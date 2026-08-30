@@ -4,6 +4,7 @@ import { Plus, CircleCheck, TriangleAlert } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
+import { canAddContractor } from "@/lib/billing/entitlements";
 import { StatusBadge } from "@/app/components/status-badge";
 import type { Contractor, DocumentStatus } from "@/lib/types";
 import { ResendButton } from "./_components/resend-button";
@@ -35,6 +36,7 @@ export default async function ContractorsPage(
     .order("created_at", { ascending: false });
 
   const contractors = (data ?? []) as ContractorRow[];
+  const limitCheck = await canAddContractor(company.id);
 
   // Per-contractor document progress.
   const progress = new Map<string, { approved: number; total: number }>();
@@ -72,14 +74,40 @@ export default async function ContractorsPage(
             Everyone you&apos;ve requested compliance documents from.
           </p>
         </div>
-        <Link
-          href="/dashboard/contractors/new"
-          className="inline-flex shrink-0 items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-        >
-          <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-          Add contractor
-        </Link>
+        {limitCheck.allowed ? (
+          <Link
+            href="/dashboard/contractors/new"
+            className="inline-flex shrink-0 items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+            Add contractor
+          </Link>
+        ) : (
+          <Link
+            href="/dashboard/settings?tab=billing"
+            className="inline-flex shrink-0 items-center gap-2 rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+          >
+            Upgrade to add more
+          </Link>
+        )}
       </header>
+
+      {!limitCheck.allowed && (
+        <div className="flex items-start gap-2 rounded-md bg-attention-bg px-4 py-3 text-sm text-attention">
+          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+          <span>
+            You&apos;re at your plan&apos;s limit of {limitCheck.limit}{" "}
+            contractors.{" "}
+            <Link
+              href="/dashboard/settings?tab=billing"
+              className="font-medium underline"
+            >
+              Upgrade your plan
+            </Link>{" "}
+            to add more.
+          </span>
+        </div>
+      )}
 
       {created && (
         <div

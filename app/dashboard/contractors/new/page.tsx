@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText, Lock } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
+import { canAddContractor } from "@/lib/billing/entitlements";
 import type { DocumentType } from "@/lib/types";
 import { NewContractorForm } from "./_components/new-contractor-form";
 
@@ -12,6 +13,8 @@ export const metadata: Metadata = { title: "Add contractor" };
 export default async function NewContractorPage() {
   const company = await getCompany();
   if (!company) return null;
+
+  const limitCheck = await canAddContractor(company.id);
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -41,7 +44,26 @@ export default async function NewContractorPage() {
         </p>
       </div>
 
-      {error ? (
+      {!limitCheck.allowed ? (
+        <div className="flex flex-col items-center rounded-card border border-dashed border-line-strong bg-surface px-6 py-14 text-center">
+          <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted text-ink-subtle">
+            <Lock className="h-5 w-5" strokeWidth={2} aria-hidden />
+          </span>
+          <p className="text-sm font-medium">
+            You&apos;re at your plan&apos;s limit of {limitCheck.limit} contractors
+          </p>
+          <p className="mt-1 max-w-sm text-sm text-ink-muted">
+            Upgrade your plan to add more. Your existing contractors and their
+            documents aren&apos;t affected.
+          </p>
+          <Link
+            href="/dashboard/settings?tab=billing"
+            className="mt-5 inline-flex items-center rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
+          >
+            Go to billing
+          </Link>
+        </div>
+      ) : error ? (
         <p className="rounded-md bg-expired-bg px-4 py-3 text-sm text-expired">
           We couldn&apos;t load your document types. Refresh to try again.
         </p>

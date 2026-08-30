@@ -6,11 +6,13 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCompany, getUser } from "@/lib/supabase/dal";
 import { getAppUrl } from "@/lib/app-url";
+import { canAddContractor } from "@/lib/billing/entitlements";
 import { sendOnboardingEmail, type SendResult } from "@/lib/email/onboarding";
 
 export interface NewContractorState {
   ok: boolean;
   error?: string;
+  limitReached?: boolean;
   fieldErrors?: {
     business_name?: string;
     contact_name?: string;
@@ -36,6 +38,15 @@ export async function createContractor(
     return { ok: false, error: "Your session has expired. Reload and try again." };
   }
   const user = await getUser();
+
+  const limitCheck = await canAddContractor(company.id);
+  if (!limitCheck.allowed) {
+    return {
+      ok: false,
+      limitReached: true,
+      error: `You've reached your plan's limit of ${limitCheck.limit} contractors. Upgrade your plan in Settings → Billing to add more.`,
+    };
+  }
 
   const businessName = str(formData, "business_name");
   const contactName = str(formData, "contact_name");

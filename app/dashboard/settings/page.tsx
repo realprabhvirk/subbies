@@ -3,8 +3,15 @@ import Link from "next/link";
 import { FileText, ArrowRight } from "lucide-react";
 
 import { getCompany, getUser } from "@/lib/supabase/dal";
+import {
+  getEntitlement,
+  getContractorCount,
+} from "@/lib/billing/entitlements";
+import { reconcileCompanyFromStripe } from "@/lib/billing/sync";
+import { PLANS, PLAN_IDS, FREE_CONTRACTOR_LIMIT } from "@/lib/billing/plans";
 import { CompanyProfileForm } from "./_components/company-profile-form";
 import { ChangePasswordForm } from "./_components/change-password-form";
+import { BillingPanel } from "./_components/billing-panel";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -28,6 +35,27 @@ export default async function SettingsPage(
   const tab: TabId = TABS.some((t) => t.id === requested)
     ? (requested as TabId)
     : "company";
+
+  const checkoutParam =
+    sp.checkout === "success" || sp.checkout === "cancelled"
+      ? sp.checkout
+      : null;
+
+  // On return from a successful checkout, pull the truth from Stripe directly
+  // so billing reflects the new plan even if the webhook hasn't landed yet.
+  if (tab === "billing" && checkoutParam === "success") {
+    await reconcileCompanyFromStripe(company.id).catch((e) =>
+      console.error("checkout reconcile failed", e),
+    );
+  }
+
+  const [entitlement, contractorCount] =
+    tab === "billing"
+      ? await Promise.all([
+          getEntitlement(company.id),
+          getContractorCount(company.id),
+        ])
+      : [null, 0];
 
   return (
     <div className="space-y-8">
@@ -97,21 +125,29 @@ export default async function SettingsPage(
         </div>
       )}
 
-      {tab === "billing" && (
-        <div className="rounded-card border border-line bg-surface p-6">
-          <h3 className="text-sm font-semibold">Billing</h3>
-          <p className="mt-1 max-w-prose text-sm text-ink-muted">
-            You&apos;re on the free early-access plan. Paid plans and billing
-            management will appear here once checkout is switched on.
-          </p>
-          <Link
-            href="/pricing"
-            className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-brand hover:underline"
-          >
-            See the plans
-            <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
-          </Link>
-        </div>
+      {tab === "billing" && entitlement && (
+        <BillingPanel
+          entitlement={{
+            status: entitlement.status,
+            plan: entitlement.plan,
+            planName: entitlement.planName,
+            hasAccess: entitlement.hasAccess,
+            inGoodStanding: entitlement.inGoodStanding,
+            trialEnd: entitlement.trialEnd,
+            currentPeriodEnd: entitlement.currentPeriodEnd,
+            cancelAtPeriodEnd: entitlement.cancelAtPeriodEnd,
+          }}
+          usage={{ used: contractorCount, limit: entitlement.contractorLimit }}
+          plans={PLAN_IDS.map((id) => ({
+            id,
+            name: PLANS[id].name,
+            amount: PLANS[id].amount,
+            blurb: PLANS[id].blurb,
+            features: PLANS[id].features,
+          }))}
+          freeLimit={FREE_CONTRACTOR_LIMIT}
+          checkout={checkoutParam}
+        />
       )}
     </div>
   );
