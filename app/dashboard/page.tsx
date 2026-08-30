@@ -6,11 +6,13 @@ import {
   CalendarClock,
   CircleX,
   ArrowRight,
+  TriangleAlert,
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
 import { StatusBadge } from "@/app/components/status-badge";
+import { hasComplianceIssue } from "@/lib/projects";
 import type { ContractorStatus, DocumentStatus } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Dashboard" };
@@ -59,6 +61,28 @@ export default async function DashboardPage() {
         contractors.map((c) => c.id),
       );
     docs = (docData ?? []) as DocRow[];
+  }
+
+  // Projects whose currently-assigned contractors include a compliance issue.
+  let projectsWithIssues = 0;
+  const { data: projectRows } = await supabase
+    .from("projects")
+    .select("id, project_contractors(removed_at, contractors(status))")
+    .eq("company_id", company.id)
+    .neq("status", "completed");
+
+  for (const project of (projectRows ?? []) as unknown as {
+    id: string;
+    project_contractors:
+      | { removed_at: string | null; contractors: { status: ContractorStatus } | null }[]
+      | null;
+  }[]) {
+    const active = (project.project_contractors ?? []).filter(
+      (pc) => pc.removed_at === null,
+    );
+    if (active.some((pc) => pc.contractors && hasComplianceIssue(pc.contractors.status))) {
+      projectsWithIssues += 1;
+    }
   }
 
   const today = startOfToday();
@@ -135,6 +159,21 @@ export default async function DashboardPage() {
         <p className="rounded-md bg-expired-bg px-4 py-3 text-sm text-expired">
           We couldn&apos;t load your contractors just now. Refresh to try again.
         </p>
+      )}
+
+      {projectsWithIssues > 0 && (
+        <Link
+          href="/dashboard/projects"
+          className="flex items-center justify-between gap-3 rounded-md bg-attention-bg px-4 py-3 text-sm text-attention transition-opacity hover:opacity-90"
+        >
+          <span className="flex items-center gap-2">
+            <TriangleAlert className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+            {projectsWithIssues}{" "}
+            {projectsWithIssues === 1 ? "project has" : "projects have"} a
+            contractor that isn&apos;t compliant
+          </span>
+          <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+        </Link>
       )}
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">

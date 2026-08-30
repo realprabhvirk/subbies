@@ -1,15 +1,26 @@
-import { contractorStatusMeta, documentStatusMeta } from "@/lib/status";
-import type { ContractorStatus, DocumentStatus } from "@/lib/types";
+import {
+  contractorStatusMeta,
+  documentStatusMeta,
+  projectStatusMeta,
+} from "@/lib/status";
+import type {
+  ContractorStatus,
+  DocumentStatus,
+  ProjectStatus,
+} from "@/lib/types";
 
 type Props =
   | { kind: "contractor"; status: ContractorStatus }
-  | { kind: "document"; status: DocumentStatus };
+  | { kind: "document"; status: DocumentStatus }
+  | { kind: "project"; status: ProjectStatus };
 
 export function StatusBadge(props: Props) {
   const meta =
     props.kind === "contractor"
       ? contractorStatusMeta[props.status]
-      : documentStatusMeta[props.status];
+      : props.kind === "document"
+        ? documentStatusMeta[props.status]
+        : projectStatusMeta[props.status];
   const Icon = meta.icon;
 
   return (

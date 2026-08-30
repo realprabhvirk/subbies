@@ -5,9 +5,15 @@ import {
   Clock,
   TriangleAlert,
   CircleX,
+  CircleDot,
+  PauseCircle,
 } from "lucide-react";
 
-import type { ContractorStatus, DocumentStatus } from "@/lib/types";
+import type {
+  ContractorStatus,
+  DocumentStatus,
+  ProjectStatus,
+} from "@/lib/types";
 
 interface StatusMeta {
   label: string;
@@ -66,5 +72,24 @@ export const documentStatusMeta: Record<DocumentStatus, StatusMeta> = {
     label: "Rejected",
     icon: CircleX,
     className: "text-expired bg-expired-bg border-expired-line",
+  },
+};
+
+export const projectStatusMeta: Record<ProjectStatus, StatusMeta> = {
+  active: {
+    label: "Active",
+    icon: CircleDot,
+    className: "text-review bg-review-bg border-review-line",
+  },
+  on_hold: {
+    label: "On hold",
+    icon: PauseCircle,
+    className:
+      "text-neutral-status bg-neutral-status-bg border-neutral-status-line",
+  },
+  completed: {
+    label: "Completed",
+    icon: CircleCheck,
+    className: "text-approved bg-approved-bg border-approved-line",
   },
 };

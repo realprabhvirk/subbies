@@ -64,6 +64,28 @@ export interface ContractorToken {
   created_at: string;
 }
 
+export type ProjectStatus = "active" | "on_hold" | "completed";
+
+export interface Project {
+  id: string;
+  company_id: string;
+  name: string;
+  address: string | null;
+  status: ProjectStatus;
+  start_date: string | null;
+  end_date: string | null;
+  created_at: string;
+}
+
+export interface ProjectContractor {
+  id: string;
+  project_id: string;
+  contractor_id: string;
+  role_on_project: string | null;
+  assigned_at: string;
+  removed_at: string | null;
+}
+
 export type NotificationType =
   | "document_uploaded"
   | "contractor_approved"
