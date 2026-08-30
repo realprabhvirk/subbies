@@ -13,8 +13,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import type { AppNotification } from "@/lib/types";
 import { Logo } from "@/app/components/logo";
 import { SignOutButton } from "./sign-out-button";
+import { NotificationsBell } from "./notifications-bell";
 
 interface NavItem {
   href: string;
@@ -37,9 +39,13 @@ function isActive(pathname: string, item: NavItem) {
 
 export function DashboardShell({
   companyName,
+  notifications,
+  unreadCount,
   children,
 }: {
   companyName: string;
+  notifications: AppNotification[];
+  unreadCount: number;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -90,14 +96,20 @@ export function DashboardShell({
         <Link href="/dashboard">
           <Logo />
         </Link>
-        <button
-          type="button"
-          onClick={() => setMobileOpen(true)}
-          className="rounded-md p-2 text-ink-muted hover:bg-surface-muted"
-          aria-label="Open menu"
-        >
-          <Menu className="h-5 w-5" strokeWidth={2} />
-        </button>
+        <div className="flex items-center gap-1">
+          <NotificationsBell
+            notifications={notifications}
+            unreadCount={unreadCount}
+          />
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="rounded-md p-2 text-ink-muted hover:bg-surface-muted"
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" strokeWidth={2} />
+          </button>
+        </div>
       </header>
 
       {/* Mobile drawer */}
@@ -133,6 +145,12 @@ export function DashboardShell({
       )}
 
       <div className="flex min-w-0 flex-col">
+        <header className="hidden h-16 items-center justify-end border-b border-line bg-surface px-6 lg:flex">
+          <NotificationsBell
+            notifications={notifications}
+            unreadCount={unreadCount}
+          />
+        </header>
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 lg:px-10">
           {children}
         </main>

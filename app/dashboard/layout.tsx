@@ -1,4 +1,6 @@
+import { createClient } from "@/lib/supabase/server";
 import { requireUser, getCompany } from "@/lib/supabase/dal";
+import type { AppNotification } from "@/lib/types";
 import { Logo } from "@/app/components/logo";
 import { SignOutButton } from "./_components/sign-out-button";
 import { DashboardShell } from "./_components/dashboard-shell";
@@ -27,7 +29,31 @@ export default async function DashboardLayout({
     );
   }
 
+  const supabase = await createClient();
+  const [{ data: notifData }, { count }] = await Promise.all([
+    supabase
+      .from("notifications")
+      .select("id, company_id, contractor_id, type, message, read_at, created_at")
+      .eq("company_id", company.id)
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("company_id", company.id)
+      .is("read_at", null),
+  ]);
+
+  const notifications = (notifData ?? []) as AppNotification[];
+  const unreadCount = count ?? 0;
+
   return (
-    <DashboardShell companyName={company.name}>{children}</DashboardShell>
+    <DashboardShell
+      companyName={company.name}
+      notifications={notifications}
+      unreadCount={unreadCount}
+    >
+      {children}
+    </DashboardShell>
   );
 }
