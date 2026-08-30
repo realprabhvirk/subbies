@@ -1,26 +1,96 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+  Subbies design tokens
+  --------------------------------------------------------------------------
+  Trustworthy compliance software: a deep navy brand, warm neutral greys,
+  and three intentional status colours (approved / attention / expired).
+  Light theme only for now — a controlled palette beats an auto dark mode
+  that renders inconsistently. Revisit if users ask for dark.
+*/
+
+@theme {
+  --font-sans: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SF Mono", Menlo, Consolas,
+    monospace;
+
+  /* Neutrals — warm grey, not blue-grey */
+  --color-canvas: #f6f5f2;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f1efea;
+  --color-line: #e4e2db;
+  --color-line-strong: #d3d0c6;
+
+  --color-ink: #1c1b17;
+  --color-ink-muted: #64615a;
+  --color-ink-subtle: #8f8b81;
+  --color-ink-inverse: #f6f5f2;
+
+  /* Brand — deep navy */
+  --color-brand: #1c3d5a;
+  --color-brand-hover: #16324a;
+  --color-brand-active: #112637;
+  --color-brand-ink: #0f2740;
+  --color-brand-tint: #e9eef3;
+
+  /* Status — colour + always paired with an icon and a label in the UI */
+  --color-approved: #2f6a4a;
+  --color-approved-bg: #e6f0ea;
+  --color-approved-line: #bcd8c8;
+
+  --color-review: #2f5d8a;
+  --color-review-bg: #e5edf5;
+  --color-review-line: #bcd0e5;
+
+  --color-attention: #97671a;
+  --color-attention-bg: #f6ecd8;
+  --color-attention-line: #e3cfa4;
+
+  --color-expired: #a5352f;
+  --color-expired-bg: #f4e5e3;
+  --color-expired-line: #e2bdb9;
+
+  --color-neutral-status: #5c6067;
+  --color-neutral-status-bg: #eceae5;
+  --color-neutral-status-line: #d8d5cc;
+
+  --radius-card: 10px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    border-color: var(--color-line);
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    line-height: 1.55;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--color-brand-ink);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    font-weight: 600;
+  }
+
+  /* Visible, on-brand focus ring for keyboard users */
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
