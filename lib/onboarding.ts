@@ -6,6 +6,82 @@ import type { ContractorDocument, DocumentStatus } from "@/lib/types";
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export function isUuid(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
+export interface ResolvedToken {
+  contractorId: string;
+  companyId: string;
+  companyName: string;
+  businessName: string;
+  contactName: string | null;
+  contractorEmail: string;
+}
+
+/**
+ * Trusted server-side resolution of a contractor token to the ids and contact
+ * details the upload actions need. Returns null for a missing/malformed token.
+ */
+export async function resolveOnboardingToken(
+  token: string,
+): Promise<ResolvedToken | null> {
+  if (!token || !UUID_RE.test(token)) return null;
+
+  const admin = createAdminClient();
+
+  const { data: tokenRow } = await admin
+    .from("contractor_tokens")
+    .select("contractor_id")
+    .eq("token", token)
+    .maybeSingle<{ contractor_id: string }>();
+
+  if (!tokenRow) return null;
+
+  const { data: contractor } = await admin
+    .from("contractors")
+    .select("id, company_id, business_name, contact_name, email, companies(name)")
+    .eq("id", tokenRow.contractor_id)
+    .maybeSingle<{
+      id: string;
+      company_id: string;
+      business_name: string;
+      contact_name: string | null;
+      email: string;
+      companies: { name: string } | null;
+    }>();
+
+  if (!contractor) return null;
+
+  return {
+    contractorId: contractor.id,
+    companyId: contractor.company_id,
+    companyName: contractor.companies?.name ?? "The company",
+    businessName: contractor.business_name,
+    contactName: contractor.contact_name,
+    contractorEmail: contractor.email,
+  };
+}
+
+/** The auth email of the company account owner (for company-facing emails). */
+export async function getCompanyOwnerEmail(
+  companyId: string,
+): Promise<string | null> {
+  const admin = createAdminClient();
+
+  const { data: company } = await admin
+    .from("companies")
+    .select("user_id")
+    .eq("id", companyId)
+    .maybeSingle<{ user_id: string }>();
+
+  if (!company) return null;
+
+  const { data, error } = await admin.auth.admin.getUserById(company.user_id);
+  if (error || !data?.user?.email) return null;
+  return data.user.email;
+}
+
 export interface OnboardingChecklistItem {
   id: string;
   documentName: string;

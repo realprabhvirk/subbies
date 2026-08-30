@@ -2,17 +2,15 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { Logo } from "@/app/components/logo";
-import { StatusBadge } from "@/app/components/status-badge";
 import { getOnboardingContext } from "@/lib/onboarding";
+import { OnboardChecklist } from "./_components/onboard-checklist";
 
 export const metadata: Metadata = {
   title: "Upload your documents",
   robots: { index: false, follow: false },
 };
 
-export default async function OnboardPage(
-  props: PageProps<"/onboard/[token]">,
-) {
+export default async function OnboardPage(props: PageProps<"/onboard/[token]">) {
   const { token } = await props.params;
   const context = await getOnboardingContext(token);
 
@@ -22,6 +20,7 @@ export default async function OnboardPage(
   const outstanding = items.filter(
     (i) => i.status === "requested" || i.status === "rejected",
   ).length;
+  const allDone = outstanding === 0;
 
   return (
     <main className="mx-auto w-full max-w-lg px-4 py-10 sm:py-16">
@@ -34,33 +33,25 @@ export default async function OnboardPage(
         </h1>
         <p className="mt-2 text-sm text-ink-muted">
           {companyName} needs the documents below before work can begin. This
-          page is unique to you — no login required.
+          page is unique to you — no login required. You can come back to this
+          link any time.
         </p>
 
-        <ul className="mt-6 space-y-3">
-          {items.map((item) => (
-            <li
-              key={item.id}
-              className="rounded-md border border-line p-4"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <span className="font-medium">{item.documentName}</span>
-                <StatusBadge kind="document" status={item.status} />
-              </div>
-              {item.status === "rejected" && item.rejectionReason && (
-                <p className="mt-2 text-sm text-expired">
-                  Not accepted: {item.rejectionReason}
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
-
-        <div className="mt-6 rounded-md bg-surface-muted px-4 py-3 text-sm text-ink-muted">
-          {outstanding > 0
-            ? "The upload step is being finalised. You'll be able to add each document here shortly — this link stays valid."
-            : "Everything requested has been submitted. There's nothing more to do right now."}
+        <div
+          className={`mt-5 rounded-md px-4 py-3 text-sm ${
+            allDone
+              ? "bg-approved-bg text-approved"
+              : "bg-surface-muted text-ink-muted"
+          }`}
+        >
+          {allDone
+            ? "Everything requested has been submitted. There's nothing more to do right now — you'll hear from " +
+              companyName +
+              " if anything needs changing."
+            : `${outstanding} ${outstanding === 1 ? "document" : "documents"} still to upload. Accepted formats: PDF, JPG, PNG, HEIC (max 15 MB).`}
         </div>
+
+        <OnboardChecklist token={token} items={items} />
       </div>
 
       <p className="mt-6 text-center text-xs text-ink-subtle">
