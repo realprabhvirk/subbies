@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // A stray package-lock.json in the parent directory makes Turbopack's
+  // workspace-root inference ambiguous. Pin it to this project.
+  turbopack: {
+    root: __dirname,
+  },
 };
 
 export default nextConfig;
