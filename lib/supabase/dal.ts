@@ -39,7 +39,7 @@ export const getCompany = cache(async (): Promise<Company | null> => {
 
   const { data, error } = await supabase
     .from("companies")
-    .select("id, user_id, name, created_at")
+    .select("id, user_id, name, address, phone, created_at")
     .eq("user_id", user.id)
     .maybeSingle<Company>();
 

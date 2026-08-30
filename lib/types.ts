@@ -18,6 +18,8 @@ export interface Company {
   id: string;
   user_id: string;
   name: string;
+  address: string | null;
+  phone: string | null;
   created_at: string;
 }
 
