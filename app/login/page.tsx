@@ -1,45 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/app/components/logo";
+import { Spinner } from "@/app/components/spinner";
+import { PasswordField } from "@/app/components/password-field";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [pending, startTransition] = useTransition();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
 
-    const supabase = createClient();
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    startTransition(async () => {
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        setError(
+          signInError.message === "Invalid login credentials"
+            ? "That email and password don't match an account."
+            : signInError.message,
+        );
+        return;
+      }
+
+      const redirectTo =
+        new URLSearchParams(window.location.search).get("redirectTo") ||
+        "/dashboard";
+      router.replace(redirectTo);
+      router.refresh();
     });
-
-    if (signInError) {
-      setError(
-        signInError.message === "Invalid login credentials"
-          ? "That email and password don't match an account."
-          : signInError.message,
-      );
-      setLoading(false);
-      return;
-    }
-
-    const redirectTo =
-      new URLSearchParams(window.location.search).get("redirectTo") ||
-      "/dashboard";
-    router.replace(redirectTo);
-    router.refresh();
   };
 
   return (
@@ -72,14 +74,12 @@ export default function LoginPage() {
               <label htmlFor="password" className="block text-sm font-medium">
                 Password
               </label>
-              <input
+              <PasswordField
                 id="password"
-                type="password"
                 autoComplete="current-password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
               />
             </div>
 
@@ -91,10 +91,11 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
+              disabled={pending}
+              className="flex w-full items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
             >
-              {loading ? "Logging in…" : "Log in"}
+              {pending && <Spinner className="h-4 w-4" />}
+              {pending ? "Logging in…" : "Log in"}
             </button>
           </form>
         </div>

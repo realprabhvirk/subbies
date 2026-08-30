@@ -6,6 +6,7 @@ import { Upload, FileText, RefreshCw } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { StatusBadge } from "@/app/components/status-badge";
+import { Spinner } from "@/app/components/spinner";
 import {
   CONTRACTOR_DOCS_BUCKET,
   MAX_UPLOAD_BYTES,
@@ -188,7 +189,11 @@ function FilePicker({
         onClick={() => inputRef.current?.click()}
         className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
       >
-        <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+        {disabled ? (
+          <Spinner className="h-4 w-4" />
+        ) : (
+          <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+        )}
         {label}
       </button>
       <input

@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { Check } from "lucide-react";
 
+import { Spinner } from "@/app/components/spinner";
 import type { DocumentType } from "@/lib/types";
 import { createContractor, type NewContractorState } from "../../actions";
 
@@ -271,8 +272,9 @@ export function NewContractorForm({
           <button
             type="submit"
             disabled={pending || selected.size === 0}
-            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
           >
+            {pending && <Spinner className="h-4 w-4" />}
             {pending ? "Sending request…" : "Send onboarding request"}
           </button>
         </div>

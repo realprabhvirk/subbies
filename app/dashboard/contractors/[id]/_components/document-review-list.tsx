@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, Check, X } from "lucide-react";
 
 import { StatusBadge } from "@/app/components/status-badge";
+import { Spinner } from "@/app/components/spinner";
 import type { DocumentStatus } from "@/lib/types";
 import { approveDocument, rejectDocument, getDocumentFileUrl } from "../actions";
 
@@ -70,6 +71,13 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
     doc.expiryDate ?? defaultExpiry(doc.defaultDurationMonths),
   );
 
+  // Optimistic view of this document. Reverts automatically to `doc` when the
+  // transition ends, so a failed approve rolls back on its own.
+  const [optimisticDoc, applyOptimistic] = useOptimistic(
+    doc,
+    (current, patch: Partial<ReviewDocument>) => ({ ...current, ...patch }),
+  );
+
   const viewFile = () => {
     setError(null);
     startTransition(async () => {
@@ -86,6 +94,7 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
     setError(null);
     setNotice(null);
     startTransition(async () => {
+      applyOptimistic({ status: "approved", expiryDate: expiry });
       const result = await approveDocument(doc.id, expiry);
       if (!result.ok) {
         setError(result.error ?? "Couldn't approve.");
@@ -111,46 +120,52 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
     });
   };
 
+  const view = optimisticDoc;
+
   return (
     <li className="px-5 py-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-medium">{doc.documentName}</p>
-          {doc.status === "approved" && doc.expiryDate && (
+          <p className="font-medium">{view.documentName}</p>
+          {view.status === "approved" && view.expiryDate && (
             <p className="mt-0.5 text-sm text-ink-muted">
-              Expires {formatDate(doc.expiryDate)}
+              Expires {formatDate(view.expiryDate)}
             </p>
           )}
-          {doc.status === "requested" && (
+          {view.status === "requested" && (
             <p className="mt-0.5 text-sm text-ink-muted">
               Waiting on the contractor to upload.
             </p>
           )}
-          {doc.status === "rejected" && (
+          {view.status === "rejected" && (
             <p className="mt-0.5 text-sm text-ink-muted">
-              Rejected{doc.rejectionReason ? ` — ${doc.rejectionReason}` : ""}.
+              Rejected{view.rejectionReason ? ` — ${view.rejectionReason}` : ""}.
               Waiting on a replacement.
             </p>
           )}
         </div>
-        <StatusBadge kind="document" status={doc.status} />
+        <StatusBadge kind="document" status={view.status} />
       </div>
 
-      {(doc.hasFile || doc.status === "uploaded") && (
+      {(view.hasFile || view.status === "uploaded") && (
         <div className="mt-3 space-y-3">
-          {doc.hasFile && (
+          {view.hasFile && (
             <button
               type="button"
               onClick={viewFile}
               disabled={pending}
               className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted disabled:opacity-60"
             >
-              <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
+              {pending ? (
+                <Spinner className="h-4 w-4" />
+              ) : (
+                <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
+              )}
               View file
             </button>
           )}
 
-          {doc.status === "uploaded" && !rejecting && (
+          {view.status === "uploaded" && !rejecting && (
             <div className="flex flex-wrap items-end gap-3 rounded-md bg-surface-muted p-3">
               <div className="space-y-1">
                 <label
@@ -174,8 +189,12 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
                 disabled={pending}
                 className="inline-flex items-center gap-1.5 rounded-md bg-approved px-3 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
               >
-                <Check className="h-4 w-4" strokeWidth={2} aria-hidden />
-                {pending ? "Working…" : "Approve"}
+                {pending ? (
+                  <Spinner className="h-4 w-4" />
+                ) : (
+                  <Check className="h-4 w-4" strokeWidth={2} aria-hidden />
+                )}
+                {pending ? "Approving…" : "Approve"}
               </button>
               <button
                 type="button"
@@ -189,7 +208,7 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
             </div>
           )}
 
-          {doc.status === "uploaded" && rejecting && (
+          {view.status === "uploaded" && rejecting && (
             <div className="space-y-2 rounded-md border border-expired-line bg-expired-bg p-3">
               <label
                 htmlFor={`reason-${doc.id}`}
@@ -211,8 +230,9 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
                   type="button"
                   onClick={confirmReject}
                   disabled={pending}
-                  className="rounded-md bg-expired px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-expired px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
                 >
+                  {pending && <Spinner className="h-3.5 w-3.5" />}
                   {pending ? "Sending…" : "Confirm rejection"}
                 </button>
                 <button

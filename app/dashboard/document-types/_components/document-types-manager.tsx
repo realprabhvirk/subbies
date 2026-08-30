@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, X, CalendarClock, BellRing } from "lucide-react";
 
+import { Spinner } from "@/app/components/spinner";
 import type { DocumentType } from "@/lib/types";
 import {
   createDocumentType,
@@ -143,8 +144,9 @@ export function DocumentTypesManager({ types }: { types: DocumentType[] }) {
                       type="button"
                       onClick={() => handleDelete(type.id)}
                       disabled={isDeleting}
-                      className="rounded-md bg-expired px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60"
+                      className="inline-flex items-center gap-1.5 rounded-md bg-expired px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60"
                     >
+                      {isDeleting && <Spinner className="h-3.5 w-3.5" />}
                       {isDeleting ? "Deleting…" : "Delete"}
                     </button>
                     <button
@@ -193,9 +195,11 @@ function DocumentTypeDialog({
     DocumentTypeFormState | null,
     FormData
   >(action, null);
+  const [finishing, startFinish] = useTransition();
+  const busy = pending || finishing;
 
   useEffect(() => {
-    if (state?.ok) onSaved();
+    if (state?.ok) startFinish(onSaved);
   }, [state, onSaved]);
 
   useEffect(() => {
@@ -314,16 +318,18 @@ function DocumentTypeDialog({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted"
+              disabled={busy}
+              className="rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted disabled:opacity-60"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={pending}
-              className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
+              disabled={busy}
+              className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
             >
-              {pending
+              {busy && <Spinner className="h-4 w-4" />}
+              {busy
                 ? "Saving…"
                 : isEdit
                   ? "Save changes"

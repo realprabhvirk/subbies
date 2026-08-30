@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Users,
+  FolderKanban,
   FileText,
   Settings,
   Menu,
@@ -15,6 +16,7 @@ import {
 
 import type { AppNotification } from "@/lib/types";
 import { Logo } from "@/app/components/logo";
+import { Spinner } from "@/app/components/spinner";
 import { SignOutButton } from "./sign-out-button";
 import { NotificationsBell } from "./notifications-bell";
 
@@ -29,12 +31,49 @@ interface NavItem {
 const NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/contractors", label: "Contractors", icon: Users },
+  { href: "/dashboard/projects", label: "Projects", icon: FolderKanban },
   { href: "/dashboard/document-types", label: "Document types", icon: FileText },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
 function isActive(pathname: string, item: NavItem) {
   return item.exact ? pathname === item.href : pathname.startsWith(item.href);
+}
+
+/** Swaps the nav icon for a spinner while that route is loading. */
+function NavIcon({ Icon }: { Icon: LucideIcon }) {
+  const { pending } = useLinkStatus();
+  return pending ? (
+    <Spinner className="h-4 w-4" />
+  ) : (
+    <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+  );
+}
+
+function NavLink({
+  item,
+  active,
+  onNavigate,
+}: {
+  item: NavItem;
+  active: boolean;
+  onNavigate?: () => void;
+}) {
+  return (
+    <Link
+      href={item.href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+        active
+          ? "bg-brand-tint text-brand-ink"
+          : "text-ink-muted hover:bg-surface-muted hover:text-ink"
+      }`}
+    >
+      <NavIcon Icon={item.icon} />
+      {item.label}
+    </Link>
+  );
 }
 
 export function DashboardShell({
@@ -52,26 +91,14 @@ export function DashboardShell({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navLinks = (onNavigate?: () => void) =>
-    NAV.map((item) => {
-      const Icon = item.icon;
-      const active = isActive(pathname, item);
-      return (
-        <Link
-          key={item.href}
-          href={item.href}
-          onClick={onNavigate}
-          aria-current={active ? "page" : undefined}
-          className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            active
-              ? "bg-brand-tint text-brand-ink"
-              : "text-ink-muted hover:bg-surface-muted hover:text-ink"
-          }`}
-        >
-          <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
-          {item.label}
-        </Link>
-      );
-    });
+    NAV.map((item) => (
+      <NavLink
+        key={item.href}
+        item={item}
+        active={isActive(pathname, item)}
+        onNavigate={onNavigate}
+      />
+    ));
 
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[16rem_1fr]">
