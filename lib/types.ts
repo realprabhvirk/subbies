@@ -61,3 +61,18 @@ export interface ContractorToken {
   token: string;
   created_at: string;
 }
+
+export type NotificationType =
+  | "document_uploaded"
+  | "contractor_approved"
+  | "document_rejected";
+
+export interface AppNotification {
+  id: string;
+  company_id: string;
+  contractor_id: string | null;
+  type: NotificationType;
+  message: string;
+  read_at: string | null;
+  created_at: string;
+}
