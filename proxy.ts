@@ -9,11 +9,11 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Run on every path except static assets and image files. Auth cookie
-     * refresh needs to happen on normal navigations, including the public
-     * /onboard/[token] contractor pages (which stay accessible — they are
-     * not under /dashboard).
+     * Run on every path except static assets, image files, and API routes.
+     * Auth cookie refresh needs to happen on normal navigations, including the
+     * public /onboard/[token] contractor pages (not under /dashboard). API
+     * routes (e.g. the Stripe webhook) authenticate themselves.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
