@@ -147,7 +147,12 @@ export default async function ContractorsPage(
                 className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4"
               >
                 <div className="min-w-0 grow">
-                  <p className="truncate font-medium">{c.business_name}</p>
+                  <Link
+                    href={`/dashboard/contractors/${c.id}`}
+                    className="font-medium hover:text-brand hover:underline"
+                  >
+                    {c.business_name}
+                  </Link>
                   <p className="truncate text-sm text-ink-muted">
                     {[c.trade, c.email].filter(Boolean).join(" · ")}
                   </p>
