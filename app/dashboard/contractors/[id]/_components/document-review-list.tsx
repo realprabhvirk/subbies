@@ -45,14 +45,14 @@ export function DocumentReviewList({
 }) {
   if (documents.length === 0) {
     return (
-      <p className="rounded-card border border-line bg-surface px-5 py-8 text-center text-sm text-ink-muted">
+      <p className="rounded-card border border-line bg-surface shadow-sm px-5 py-8 text-center text-sm text-ink-muted">
         No documents were requested from this contractor.
       </p>
     );
   }
 
   return (
-    <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
+    <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
       {documents.map((doc) => (
         <DocumentRow key={doc.id} doc={doc} />
       ))}

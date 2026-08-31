@@ -57,7 +57,7 @@ export function ProjectDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-brand-ink/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-warm-900/40 backdrop-blur-[2px]" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"

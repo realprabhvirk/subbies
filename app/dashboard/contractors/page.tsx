@@ -166,7 +166,7 @@ export default async function ContractorsPage(
           </Link>
         </div>
       ) : (
-        <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
+        <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
           {contractors.map((c) => {
             const p = progress.get(c.id);
             return (

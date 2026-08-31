@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-sm font-semibold uppercase tracking-wide text-brand">
+    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-subtle">
       {children}
     </p>
   );
@@ -44,7 +44,7 @@ export function PrimaryLink({
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
+      className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-[background,transform] hover:bg-brand-hover active:scale-[0.98]"
     >
       {children}
       <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
@@ -78,24 +78,22 @@ export function CtaBand({
 }) {
   return (
     <Section className="py-16">
-      <div className="rounded-card border border-brand-ink/10 bg-brand-ink px-6 py-12 text-center sm:px-12">
-        <h2 className="text-2xl font-semibold text-ink-inverse sm:text-3xl">
-          {heading}
-        </h2>
-        <p className="mx-auto mt-3 max-w-xl text-sm text-ink-inverse/80 sm:text-base">
+      <div className="overflow-hidden rounded-card border border-line bg-surface px-6 py-14 text-center shadow-md sm:px-12">
+        <h2 className="text-2xl font-semibold sm:text-3xl">{heading}</h2>
+        <p className="mx-auto mt-3 max-w-xl text-sm text-ink-muted sm:text-base">
           {sub}
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           <Link
             href="/signup"
-            className="inline-flex items-center gap-2 rounded-md bg-surface px-5 py-2.5 text-sm font-medium text-brand-ink transition-colors hover:bg-surface-muted"
+            className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-[background,transform] hover:bg-brand-hover active:scale-[0.98]"
           >
             Create your account
             <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
           </Link>
           <Link
             href="/how-it-works"
-            className="inline-flex items-center rounded-md border border-ink-inverse/25 px-5 py-2.5 text-sm font-medium text-ink-inverse transition-colors hover:bg-ink-inverse/10"
+            className="inline-flex items-center rounded-md border border-line-strong px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
           >
             See how it works
           </Link>

@@ -56,7 +56,7 @@ export default function SignupPage() {
     <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
         <Logo className="mb-8" />
-        <div className="rounded-card border border-line bg-surface p-6 shadow-sm sm:p-8">
+        <div className="rounded-card border border-line bg-surface shadow-sm p-6 shadow-sm sm:p-8">
           <h1 className="text-xl font-semibold">Create your account</h1>
           <p className="mt-1 text-sm text-ink-muted">
             Start collecting contractor documents in a few minutes.

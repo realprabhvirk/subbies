@@ -18,7 +18,7 @@ export default async function DashboardLayout({
   if (!company) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
-        <div className="w-full max-w-md rounded-card border border-line bg-surface p-8 shadow-sm">
+        <div className="w-full max-w-md rounded-card border border-line bg-surface shadow-sm p-8 shadow-sm">
           <Logo className="mb-6" />
           <h1 className="text-lg font-semibold">Account setup incomplete</h1>
           <p className="mt-2 text-sm text-ink-muted">
