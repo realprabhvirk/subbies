@@ -11,8 +11,7 @@ import { getCompanyOwnerEmail } from "@/lib/onboarding";
 import { getAppUrl } from "@/lib/app-url";
 import { PLANS } from "@/lib/billing/plans";
 import {
-  sendTrialEndingEmail,
-  sendTrialConvertedEmail,
+  sendSubscriptionStartedEmail,
   sendPaymentFailedEmail,
 } from "@/lib/email/billing";
 
@@ -23,7 +22,6 @@ const RELEVANT = new Set<string>([
   "customer.subscription.created",
   "customer.subscription.updated",
   "customer.subscription.deleted",
-  "customer.subscription.trial_will_end",
   "invoice.payment_failed",
 ]);
 
@@ -62,7 +60,24 @@ export async function POST(req: NextRequest) {
               ? session.subscription
               : session.subscription.id;
           const sub = await stripe.subscriptions.retrieve(subId);
-          await syncSubscription(sub);
+          const result = await syncSubscription(sub);
+
+          // First activation → confirmation email.
+          if (
+            result.companyId &&
+            result.plan &&
+            result.newStatus === "active" &&
+            result.prevStatus !== "active"
+          ) {
+            const email = await getCompanyOwnerEmail(result.companyId);
+            if (email) {
+              await sendSubscriptionStartedEmail({
+                to: email,
+                planName: PLANS[result.plan].name,
+                amount: PLANS[result.plan].amount,
+              });
+            }
+          }
         }
         break;
       }
@@ -70,48 +85,13 @@ export async function POST(req: NextRequest) {
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
-        const result = await syncSubscription(sub);
-
-        if (
-          result.companyId &&
-          result.plan &&
-          result.prevStatus === "trialing" &&
-          result.newStatus === "active"
-        ) {
-          const email = await getCompanyOwnerEmail(result.companyId);
-          if (email) {
-            await sendTrialConvertedEmail({
-              to: email,
-              planName: PLANS[result.plan].name,
-              amount: PLANS[result.plan].amount,
-            });
-          }
-        }
+        await syncSubscription(sub);
         break;
       }
 
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
         await markSubscriptionCanceled(sub.id);
-        break;
-      }
-
-      case "customer.subscription.trial_will_end": {
-        const sub = event.data.object as Stripe.Subscription;
-        const result = await syncSubscription(sub);
-        if (result.companyId && result.plan) {
-          const email = await getCompanyOwnerEmail(result.companyId);
-          if (email) {
-            await sendTrialEndingEmail({
-              to: email,
-              planName: PLANS[result.plan].name,
-              amount: PLANS[result.plan].amount,
-              trialEnd: sub.trial_end
-                ? new Date(sub.trial_end * 1000).toISOString()
-                : null,
-            });
-          }
-        }
         break;
       }
 
@@ -139,7 +119,6 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error("stripe webhook handler error", event.type, err);
-    // 500 → Stripe retries with backoff.
     return new Response("Handler error", { status: 500 });
   }
 

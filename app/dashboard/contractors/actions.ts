@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCompany, getUser } from "@/lib/supabase/dal";
 import { getAppUrl } from "@/lib/app-url";
-import { canAddContractor } from "@/lib/billing/entitlements";
+import { canAddContractor, limitMessage } from "@/lib/billing/entitlements";
 import { sendOnboardingEmail, type SendResult } from "@/lib/email/onboarding";
 
 export interface NewContractorState {
@@ -44,7 +44,7 @@ export async function createContractor(
     return {
       ok: false,
       limitReached: true,
-      error: `You've reached your plan's limit of ${limitCheck.limit} contractors. Upgrade your plan in Settings → Billing to add more.`,
+      error: limitMessage(limitCheck, "contractors"),
     };
   }
 

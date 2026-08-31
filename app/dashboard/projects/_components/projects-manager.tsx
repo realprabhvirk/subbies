@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Pencil, MapPin, Users, TriangleAlert } from "lucide-react";
 
 import { StatusBadge } from "@/app/components/status-badge";
+import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
 import type { ProjectStatus } from "@/lib/types";
 import { ProjectDialog, type ProjectDialogData } from "./project-dialog";
 
@@ -25,7 +26,15 @@ type DialogState =
   | { mode: "edit"; project: ProjectDialogData }
   | null;
 
-export function ProjectsManager({ projects }: { projects: ProjectListItem[] }) {
+export function ProjectsManager({
+  projects,
+  atLimit = false,
+  limit = null,
+}: {
+  projects: ProjectListItem[];
+  atLimit?: boolean;
+  limit?: number | null;
+}) {
   const router = useRouter();
   const [dialog, setDialog] = useState<DialogState>(null);
 
@@ -41,15 +50,26 @@ export function ProjectsManager({ projects }: { projects: ProjectListItem[] }) {
             everyone on site is compliant.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex shrink-0 items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-        >
-          <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-          New project
-        </button>
+        {atLimit ? (
+          <Link
+            href="/dashboard/settings?tab=billing"
+            className="inline-flex shrink-0 items-center gap-2 rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+          >
+            Upgrade to add more
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex shrink-0 items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+            New project
+          </button>
+        )}
       </header>
+
+      {atLimit && <LimitBanner resource="projects" limit={limit} />}
 
       {projects.length === 0 ? (
         <div className="flex flex-col items-center rounded-card border border-dashed border-line-strong bg-surface px-6 py-16 text-center">

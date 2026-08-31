@@ -40,6 +40,8 @@ export interface SyncResult {
   customerId: string;
 }
 
+const PAID_STATUSES: SubscriptionStatus[] = ["trialing", "active", "past_due"];
+
 /**
  * Writes the current state of a Stripe Subscription into our `subscriptions`
  * table. Idempotent — safe to call for every webhook retry. Stripe is the
@@ -56,29 +58,40 @@ export async function syncSubscription(
   const plan = priceId ? planForPriceId(priceId) : null;
   const status = mapStatus(sub.status);
 
-  // Resolve which company this belongs to.
   let companyId: string | null =
     (sub.metadata?.company_id as string | undefined) ?? null;
   let prevStatus: SubscriptionStatus | null = null;
 
   const { data: bySub } = await admin
     .from("subscriptions")
-    .select("company_id, status")
+    .select("company_id, status, onboarding_completed_at")
     .eq("stripe_subscription_id", sub.id)
-    .maybeSingle<{ company_id: string; status: SubscriptionStatus }>();
+    .maybeSingle<{
+      company_id: string;
+      status: SubscriptionStatus;
+      onboarding_completed_at: string | null;
+    }>();
+
+  let onboardingCompletedAt: string | null = null;
 
   if (bySub) {
     companyId = bySub.company_id;
     prevStatus = bySub.status;
+    onboardingCompletedAt = bySub.onboarding_completed_at;
   } else {
     const { data: byCustomer } = await admin
       .from("subscriptions")
-      .select("company_id, status")
+      .select("company_id, status, onboarding_completed_at")
       .eq("stripe_customer_id", customerId)
-      .maybeSingle<{ company_id: string; status: SubscriptionStatus }>();
+      .maybeSingle<{
+        company_id: string;
+        status: SubscriptionStatus;
+        onboarding_completed_at: string | null;
+      }>();
     if (byCustomer) {
       companyId = byCustomer.company_id;
       prevStatus = byCustomer.status;
+      onboardingCompletedAt = byCustomer.onboarding_completed_at;
     }
   }
 
@@ -92,6 +105,11 @@ export async function syncSubscription(
     return { companyId: null, prevStatus, newStatus: status, plan, customerId };
   }
 
+  // A confirmed paid subscription also completes the onboarding gate.
+  const nowIso = new Date().toISOString();
+  const stampOnboarding =
+    !onboardingCompletedAt && PAID_STATUSES.includes(status);
+
   const { error } = await admin.from("subscriptions").upsert(
     {
       company_id: companyId,
@@ -102,7 +120,8 @@ export async function syncSubscription(
       current_period_end: toIso(item?.current_period_end),
       trial_end: toIso(sub.trial_end),
       cancel_at_period_end: sub.cancel_at_period_end,
-      updated_at: new Date().toISOString(),
+      ...(stampOnboarding ? { onboarding_completed_at: nowIso } : {}),
+      updated_at: nowIso,
     },
     { onConflict: "company_id" },
   );
@@ -124,6 +143,16 @@ export async function getCompanyIdByCustomer(
     .eq("stripe_customer_id", customerId)
     .maybeSingle<{ company_id: string }>();
   return data?.company_id ?? null;
+}
+
+/** Stamps the forced-onboarding gate as passed (free-access choice). */
+export async function stampOnboardingComplete(companyId: string): Promise<void> {
+  const admin = createAdminClient();
+  await admin
+    .from("subscriptions")
+    .update({ onboarding_completed_at: new Date().toISOString() })
+    .eq("company_id", companyId)
+    .is("onboarding_completed_at", null);
 }
 
 /**

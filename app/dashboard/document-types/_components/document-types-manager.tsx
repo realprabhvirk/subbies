@@ -1,10 +1,12 @@
 "use client";
 
 import { useActionState, useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, X, CalendarClock, BellRing } from "lucide-react";
 
 import { Spinner } from "@/app/components/spinner";
+import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
 import type { DocumentType } from "@/lib/types";
 import {
   createDocumentType,
@@ -18,7 +20,15 @@ type DialogState =
   | { mode: "edit"; type: DocumentType }
   | null;
 
-export function DocumentTypesManager({ types }: { types: DocumentType[] }) {
+export function DocumentTypesManager({
+  types,
+  atLimit = false,
+  limit = null,
+}: {
+  types: DocumentType[];
+  atLimit?: boolean;
+  limit?: number | null;
+}) {
   const router = useRouter();
   const [dialog, setDialog] = useState<DialogState>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -48,15 +58,26 @@ export function DocumentTypesManager({ types }: { types: DocumentType[] }) {
             pick from this list when onboarding each contractor.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setDialog({ mode: "create" })}
-          className="inline-flex shrink-0 items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-        >
-          <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-          Add document type
-        </button>
+        {atLimit ? (
+          <Link
+            href="/dashboard/settings?tab=billing"
+            className="inline-flex shrink-0 items-center gap-2 rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+          >
+            Upgrade to add more
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setDialog({ mode: "create" })}
+            className="inline-flex shrink-0 items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+            Add document type
+          </button>
+        )}
       </header>
+
+      {atLimit && <LimitBanner resource="document types" limit={limit} />}
 
       {deleteError && (
         <p className="rounded-md bg-expired-bg px-4 py-3 text-sm text-expired">

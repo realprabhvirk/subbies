@@ -4,19 +4,40 @@ import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 import type { Subscription, SubscriptionStatus } from "@/lib/types";
-import { PLANS, FREE_CONTRACTOR_LIMIT, type PlanId } from "./plans";
+import {
+  PLANS,
+  FREE_TIER,
+  type PlanId,
+  type PlanLimits,
+  type LimitedResource,
+} from "./plans";
 
 export interface Entitlement {
   status: SubscriptionStatus;
   plan: PlanId | null;
   planName: string | null;
-  /** trialing / active / past_due — the product is usable. */
+
+  /** The forced plan-selection screen has been passed. */
+  onboardingCompleted: boolean;
+  /** Redirect the user to /onboarding. */
+  needsOnboarding: boolean;
+
+  /** On the 7-day free tier, window still open. */
+  onFreeTier: boolean;
+  freeEndsAt: string | null;
+  /** Free window has run out. */
+  freeExpired: boolean;
+
+  /** Paid access: trialing / active / past_due. */
+  paidAccess: boolean;
+  /** The product is usable right now (paid access or open free window). */
   hasAccess: boolean;
-  /** trialing / active — billing is healthy. */
-  inGoodStanding: boolean;
-  /** null = unlimited. */
-  contractorLimit: number | null;
-  trialEnd: string | null;
+  /** Onboarded, but access has lapsed — show the soft-lock screen. */
+  softLocked: boolean;
+
+  /** Effective limits for creation checks. */
+  limits: PlanLimits;
+
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
   stripeCustomerId: string | null;
@@ -41,20 +62,41 @@ export const getEntitlement = cache(
     const status: SubscriptionStatus = sub?.status ?? "none";
     const plan = sub?.plan ?? null;
 
-    const inGoodStanding = status === "trialing" || status === "active";
-    const hasAccess = inGoodStanding || status === "past_due";
+    const onboardingCompleted = Boolean(sub?.onboarding_completed_at);
+    const now = Date.now();
+    const freeEndsAt = sub?.free_ends_at ?? null;
 
-    const contractorLimit =
-      hasAccess && plan ? PLANS[plan].contractorLimit : FREE_CONTRACTOR_LIMIT;
+    const onFreeTier =
+      status === "free" &&
+      freeEndsAt !== null &&
+      new Date(freeEndsAt).getTime() > now;
+    const freeExpired =
+      status === "free" &&
+      (freeEndsAt === null || new Date(freeEndsAt).getTime() <= now);
+
+    const paidAccess =
+      status === "trialing" || status === "active" || status === "past_due";
+
+    const hasAccess = paidAccess || onFreeTier;
+    const needsOnboarding = !onboardingCompleted;
+    const softLocked = onboardingCompleted && !hasAccess;
+
+    const limits: PlanLimits =
+      paidAccess && plan ? PLANS[plan].limits : FREE_TIER.limits;
 
     return {
       status,
       plan,
       planName: plan ? PLANS[plan].name : null,
+      onboardingCompleted,
+      needsOnboarding,
+      onFreeTier,
+      freeEndsAt,
+      freeExpired,
+      paidAccess,
       hasAccess,
-      inGoodStanding,
-      contractorLimit,
-      trialEnd: sub?.trial_end ?? null,
+      softLocked,
+      limits,
       currentPeriodEnd: sub?.current_period_end ?? null,
       cancelAtPeriodEnd: sub?.cancel_at_period_end ?? false,
       stripeCustomerId: sub?.stripe_customer_id ?? null,
@@ -63,34 +105,87 @@ export const getEntitlement = cache(
   },
 );
 
-export const getContractorCount = cache(
-  async (companyId: string): Promise<number> => {
-    const supabase = await createClient();
-    const { count } = await supabase
-      .from("contractors")
-      .select("id", { count: "exact", head: true })
-      .eq("company_id", companyId);
-    return count ?? 0;
+const RESOURCE_TABLE: Record<LimitedResource, string> = {
+  contractors: "contractors",
+  documentTypes: "document_types",
+  projects: "projects",
+};
+
+async function countResource(
+  companyId: string,
+  resource: LimitedResource,
+): Promise<number> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from(RESOURCE_TABLE[resource])
+    .select("id", { count: "exact", head: true })
+    .eq("company_id", companyId);
+  return count ?? 0;
+}
+
+export const getContractorCount = cache((companyId: string) =>
+  countResource(companyId, "contractors"),
+);
+
+export const getUsageCounts = cache(
+  async (
+    companyId: string,
+  ): Promise<Record<LimitedResource, number>> => {
+    const [contractors, documentTypes, projects] = await Promise.all([
+      countResource(companyId, "contractors"),
+      countResource(companyId, "documentTypes"),
+      countResource(companyId, "projects"),
+    ]);
+    return { contractors, documentTypes, projects };
   },
 );
 
-export interface AddContractorCheck {
+export interface LimitCheck {
   allowed: boolean;
   used: number;
   limit: number | null;
+  /** true when blocked because access has lapsed rather than a count cap. */
+  accessLapsed: boolean;
 }
 
-export async function canAddContractor(
+export async function checkResourceLimit(
   companyId: string,
-): Promise<AddContractorCheck> {
+  resource: LimitedResource,
+): Promise<LimitCheck> {
   const [entitlement, used] = await Promise.all([
     getEntitlement(companyId),
-    getContractorCount(companyId),
+    countResource(companyId, resource),
   ]);
-  const limit = entitlement.contractorLimit;
+
+  if (!entitlement.hasAccess) {
+    return {
+      allowed: false,
+      used,
+      limit: entitlement.limits[resource],
+      accessLapsed: true,
+    };
+  }
+
+  const limit = entitlement.limits[resource];
   return {
     allowed: limit === null || used < limit,
     used,
     limit,
+    accessLapsed: false,
   };
+}
+
+export const canAddContractor = (companyId: string) =>
+  checkResourceLimit(companyId, "contractors");
+export const canAddDocumentType = (companyId: string) =>
+  checkResourceLimit(companyId, "documentTypes");
+export const canAddProject = (companyId: string) =>
+  checkResourceLimit(companyId, "projects");
+
+/** Consistent user-facing copy for a blocked create. */
+export function limitMessage(check: LimitCheck, label: string): string {
+  if (check.accessLapsed) {
+    return `Your Subbies access has ended. Choose a plan in Settings → Billing to keep adding ${label}.`;
+  }
+  return `You've reached your ${check.limit} ${label} limit. Upgrade your plan in Settings → Billing to add more.`;
 }

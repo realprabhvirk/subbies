@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
+import { canAddDocumentType, limitMessage } from "@/lib/billing/entitlements";
 
 export interface DocumentTypeFormState {
   ok: boolean;
@@ -87,6 +88,11 @@ export async function createDocumentType(
 ): Promise<DocumentTypeFormState> {
   const company = await getCompany();
   if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+
+  const limitCheck = await canAddDocumentType(company.id);
+  if (!limitCheck.allowed) {
+    return { ok: false, error: limitMessage(limitCheck, "document types") };
+  }
 
   const { data, state } = validate(formData);
   if (state) return state;

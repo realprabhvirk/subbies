@@ -3,12 +3,9 @@ import Link from "next/link";
 import { FileText, ArrowRight } from "lucide-react";
 
 import { getCompany, getUser } from "@/lib/supabase/dal";
-import {
-  getEntitlement,
-  getContractorCount,
-} from "@/lib/billing/entitlements";
+import { getEntitlement, getUsageCounts } from "@/lib/billing/entitlements";
 import { reconcileCompanyFromStripe } from "@/lib/billing/sync";
-import { PLANS, PLAN_IDS, FREE_CONTRACTOR_LIMIT } from "@/lib/billing/plans";
+import { PLANS, PLAN_IDS } from "@/lib/billing/plans";
 import { CompanyProfileForm } from "./_components/company-profile-form";
 import { ChangePasswordForm } from "./_components/change-password-form";
 import { BillingPanel } from "./_components/billing-panel";
@@ -49,13 +46,16 @@ export default async function SettingsPage(
     );
   }
 
-  const [entitlement, contractorCount] =
+  const billing =
     tab === "billing"
-      ? await Promise.all([
-          getEntitlement(company.id),
-          getContractorCount(company.id),
-        ])
-      : [null, 0];
+      ? await (async () => {
+          const [entitlement, usage] = await Promise.all([
+            getEntitlement(company.id),
+            getUsageCounts(company.id),
+          ]);
+          return { entitlement, usage };
+        })()
+      : null;
 
   return (
     <div className="space-y-8">
@@ -125,27 +125,30 @@ export default async function SettingsPage(
         </div>
       )}
 
-      {tab === "billing" && entitlement && (
+      {tab === "billing" && billing && (
         <BillingPanel
           entitlement={{
-            status: entitlement.status,
-            plan: entitlement.plan,
-            planName: entitlement.planName,
-            hasAccess: entitlement.hasAccess,
-            inGoodStanding: entitlement.inGoodStanding,
-            trialEnd: entitlement.trialEnd,
-            currentPeriodEnd: entitlement.currentPeriodEnd,
-            cancelAtPeriodEnd: entitlement.cancelAtPeriodEnd,
+            status: billing.entitlement.status,
+            planName: billing.entitlement.planName,
+            planAmount: billing.entitlement.plan
+              ? PLANS[billing.entitlement.plan].amount
+              : null,
+            paidAccess: billing.entitlement.paidAccess,
+            onFreeTier: billing.entitlement.onFreeTier,
+            freeEndsAt: billing.entitlement.freeEndsAt,
+            currentPeriodEnd: billing.entitlement.currentPeriodEnd,
+            cancelAtPeriodEnd: billing.entitlement.cancelAtPeriodEnd,
           }}
-          usage={{ used: contractorCount, limit: entitlement.contractorLimit }}
+          usage={billing.usage}
+          limits={billing.entitlement.limits}
           plans={PLAN_IDS.map((id) => ({
             id,
             name: PLANS[id].name,
             amount: PLANS[id].amount,
             blurb: PLANS[id].blurb,
+            featured: PLANS[id].featured,
             features: PLANS[id].features,
           }))}
-          freeLimit={FREE_CONTRACTOR_LIMIT}
           checkout={checkoutParam}
         />
       )}

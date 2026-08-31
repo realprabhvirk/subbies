@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
+import { canAddProject } from "@/lib/billing/entitlements";
 import { hasComplianceIssue } from "@/lib/projects";
 import type { ContractorStatus, ProjectStatus } from "@/lib/types";
 import {
@@ -92,5 +93,13 @@ export default async function ProjectsPage() {
       (a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status],
     );
 
-  return <ProjectsManager projects={items} />;
+  const limitCheck = await canAddProject(company.id);
+
+  return (
+    <ProjectsManager
+      projects={items}
+      atLimit={!limitCheck.allowed}
+      limit={limitCheck.limit}
+    />
+  );
 }
