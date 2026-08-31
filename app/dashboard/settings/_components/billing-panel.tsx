@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, CircleCheck, TriangleAlert, CreditCard } from "lucide-react";
+import { CircleCheck, TriangleAlert, CreditCard, Clock } from "lucide-react";
 
 import { Spinner } from "@/app/components/spinner";
-import type { PlanId } from "@/lib/billing/plans";
+import { PlanCards, type BillingPlan } from "@/app/components/plan-cards";
 import type { SubscriptionStatus } from "@/lib/types";
+import type { LimitedResource } from "@/lib/billing/plans";
 import {
   startCheckout,
   openBillingPortal,
@@ -14,24 +15,22 @@ import {
   resumeSubscription,
 } from "../billing-actions";
 
-export interface BillingPlan {
-  id: PlanId;
-  name: string;
-  amount: number;
-  blurb: string;
-  features: string[];
-}
-
 export interface BillingEntitlementView {
   status: SubscriptionStatus;
-  plan: PlanId | null;
   planName: string | null;
-  hasAccess: boolean;
-  inGoodStanding: boolean;
-  trialEnd: string | null;
+  planAmount: number | null;
+  paidAccess: boolean;
+  onFreeTier: boolean;
+  freeEndsAt: string | null;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
 }
+
+const RESOURCE_LABEL: Record<LimitedResource, string> = {
+  contractors: "Contractors",
+  documentTypes: "Document types",
+  projects: "Projects",
+};
 
 function fmt(iso: string | null): string {
   if (!iso) return "—";
@@ -42,17 +41,25 @@ function fmt(iso: string | null): string {
   }).format(new Date(iso));
 }
 
+function daysUntil(iso: string | null): number {
+  if (!iso) return 0;
+  return Math.max(
+    0,
+    Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000),
+  );
+}
+
 export function BillingPanel({
   entitlement,
   usage,
+  limits,
   plans,
-  freeLimit,
   checkout,
 }: {
   entitlement: BillingEntitlementView;
-  usage: { used: number; limit: number | null };
+  usage: Record<LimitedResource, number>;
+  limits: Record<LimitedResource, number | null>;
   plans: BillingPlan[];
-  freeLimit: number;
   checkout: "success" | "cancelled" | null;
 }) {
   const router = useRouter();
@@ -61,9 +68,10 @@ export function BillingPanel({
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
 
-  const currentPlan = plans.find((p) => p.id === entitlement.plan) ?? null;
-
-  const run = (name: string, fn: () => Promise<{ ok: boolean; url?: string; error?: string }>) => {
+  const run = (
+    name: string,
+    fn: () => Promise<{ ok: boolean; url?: string; error?: string }>,
+  ) => {
     setError(null);
     setBusyAction(name);
     startTransition(async () => {
@@ -83,15 +91,15 @@ export function BillingPanel({
     });
   };
 
+  const startPlanCheckout = (planId: BillingPlan["id"]) =>
+    run(`checkout-${planId}`, () => startCheckout(planId));
+
   return (
     <div className="space-y-6">
       {checkout === "success" && (
         <div className="flex items-start gap-2 rounded-md bg-approved-bg px-4 py-3 text-sm text-approved">
           <CircleCheck className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-          <span>
-            Your plan is set up and your 14-day free trial has started. You can
-            cancel any time before it ends.
-          </span>
+          <span>Your plan is active. Thanks for subscribing.</span>
         </div>
       )}
       {checkout === "cancelled" && (
@@ -100,53 +108,9 @@ export function BillingPanel({
         </div>
       )}
 
-      {/* Current state */}
-      {!entitlement.hasAccess ? (
-        <div>
-          <h3 className="text-sm font-semibold">Choose a plan</h3>
-          <p className="mt-1 max-w-prose text-sm text-ink-muted">
-            Every plan includes a 14-day free trial. Your card is added now and
-            charged when the trial ends — cancel before then and you won&apos;t
-            be charged.
-          </p>
-          <div className="mt-4 grid gap-4 lg:grid-cols-3">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className="flex flex-col rounded-card border border-line bg-surface shadow-sm p-5"
-              >
-                <h4 className="text-base font-semibold">{plan.name}</h4>
-                <p className="mt-1 text-sm text-ink-muted">{plan.blurb}</p>
-                <p className="mt-3">
-                  <span className="text-2xl font-semibold text-brand-ink">
-                    A${plan.amount}
-                  </span>
-                  <span className="text-sm text-ink-muted">/month</span>
-                </p>
-                <button
-                  type="button"
-                  onClick={() => run(`checkout-${plan.id}`, () => startCheckout(plan.id))}
-                  disabled={pending}
-                  className="mt-4 inline-flex items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
-                >
-                  {busyAction === `checkout-${plan.id}` && <Spinner className="h-4 w-4" />}
-                  Start 14-day trial
-                </button>
-                <ul className="mt-5 space-y-2 text-sm">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-approved" strokeWidth={2.5} aria-hidden />
-                      <span className="text-ink-muted">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-card border border-line bg-surface shadow-sm p-6">
-          {(entitlement.status === "past_due" || entitlement.status === "unpaid") && (
+      {entitlement.paidAccess ? (
+        <div className="rounded-card border border-line bg-surface p-6">
+          {entitlement.status === "past_due" && (
             <div className="mb-4 flex items-start gap-2 rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
               <span>
@@ -157,46 +121,22 @@ export function BillingPanel({
             </div>
           )}
 
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold">
-                {entitlement.status === "trialing" ? "Free trial" : entitlement.planName}
-                {currentPlan && (
-                  <span className="font-normal text-ink-muted">
-                    {" "}
-                    — A${currentPlan.amount}/month
-                  </span>
-                )}
-              </p>
-              <p className="mt-1 text-sm text-ink-muted">
-                {entitlement.status === "trialing" && !entitlement.cancelAtPeriodEnd && (
-                  <>
-                    Trial ends {fmt(entitlement.trialEnd)}. Your card is charged
-                    A${currentPlan?.amount}/month from then unless you cancel.
-                  </>
-                )}
-                {entitlement.status === "trialing" && entitlement.cancelAtPeriodEnd && (
-                  <>
-                    Set to cancel when the trial ends on {fmt(entitlement.trialEnd)}
-                    — you won&apos;t be charged.
-                  </>
-                )}
-                {entitlement.status === "active" && !entitlement.cancelAtPeriodEnd && (
-                  <>Renews {fmt(entitlement.currentPeriodEnd)}.</>
-                )}
-                {entitlement.status === "active" && entitlement.cancelAtPeriodEnd && (
-                  <>
-                    Cancels {fmt(entitlement.currentPeriodEnd)}. You keep access
-                    until then.
-                  </>
-                )}
-                {(entitlement.status === "past_due" ||
-                  entitlement.status === "unpaid") && (
-                  <>Payment overdue.</>
-                )}
-              </p>
-            </div>
-          </div>
+          <p className="text-sm font-semibold">
+            {entitlement.planName}
+            {entitlement.planAmount !== null && (
+              <span className="font-normal text-ink-muted">
+                {" "}
+                — A${entitlement.planAmount}/month
+              </span>
+            )}
+          </p>
+          <p className="mt-1 text-sm text-ink-muted">
+            {entitlement.cancelAtPeriodEnd
+              ? `Cancels ${fmt(entitlement.currentPeriodEnd)}. You keep access until then.`
+              : entitlement.status === "past_due"
+                ? "Payment overdue."
+                : `Renews ${fmt(entitlement.currentPeriodEnd)}.`}
+          </p>
 
           <div className="mt-5 flex flex-wrap gap-2">
             <button
@@ -241,12 +181,8 @@ export function BillingPanel({
             <div className="mt-4 rounded-md border border-expired-line bg-expired-bg p-3">
               <p className="text-sm text-expired">
                 Cancel your {entitlement.planName} plan? You&apos;ll keep access
-                until{" "}
-                {entitlement.status === "trialing"
-                  ? fmt(entitlement.trialEnd)
-                  : fmt(entitlement.currentPeriodEnd)}
-                , then drop to the free limit of {freeLimit} contractors. Nothing
-                is deleted.
+                until {fmt(entitlement.currentPeriodEnd)}, then the account locks
+                until you choose a plan again. Nothing is deleted.
               </p>
               <div className="mt-3 flex gap-2">
                 <button
@@ -270,6 +206,39 @@ export function BillingPanel({
             </div>
           )}
         </div>
+      ) : (
+        <div>
+          {entitlement.onFreeTier && (
+            <div className="mb-4 flex items-start gap-2 rounded-md bg-attention-bg px-4 py-3 text-sm text-attention">
+              <Clock className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+              <span>
+                You&apos;re on free access —{" "}
+                <strong>
+                  {daysUntil(entitlement.freeEndsAt)}{" "}
+                  {daysUntil(entitlement.freeEndsAt) === 1 ? "day" : "days"} left
+                </strong>
+                . Choose a plan to keep going. Your data stays as it is.
+              </span>
+            </div>
+          )}
+          <h3 className="text-sm font-semibold">Choose a plan</h3>
+          <p className="mt-1 max-w-prose text-sm text-ink-muted">
+            You&apos;re charged today. Change or cancel any time. Have a code?
+            Enter it at checkout.
+          </p>
+          <div className="mt-4">
+            <PlanCards
+              plans={plans}
+              onChoose={startPlanCheckout}
+              busyPlanId={
+                busyAction?.startsWith("checkout-")
+                  ? (busyAction.slice("checkout-".length) as BillingPlan["id"])
+                  : null
+              }
+              disabled={pending}
+            />
+          </div>
+        </div>
       )}
 
       {error && (
@@ -278,16 +247,24 @@ export function BillingPanel({
         </p>
       )}
 
-      {/* Usage */}
-      <div className="rounded-card border border-line bg-surface shadow-sm p-5">
-        <p className="text-sm font-semibold">Contractor usage</p>
-        <p className="mt-1 text-sm text-ink-muted">
-          {usage.used} of{" "}
-          {usage.limit === null ? "unlimited" : usage.limit} contractors
-          {usage.limit !== null && usage.used >= usage.limit && (
-            <span className="font-medium text-attention"> — limit reached</span>
-          )}
-        </p>
+      <div className="rounded-card border border-line bg-surface p-5">
+        <p className="text-sm font-semibold">Usage</p>
+        <dl className="mt-2 space-y-1.5 text-sm">
+          {(Object.keys(RESOURCE_LABEL) as LimitedResource[]).map((r) => {
+            const limit = limits[r];
+            const used = usage[r];
+            const atLimit = limit !== null && used >= limit;
+            return (
+              <div key={r} className="flex justify-between">
+                <dt className="text-ink-muted">{RESOURCE_LABEL[r]}</dt>
+                <dd className={atLimit ? "font-medium text-attention" : "text-ink"}>
+                  {used} / {limit === null ? "unlimited" : limit}
+                  {atLimit && " — limit reached"}
+                </dd>
+              </div>
+            );
+          })}
+        </dl>
       </div>
     </div>
   );

@@ -47,7 +47,7 @@ export default function SignupPage() {
         }
       }
 
-      router.replace("/dashboard");
+      router.replace("/onboarding");
       router.refresh();
     });
   };

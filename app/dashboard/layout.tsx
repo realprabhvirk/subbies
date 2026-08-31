@@ -1,9 +1,13 @@
+import { redirect } from "next/navigation";
+
 import { createClient } from "@/lib/supabase/server";
 import { requireUser, getCompany } from "@/lib/supabase/dal";
+import { getEntitlement } from "@/lib/billing/entitlements";
 import type { AppNotification } from "@/lib/types";
 import { Logo } from "@/app/components/logo";
 import { SignOutButton } from "./_components/sign-out-button";
 import { DashboardShell } from "./_components/dashboard-shell";
+import { SoftLock } from "./_components/soft-lock";
 
 export default async function DashboardLayout({
   children,
@@ -29,6 +33,16 @@ export default async function DashboardLayout({
     );
   }
 
+  const entitlement = await getEntitlement(company.id);
+
+  // First-time forced plan-selection gate.
+  if (entitlement.needsOnboarding) redirect("/onboarding");
+
+  // Free window ran out / plan lapsed — block the dashboard entirely.
+  if (entitlement.softLocked) {
+    return <SoftLock freeExpired={entitlement.freeExpired} />;
+  }
+
   const supabase = await createClient();
   const [{ data: notifData }, { count }] = await Promise.all([
     supabase
@@ -52,6 +66,7 @@ export default async function DashboardLayout({
       companyName={company.name}
       notifications={notifications}
       unreadCount={unreadCount}
+      freeTierEndsAt={entitlement.onFreeTier ? entitlement.freeEndsAt : null}
     >
       {children}
     </DashboardShell>

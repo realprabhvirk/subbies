@@ -1,67 +1,43 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Check, Info } from "lucide-react";
+import { Check, Minus } from "lucide-react";
 
 import { Section, Eyebrow, CtaBand } from "../_components/ui";
+import { PLANS, PLAN_IDS } from "@/lib/billing/plans";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Simple monthly pricing for contractor compliance tracking. Indicative figures — final pricing to be confirmed.",
+    "Simple monthly pricing for contractor compliance tracking. Start free for 7 days — no card required.",
 };
 
-interface Tier {
-  name: string;
-  price: string;
-  cadence: string;
-  blurb: string;
-  featured?: boolean;
-  features: string[];
+const TIERS = PLAN_IDS.map((id) => PLANS[id]);
+
+function limitText(v: number | null): string {
+  return v === null ? "Unlimited" : String(v);
 }
 
-// NOTE: placeholder pricing and feature splits — to be finalised by the founder.
-const TIERS: Tier[] = [
+const COMPARISON: {
+  label: string;
+  value: (p: (typeof TIERS)[number]) => string;
+}[] = [
+  { label: "Contractors", value: (p) => limitText(p.limits.contractors) },
+  { label: "Document types", value: (p) => limitText(p.limits.documentTypes) },
+  { label: "Projects", value: (p) => limitText(p.limits.projects) },
   {
-    name: "Starter",
-    price: "$29",
-    cadence: "/month",
-    blurb: "For smaller operators bringing on a handful of contractors.",
-    features: [
-      "Up to 20 contractors",
-      "Unlimited document types",
-      "Secure upload links",
-      "Review, approve & reject",
-      "Expiry reminders",
-      "Email support",
-    ],
+    label: "Document storage",
+    value: (p) =>
+      p.storageMarketing === null ? "Unlimited" : `${p.storageMarketing}`,
   },
-  {
-    name: "Business",
-    price: "$49",
-    cadence: "/month",
-    blurb: "For established builders running multiple jobs at once.",
-    featured: true,
-    features: [
-      "Up to 75 contractors",
-      "Everything in Starter",
-      "Projects & job assignment",
-      "Compliance status per project",
-      "Reminder escalation",
-      "Priority email support",
-    ],
-  },
-  {
-    name: "Pro",
-    price: "$99",
-    cadence: "/month",
-    blurb: "For larger teams and higher contractor turnover.",
-    features: [
-      "Unlimited contractors",
-      "Everything in Business",
-      "Full activity history",
-      "Early access to new features",
-    ],
-  },
+];
+
+const INCLUDED = [
+  "Contractor onboarding & secure upload links",
+  "Document review, approval & rejection",
+  "Compliance status tracking",
+  "Expiry reminders",
+  "Project assignment",
+  "Email notifications",
 ];
 
 export default function PricingPage() {
@@ -73,45 +49,34 @@ export default function PricingPage() {
           One monthly price. No per-contractor fees.
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-ink-muted">
-          Pick a plan by how many contractors you manage. Change or cancel any
-          time.
+          Try everything free for 7 days — no card required. Pick a plan by the
+          size of your operation.
         </p>
       </Section>
 
-      <Section className="pb-4">
-        <div className="mx-auto flex max-w-2xl items-start gap-2.5 rounded-md border border-attention-line bg-attention-bg px-4 py-3 text-sm text-attention">
-          <Info className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-          <span>
-            <strong>Indicative pricing.</strong> These figures and the feature
-            breakdown are placeholders and not final. Contact us for current
-            founding-customer pricing.
-          </span>
-        </div>
-      </Section>
-
       <Section className="py-10">
-        <div className="grid gap-5 lg:grid-cols-3">
+        <div className="grid items-start gap-5 lg:grid-cols-3">
           {TIERS.map((tier) => (
             <div
-              key={tier.name}
+              key={tier.id}
               className={`flex flex-col rounded-card border bg-surface p-6 ${
                 tier.featured
-                  ? "border-brand shadow-sm ring-1 ring-brand/20"
+                  ? "border-brand shadow-md ring-1 ring-brand/20 lg:-my-3 lg:py-9"
                   : "border-line"
               }`}
             >
               {tier.featured && (
-                <span className="mb-3 inline-flex w-fit rounded-full bg-brand-tint px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
+                <span className="mb-3 inline-flex w-fit rounded-full bg-brand px-2.5 py-0.5 text-xs font-semibold text-white">
                   Most popular
                 </span>
               )}
               <h2 className="text-lg font-semibold">{tier.name}</h2>
               <p className="mt-1 text-sm text-ink-muted">{tier.blurb}</p>
               <p className="mt-4">
-                <span className="text-3xl font-semibold text-brand-ink">
-                  {tier.price}
+                <span className="text-4xl font-semibold text-brand-ink">
+                  ${tier.amount}
                 </span>
-                <span className="text-sm text-ink-muted">{tier.cadence}</span>
+                <span className="text-sm text-ink-muted"> / month AUD</span>
               </p>
               <Link
                 href="/signup"
@@ -121,7 +86,7 @@ export default function PricingPage() {
                     : "border border-line-strong text-ink hover:bg-surface-muted"
                 }`}
               >
-                Start free trial
+                Start free
               </Link>
               <ul className="mt-6 space-y-2.5 text-sm">
                 {tier.features.map((f) => (
@@ -139,14 +104,69 @@ export default function PricingPage() {
           ))}
         </div>
         <p className="mt-6 text-center text-sm text-ink-subtle">
-          Every plan starts with a free trial — no charge until it ends, cancel
-          any time.
+          7 days free, no card. After that, choose a plan or your account pauses —
+          nothing is deleted.
+        </p>
+      </Section>
+
+      {/* Comparison */}
+      <Section className="py-10">
+        <div className="overflow-x-auto rounded-card border border-line bg-surface">
+          <table className="w-full min-w-[560px] text-sm">
+            <thead>
+              <tr className="border-b border-line">
+                <th className="px-5 py-3 text-left font-semibold">Plan</th>
+                {TIERS.map((t) => (
+                  <th
+                    key={t.id}
+                    className={`px-5 py-3 text-left font-semibold ${
+                      t.featured ? "text-brand-ink" : ""
+                    }`}
+                  >
+                    {t.name}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line">
+              {COMPARISON.map((row) => (
+                <tr key={row.label}>
+                  <td className="px-5 py-3 text-ink-muted">{row.label}</td>
+                  {TIERS.map((t) => (
+                    <td key={t.id} className="px-5 py-3 tabular-nums">
+                      {row.value(t)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {INCLUDED.map((feature) => (
+                <tr key={feature}>
+                  <td className="px-5 py-3 text-ink-muted">{feature}</td>
+                  {TIERS.map((t) => (
+                    <td key={t.id} className="px-5 py-3">
+                      <Check
+                        className="h-4 w-4 text-approved"
+                        strokeWidth={2.5}
+                        aria-hidden
+                      />
+                      <span className="sr-only">Included</span>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-subtle">
+          <Minus className="h-3 w-3" strokeWidth={2} aria-hidden />
+          Document storage figures are a guide. We&apos;ll be in touch well before
+          any account approaches a real limit.
         </p>
       </Section>
 
       <CtaBand
         heading="Not sure which plan fits?"
-        sub="Tell us how many contractors you manage and we'll point you to the right one."
+        sub="Start free — you can change plan any time, and everything you set up carries over."
       />
     </>
   );

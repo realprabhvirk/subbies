@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
+import { canAddDocumentType } from "@/lib/billing/entitlements";
 import type { DocumentType } from "@/lib/types";
 import { DocumentTypesManager } from "./_components/document-types-manager";
 
@@ -31,5 +32,13 @@ export default async function DocumentTypesPage() {
     );
   }
 
-  return <DocumentTypesManager types={(data ?? []) as DocumentType[]} />;
+  const limitCheck = await canAddDocumentType(company.id);
+
+  return (
+    <DocumentTypesManager
+      types={(data ?? []) as DocumentType[]}
+      atLimit={!limitCheck.allowed}
+      limit={limitCheck.limit}
+    />
+  );
 }

@@ -9,6 +9,17 @@ export function Eyebrow({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Fades/slides its children in as they scroll into view (progressive). */
+export function Reveal({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <div className={`reveal ${className}`}>{children}</div>;
+}
+
 export function Section({
   children,
   className = "",

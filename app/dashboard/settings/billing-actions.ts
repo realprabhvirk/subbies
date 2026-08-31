@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppUrl } from "@/lib/app-url";
 import { getStripe } from "@/lib/billing/stripe";
 import { getEntitlement } from "@/lib/billing/entitlements";
-import { priceIdForPlan, TRIAL_DAYS, PLAN_IDS, type PlanId } from "@/lib/billing/plans";
+import { priceIdForPlan, PLAN_IDS, type PlanId } from "@/lib/billing/plans";
 
 type Result = { ok: boolean; url?: string; error?: string };
 
@@ -57,7 +57,7 @@ export async function startCheckout(planId: PlanId): Promise<Result> {
   if (!stripe) return { ok: false, error: "Billing isn't configured yet." };
 
   const entitlement = await getEntitlement(company.id);
-  if (entitlement.inGoodStanding) {
+  if (entitlement.paidAccess && entitlement.status !== "past_due") {
     return {
       ok: false,
       error: "You already have an active plan. Use “Manage billing” to change it.",
@@ -77,15 +77,16 @@ export async function startCheckout(planId: PlanId): Promise<Result> {
       customer: customerId,
       client_reference_id: company.id,
       line_items: [{ price: priceIdForPlan(planId), quantity: 1 }],
+      // No trial — the 7-day free tier serves that purpose. Checkout charges
+      // today (or applies a promo code the customer enters).
       subscription_data: {
-        trial_period_days: TRIAL_DAYS,
         metadata: { company_id: company.id },
       },
       payment_method_collection: "always",
       allow_promotion_codes: true,
       billing_address_collection: "auto",
-      success_url: `${appUrl}/dashboard/settings?tab=billing&checkout=success`,
-      cancel_url: `${appUrl}/dashboard/settings?tab=billing&checkout=cancelled`,
+      success_url: `${appUrl}/billing/return`,
+      cancel_url: `${appUrl}/billing/return?state=cancelled`,
     });
 
     if (!session.url) return { ok: false, error: "Couldn't start checkout. Try again." };

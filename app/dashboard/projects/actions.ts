@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
+import { canAddProject, limitMessage } from "@/lib/billing/entitlements";
 import type { ProjectStatus } from "@/lib/types";
 
 const STATUSES: ProjectStatus[] = ["active", "on_hold", "completed"];
@@ -69,6 +70,11 @@ export async function createProject(
 ): Promise<ProjectFormState> {
   const company = await getCompany();
   if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+
+  const limitCheck = await canAddProject(company.id);
+  if (!limitCheck.allowed) {
+    return { ok: false, error: limitMessage(limitCheck, "projects") };
+  }
 
   const { data, state } = parseProjectForm(formData);
   if (state) return state;
