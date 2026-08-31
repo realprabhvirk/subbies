@@ -118,5 +118,12 @@
     animation-timeline: view();
     animation-range: entry 5% cover 22%;
   }
+
+  /* Browsers without scroll-driven animations: never hide the content. */
+  @supports not (animation-timeline: view()) {
+    .reveal {
+      animation: none;
+    }
+  }
 }
 
