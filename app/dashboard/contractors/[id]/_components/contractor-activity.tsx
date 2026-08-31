@@ -44,7 +44,7 @@ function fmt(iso: string): string {
 export function ContractorActivity({ events }: { events: ActivityEvent[] }) {
   if (events.length === 0) {
     return (
-      <p className="rounded-card border border-line bg-surface px-5 py-8 text-center text-sm text-ink-muted">
+      <p className="rounded-card border border-line bg-surface shadow-sm px-5 py-8 text-center text-sm text-ink-muted">
         No activity yet.
       </p>
     );

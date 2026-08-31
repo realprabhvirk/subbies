@@ -136,7 +136,7 @@ export default function LandingPage() {
             return (
               <div
                 key={f.title}
-                className="rounded-card border border-line bg-surface p-6"
+                className="rounded-card border border-line bg-surface shadow-sm p-6"
               >
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand-tint text-brand-ink">
                   <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />

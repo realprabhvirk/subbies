@@ -26,7 +26,7 @@ export default async function OnboardPage(props: PageProps<"/onboard/[token]">) 
     <main className="mx-auto w-full max-w-lg px-4 py-10 sm:py-16">
       <Logo className="mb-8" />
 
-      <div className="rounded-card border border-line bg-surface p-6 sm:p-8">
+      <div className="rounded-card border border-line bg-surface shadow-sm p-6 sm:p-8">
         <p className="text-sm font-medium text-brand">{companyName}</p>
         <h1 className="mt-1 text-xl font-semibold">
           Compliance documents for {contractor.businessName}

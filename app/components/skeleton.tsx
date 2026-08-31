@@ -34,7 +34,7 @@ export function DashboardPageSkeleton({
         </div>
       )}
 
-      <div className="overflow-hidden rounded-card border border-line bg-surface">
+      <div className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
         {Array.from({ length: rows }).map((_, i) => (
           <div
             key={i}

@@ -86,7 +86,7 @@ export function DocumentTypesManager({ types }: { types: DocumentType[] }) {
           {types.map((type) => (
             <li
               key={type.id}
-              className="flex flex-col rounded-card border border-line bg-surface p-5"
+              className="flex flex-col rounded-card border border-line bg-surface shadow-sm p-5"
             >
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-base font-semibold">{type.name}</h2>
@@ -214,7 +214,7 @@ function DocumentTypeDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-brand-ink/40" onClick={onClose} />
+      <div className="absolute inset-0 bg-warm-900/40 backdrop-blur-[2px]" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"

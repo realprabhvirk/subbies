@@ -30,7 +30,7 @@ export function ContactForm() {
   return (
     <form
       action={formAction}
-      className="space-y-4 rounded-card border border-line bg-surface p-6"
+      className="space-y-4 rounded-card border border-line bg-surface shadow-sm p-6"
     >
       {/* Honeypot */}
       <div aria-hidden className="hidden">

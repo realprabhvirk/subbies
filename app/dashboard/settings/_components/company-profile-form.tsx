@@ -28,7 +28,7 @@ export function CompanyProfileForm({ company }: { company: Company }) {
   }, [saved, state]);
 
   return (
-    <form action={formAction} className="space-y-4 rounded-card border border-line bg-surface p-6">
+    <form action={formAction} className="space-y-4 rounded-card border border-line bg-surface shadow-sm p-6">
       <div className="space-y-1.5">
         <label htmlFor="name" className="block text-sm font-medium">
           Company name

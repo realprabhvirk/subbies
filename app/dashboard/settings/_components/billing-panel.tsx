@@ -113,7 +113,7 @@ export function BillingPanel({
             {plans.map((plan) => (
               <div
                 key={plan.id}
-                className="flex flex-col rounded-card border border-line bg-surface p-5"
+                className="flex flex-col rounded-card border border-line bg-surface shadow-sm p-5"
               >
                 <h4 className="text-base font-semibold">{plan.name}</h4>
                 <p className="mt-1 text-sm text-ink-muted">{plan.blurb}</p>
@@ -145,7 +145,7 @@ export function BillingPanel({
           </div>
         </div>
       ) : (
-        <div className="rounded-card border border-line bg-surface p-6">
+        <div className="rounded-card border border-line bg-surface shadow-sm p-6">
           {(entitlement.status === "past_due" || entitlement.status === "unpaid") && (
             <div className="mb-4 flex items-start gap-2 rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
@@ -279,7 +279,7 @@ export function BillingPanel({
       )}
 
       {/* Usage */}
-      <div className="rounded-card border border-line bg-surface p-5">
+      <div className="rounded-card border border-line bg-surface shadow-sm p-5">
         <p className="text-sm font-semibold">Contractor usage</p>
         <p className="mt-1 text-sm text-ink-muted">
           {usage.used} of{" "}

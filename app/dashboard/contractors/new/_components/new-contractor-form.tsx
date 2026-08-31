@@ -110,7 +110,7 @@ export function NewContractorForm({
 
       {/* Step 1 — kept mounted so its values submit with the form */}
       <div
-        className={`space-y-4 rounded-card border border-line bg-surface p-6 ${
+        className={`space-y-4 rounded-card border border-line bg-surface shadow-sm p-6 ${
           step === 1 ? "" : "hidden"
         }`}
       >
@@ -197,7 +197,7 @@ export function NewContractorForm({
 
       {/* Step 2 */}
       <div
-        className={`space-y-4 rounded-card border border-line bg-surface p-6 ${
+        className={`space-y-4 rounded-card border border-line bg-surface shadow-sm p-6 ${
           step === 2 ? "" : "hidden"
         }`}
       >

@@ -90,7 +90,7 @@ export default async function SettingsPage(
         <div className="space-y-6">
           <CompanyProfileForm company={company} />
 
-          <div className="flex items-center justify-between rounded-card border border-line bg-surface p-5">
+          <div className="flex items-center justify-between rounded-card border border-line bg-surface shadow-sm p-5">
             <div className="flex items-start gap-3">
               <FileText
                 className="mt-0.5 h-5 w-5 text-ink-subtle"
@@ -117,7 +117,7 @@ export default async function SettingsPage(
 
       {tab === "account" && (
         <div className="space-y-6">
-          <div className="rounded-card border border-line bg-surface p-6">
+          <div className="rounded-card border border-line bg-surface shadow-sm p-6">
             <h3 className="text-sm font-semibold">Account email</h3>
             <p className="mt-1 text-sm text-ink-muted">{user?.email}</p>
           </div>

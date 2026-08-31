@@ -182,7 +182,7 @@ export default async function DashboardPage() {
           return (
             <div
               key={stat.label}
-              className="rounded-card border border-line bg-surface p-5"
+              className="rounded-card border border-line bg-surface shadow-sm p-5"
             >
               <div className="flex items-center gap-2 text-sm font-medium text-ink-muted">
                 <Icon className={`h-4 w-4 ${stat.tone}`} strokeWidth={2} aria-hidden />
@@ -199,7 +199,7 @@ export default async function DashboardPage() {
         })}
       </section>
 
-      <section className="rounded-card border border-line bg-surface">
+      <section className="rounded-card border border-line bg-surface shadow-sm">
         <div className="border-b border-line px-5 py-4">
           <h2 className="text-base font-semibold">Action required</h2>
           <p className="mt-0.5 text-sm text-ink-muted">
