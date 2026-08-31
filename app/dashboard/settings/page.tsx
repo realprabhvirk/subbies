@@ -134,8 +134,8 @@ export default async function SettingsPage(
               ? PLANS[billing.entitlement.plan].amount
               : null,
             paidAccess: billing.entitlement.paidAccess,
-            onFreeTier: billing.entitlement.onFreeTier,
-            freeEndsAt: billing.entitlement.freeEndsAt,
+            onTrial: billing.entitlement.onTrial,
+            trialEndsAt: billing.entitlement.trialEndsAt,
             currentPeriodEnd: billing.entitlement.currentPeriodEnd,
             cancelAtPeriodEnd: billing.entitlement.cancelAtPeriodEnd,
           }}

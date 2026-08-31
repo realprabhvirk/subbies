@@ -20,8 +20,8 @@ export interface BillingEntitlementView {
   planName: string | null;
   planAmount: number | null;
   paidAccess: boolean;
-  onFreeTier: boolean;
-  freeEndsAt: string | null;
+  onTrial: boolean;
+  trialEndsAt: string | null;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
 }
@@ -39,14 +39,6 @@ function fmt(iso: string | null): string {
     month: "long",
     year: "numeric",
   }).format(new Date(iso));
-}
-
-function daysUntil(iso: string | null): number {
-  if (!iso) return 0;
-  return Math.max(
-    0,
-    Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000),
-  );
 }
 
 export function BillingPanel({
@@ -122,7 +114,7 @@ export function BillingPanel({
           )}
 
           <p className="text-sm font-semibold">
-            {entitlement.planName}
+            {entitlement.onTrial ? `${entitlement.planName} — free trial` : entitlement.planName}
             {entitlement.planAmount !== null && (
               <span className="font-normal text-ink-muted">
                 {" "}
@@ -130,12 +122,21 @@ export function BillingPanel({
               </span>
             )}
           </p>
-          <p className="mt-1 text-sm text-ink-muted">
-            {entitlement.cancelAtPeriodEnd
-              ? `Cancels ${fmt(entitlement.currentPeriodEnd)}. You keep access until then.`
-              : entitlement.status === "past_due"
-                ? "Payment overdue."
-                : `Renews ${fmt(entitlement.currentPeriodEnd)}.`}
+          <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-muted">
+            {entitlement.onTrial && (
+              <Clock className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+            )}
+            <span>
+              {entitlement.onTrial && entitlement.cancelAtPeriodEnd
+                ? `Set to cancel — your trial ends ${fmt(entitlement.trialEndsAt)} and you won't be charged.`
+                : entitlement.onTrial
+                  ? `Trial ends ${fmt(entitlement.trialEndsAt)}. Your card is charged A$${entitlement.planAmount}/month from then unless you cancel.`
+                  : entitlement.cancelAtPeriodEnd
+                    ? `Cancels ${fmt(entitlement.currentPeriodEnd)}. You keep access until then.`
+                    : entitlement.status === "past_due"
+                      ? "Payment overdue."
+                      : `Renews ${fmt(entitlement.currentPeriodEnd)}.`}
+            </span>
           </p>
 
           <div className="mt-5 flex flex-wrap gap-2">
@@ -208,23 +209,11 @@ export function BillingPanel({
         </div>
       ) : (
         <div>
-          {entitlement.onFreeTier && (
-            <div className="mb-4 flex items-start gap-2 rounded-md bg-attention-bg px-4 py-3 text-sm text-attention">
-              <Clock className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-              <span>
-                You&apos;re on free access —{" "}
-                <strong>
-                  {daysUntil(entitlement.freeEndsAt)}{" "}
-                  {daysUntil(entitlement.freeEndsAt) === 1 ? "day" : "days"} left
-                </strong>
-                . Choose a plan to keep going. Your data stays as it is.
-              </span>
-            </div>
-          )}
           <h3 className="text-sm font-semibold">Choose a plan</h3>
           <p className="mt-1 max-w-prose text-sm text-ink-muted">
-            You&apos;re charged today. Change or cancel any time. Have a code?
-            Enter it at checkout.
+            Every plan starts with a 7-day free trial — your card is added now
+            but nothing is charged until it ends. Change or cancel any time. Have
+            a code? Enter it at checkout.
           </p>
           <div className="mt-4">
             <PlanCards
@@ -236,6 +225,7 @@ export function BillingPanel({
                   : null
               }
               disabled={pending}
+              ctaLabel="Start 7-day trial"
             />
           </div>
         </div>

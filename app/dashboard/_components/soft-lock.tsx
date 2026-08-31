@@ -5,7 +5,7 @@ import { Logo } from "@/app/components/logo";
 import { SignOutButton } from "./sign-out-button";
 import { PlanSelection } from "@/app/onboarding/_components/plan-selection";
 
-export function SoftLock({ freeExpired }: { freeExpired: boolean }) {
+export function SoftLock({ trialEnded }: { trialEnded: boolean }) {
   const plans = PLAN_IDS.map((id) => ({
     id,
     name: PLANS[id].name,
@@ -28,8 +28,8 @@ export function SoftLock({ freeExpired }: { freeExpired: boolean }) {
         </span>
         <div className="max-w-2xl">
           <h1 className="text-2xl font-semibold sm:text-3xl">
-            {freeExpired
-              ? "Your free access has ended"
+            {trialEnded
+              ? "Your trial has ended"
               : "Your plan is no longer active"}
           </h1>
           <p className="mt-2 text-ink-muted">
@@ -40,7 +40,7 @@ export function SoftLock({ freeExpired }: { freeExpired: boolean }) {
       </div>
 
       <div className="mt-10">
-        <PlanSelection plans={plans} allowFree={false} />
+        <PlanSelection plans={plans} heading="Choose a plan" />
       </div>
     </main>
   );
