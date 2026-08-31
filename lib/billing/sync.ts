@@ -145,16 +145,6 @@ export async function getCompanyIdByCustomer(
   return data?.company_id ?? null;
 }
 
-/** Stamps the forced-onboarding gate as passed (free-access choice). */
-export async function stampOnboardingComplete(companyId: string): Promise<void> {
-  const admin = createAdminClient();
-  await admin
-    .from("subscriptions")
-    .update({ onboarding_completed_at: new Date().toISOString() })
-    .eq("company_id", companyId)
-    .is("onboarding_completed_at", null);
-}
-
 /**
  * Pulls the latest subscription state straight from Stripe for one company and
  * syncs it. Used on the checkout success redirect so billing works even before

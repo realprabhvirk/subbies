@@ -77,38 +77,26 @@ export function sendPaymentFailedEmail(input: {
   );
 }
 
-export function sendFreeTierEndingEmail(input: {
+export function sendTrialEndingEmail(input: {
   to: string;
   daysLeft: number;
-  upgradeUrl: string;
+  planName: string;
+  amount: number;
+  billingUrl: string;
 }): Promise<SendResult> {
-  const days = `${input.daysLeft} ${input.daysLeft === 1 ? "day" : "days"}`;
-  const text = `Your Subbies free access ends in ${days}. To keep collecting and tracking contractor documents, choose a plan from Settings → Billing (${input.upgradeUrl}). Your data stays exactly as it is.`;
+  const days =
+    input.daysLeft <= 0
+      ? "today"
+      : `in ${input.daysLeft} ${input.daysLeft === 1 ? "day" : "days"}`;
+  const text = `Your Subbies ${input.planName} trial ends ${days}. When it does, the card on file is charged A$${input.amount}/month and your plan continues month to month. Cancel any time before then from Settings → Billing (${input.billingUrl}).`;
   return send(
     input.to,
-    `Your Subbies free access ends in ${days}`,
+    `Your Subbies trial ends ${days}`,
     text,
     shell(
-      `<p style="margin:0 0 16px;">Your free access to Subbies ends in <strong>${days}</strong>.</p>
-       <p style="margin:0 0 20px;">Choose a plan to keep collecting and tracking contractor documents — everything you&apos;ve set up stays exactly as it is.</p>
-       ${button(input.upgradeUrl, "Choose a plan")}`,
-    ),
-  );
-}
-
-export function sendFreeTierEndedEmail(input: {
-  to: string;
-  upgradeUrl: string;
-}): Promise<SendResult> {
-  const text = `Your Subbies free access has ended. Your account and all your data are safe — choose a plan from Settings → Billing (${input.upgradeUrl}) to pick up where you left off.`;
-  return send(
-    input.to,
-    "Your Subbies free access has ended",
-    text,
-    shell(
-      `<p style="margin:0 0 16px;">Your free access to Subbies has ended.</p>
-       <p style="margin:0 0 20px;">Your account and all your data are safe. Choose a plan to pick up where you left off.</p>
-       ${button(input.upgradeUrl, "Choose a plan")}`,
+      `<p style="margin:0 0 16px;">Your <strong>${input.planName}</strong> trial ends <strong>${days}</strong>.</p>
+       <p style="margin:0 0 20px;">When it does, the card on file is charged <strong>A$${input.amount}/month</strong> and your plan continues month to month. Cancel any time before then.</p>
+       ${button(input.billingUrl, "Manage billing")}`,
     ),
   );
 }

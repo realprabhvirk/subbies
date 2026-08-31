@@ -88,11 +88,20 @@ export const PLANS: Record<PlanId, PlanConfig> = {
 
 export const PLAN_IDS = Object.keys(PLANS) as PlanId[];
 
-/** The 7-day free access tier granted at signup (no card). */
-export const FREE_TIER = {
-  days: 7,
-  limits: { contractors: 3, documentTypes: 3, projects: 2 } satisfies PlanLimits,
-};
+/**
+ * Every plan is chosen at onboarding via Stripe Checkout with a 7-day trial —
+ * card required upfront, $0 during the trial, converts to a real charge on
+ * day 7 unless cancelled.
+ */
+export const TRIAL_DAYS = 7;
+
+/**
+ * Limits applied when a company somehow has no active plan (e.g. a lapsed
+ * subscription rendering a page before the layout's soft-lock kicks in). The
+ * creation guards already block when access has lapsed, so this is only a
+ * safe floor — use the smallest plan's limits.
+ */
+export const FALLBACK_LIMITS: PlanLimits = PLANS.starter.limits;
 
 export function priceIdForPlan(plan: PlanId): string {
   const id = process.env[PLANS[plan].priceIdEnv];

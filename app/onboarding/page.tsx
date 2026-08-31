@@ -40,13 +40,14 @@ export default async function OnboardingPage() {
           Welcome to Subbies, {company.name}
         </h1>
         <p className="mt-3 text-lg text-ink-muted">
-          One quick choice and you&apos;re in. Start free for a week, or pick a
-          plan now — you can switch either way later.
+          Pick a plan to get started. Every plan includes a 7-day free trial —
+          nothing is charged until it ends, and you can change or cancel any
+          time.
         </p>
       </div>
 
       <div className="mt-10">
-        <PlanSelection plans={plans} allowFree />
+        <PlanSelection plans={plans} />
       </div>
     </main>
   );

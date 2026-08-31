@@ -8,7 +8,7 @@ import { PLANS, PLAN_IDS } from "@/lib/billing/plans";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Simple monthly pricing for contractor compliance tracking. Start free for 7 days — no card required.",
+    "Simple monthly pricing for contractor compliance tracking. Every plan starts with a 7-day free trial.",
 };
 
 const TIERS = PLAN_IDS.map((id) => PLANS[id]);
@@ -49,8 +49,8 @@ export default function PricingPage() {
           One monthly price. No per-contractor fees.
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-ink-muted">
-          Try everything free for 7 days — no card required. Pick a plan by the
-          size of your operation.
+          Every plan starts with a 7-day free trial — add your card now, nothing
+          is charged until it ends. Pick a plan by the size of your operation.
         </p>
       </Section>
 
@@ -86,7 +86,7 @@ export default function PricingPage() {
                     : "border border-line-strong text-ink hover:bg-surface-muted"
                 }`}
               >
-                Start free
+                Start free trial
               </Link>
               <ul className="mt-6 space-y-2.5 text-sm">
                 {tier.features.map((f) => (
@@ -104,8 +104,8 @@ export default function PricingPage() {
           ))}
         </div>
         <p className="mt-6 text-center text-sm text-ink-subtle">
-          7 days free, no card. After that, choose a plan or your account pauses —
-          nothing is deleted.
+          7-day free trial on every plan. Cancel before it ends and you&apos;re
+          never charged — nothing is deleted either way.
         </p>
       </Section>
 
@@ -166,7 +166,7 @@ export default function PricingPage() {
 
       <CtaBand
         heading="Not sure which plan fits?"
-        sub="Start free — you can change plan any time, and everything you set up carries over."
+        sub="Start a free trial — you can change plan any time, and everything you set up carries over."
       />
     </>
   );

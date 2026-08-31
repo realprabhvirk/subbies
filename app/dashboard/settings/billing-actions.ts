@@ -7,7 +7,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppUrl } from "@/lib/app-url";
 import { getStripe } from "@/lib/billing/stripe";
 import { getEntitlement } from "@/lib/billing/entitlements";
-import { priceIdForPlan, PLAN_IDS, type PlanId } from "@/lib/billing/plans";
+import {
+  priceIdForPlan,
+  PLAN_IDS,
+  TRIAL_DAYS,
+  type PlanId,
+} from "@/lib/billing/plans";
 
 type Result = { ok: boolean; url?: string; error?: string };
 
@@ -77,9 +82,10 @@ export async function startCheckout(planId: PlanId): Promise<Result> {
       customer: customerId,
       client_reference_id: company.id,
       line_items: [{ price: priceIdForPlan(planId), quantity: 1 }],
-      // No trial — the 7-day free tier serves that purpose. Checkout charges
-      // today (or applies a promo code the customer enters).
+      // 7-day trial: card collected upfront, $0 now, converts on day 7 unless
+      // cancelled. A promo code the customer enters still applies.
       subscription_data: {
+        trial_period_days: TRIAL_DAYS,
         metadata: { company_id: company.id },
       },
       payment_method_collection: "always",

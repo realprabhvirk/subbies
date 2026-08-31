@@ -19,7 +19,7 @@ export function PlanCards({
   onChoose,
   busyPlanId,
   disabled,
-  ctaLabel = "Choose",
+  ctaLabel = "Choose plan",
 }: {
   plans: BillingPlan[];
   onChoose: (id: PlanId) => void;
@@ -62,7 +62,7 @@ export function PlanCards({
             }`}
           >
             {busyPlanId === plan.id && <Spinner className="h-4 w-4" />}
-            {ctaLabel} {plan.name}
+            {ctaLabel}
           </button>
           <ul className="mt-5 space-y-2 text-sm">
             {plan.features.map((f) => (

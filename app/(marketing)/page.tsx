@@ -105,12 +105,12 @@ export default function LandingPage() {
               who is approved to work.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <PrimaryLink href="/signup">Start free</PrimaryLink>
+              <PrimaryLink href="/signup">Start free trial</PrimaryLink>
               <SecondaryLink href="/how-it-works">See how it works</SecondaryLink>
             </div>
             <p className="mt-4 text-sm text-ink-subtle">
-              7 days free, no card. Built for builders, property maintenance, and
-              facilities teams.
+              7-day free trial on every plan. Built for builders, property
+              maintenance, and facilities teams.
             </p>
           </div>
 

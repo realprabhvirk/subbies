@@ -9,10 +9,11 @@ import {
 } from "@/lib/billing/sync";
 import { getCompanyOwnerEmail } from "@/lib/onboarding";
 import { getAppUrl } from "@/lib/app-url";
-import { PLANS } from "@/lib/billing/plans";
+import { PLANS, planForPriceId } from "@/lib/billing/plans";
 import {
   sendSubscriptionStartedEmail,
   sendPaymentFailedEmail,
+  sendTrialEndingEmail,
 } from "@/lib/email/billing";
 
 export const runtime = "nodejs";
@@ -22,6 +23,7 @@ const RELEVANT = new Set<string>([
   "customer.subscription.created",
   "customer.subscription.updated",
   "customer.subscription.deleted",
+  "customer.subscription.trial_will_end",
   "invoice.payment_failed",
 ]);
 
@@ -85,13 +87,61 @@ export async function POST(req: NextRequest) {
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
-        await syncSubscription(sub);
+        const result = await syncSubscription(sub);
+
+        // Trial converted to a paying subscription → confirmation email.
+        if (
+          result.companyId &&
+          result.plan &&
+          result.newStatus === "active" &&
+          result.prevStatus !== "active"
+        ) {
+          const email = await getCompanyOwnerEmail(result.companyId);
+          if (email) {
+            await sendSubscriptionStartedEmail({
+              to: email,
+              planName: PLANS[result.plan].name,
+              amount: PLANS[result.plan].amount,
+            });
+          }
+        }
         break;
       }
 
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
         await markSubscriptionCanceled(sub.id);
+        break;
+      }
+
+      case "customer.subscription.trial_will_end": {
+        // Fires ~3 days before a trial converts to a paid charge.
+        const sub = event.data.object as Stripe.Subscription;
+        await syncSubscription(sub);
+
+        const customerId =
+          typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+        const companyId = await getCompanyIdByCustomer(customerId);
+        const priceId = sub.items.data[0]?.price?.id ?? null;
+        const plan = priceId ? planForPriceId(priceId) : null;
+
+        if (companyId && plan && sub.status === "trialing" && sub.trial_end) {
+          const email = await getCompanyOwnerEmail(companyId);
+          if (email) {
+            const appUrl = await getAppUrl();
+            const daysLeft = Math.max(
+              0,
+              Math.ceil((sub.trial_end * 1000 - Date.now()) / 86_400_000),
+            );
+            await sendTrialEndingEmail({
+              to: email,
+              daysLeft,
+              planName: PLANS[plan].name,
+              amount: PLANS[plan].amount,
+              billingUrl: `${appUrl}/dashboard/settings?tab=billing`,
+            });
+          }
+        }
         break;
       }
 

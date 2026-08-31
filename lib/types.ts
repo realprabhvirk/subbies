@@ -66,8 +66,7 @@ export interface ContractorToken {
 
 export type SubscriptionStatus =
   | "none"
-  | "free" // 7-day free access tier (no card)
-  | "trialing" // Stripe-side trial — we no longer create these, kept as a safety net
+  | "trialing" // in the 7-day Stripe Checkout trial
   | "active"
   | "past_due"
   | "canceled"
@@ -84,10 +83,9 @@ export interface Subscription {
   current_period_end: string | null;
   trial_end: string | null;
   cancel_at_period_end: boolean;
-  free_ends_at: string | null;
   onboarding_completed_at: string | null;
-  free_reminder_ending_at: string | null;
-  free_reminder_ended_at: string | null;
+  trial_reminder_5_at: string | null;
+  trial_reminder_7_at: string | null;
   created_at: string;
   updated_at: string;
 }

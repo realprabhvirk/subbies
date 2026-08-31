@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Subscription, SubscriptionStatus } from "@/lib/types";
 import {
   PLANS,
-  FREE_TIER,
+  FALLBACK_LIMITS,
   type PlanId,
   type PlanLimits,
   type LimitedResource,
@@ -22,15 +22,14 @@ export interface Entitlement {
   /** Redirect the user to /onboarding. */
   needsOnboarding: boolean;
 
-  /** On the 7-day free tier, window still open. */
-  onFreeTier: boolean;
-  freeEndsAt: string | null;
-  /** Free window has run out. */
-  freeExpired: boolean;
+  /** In the 7-day Stripe trial. */
+  onTrial: boolean;
+  /** ISO date the trial converts to a paid charge. */
+  trialEndsAt: string | null;
 
   /** Paid access: trialing / active / past_due. */
   paidAccess: boolean;
-  /** The product is usable right now (paid access or open free window). */
+  /** The product is usable right now. */
   hasAccess: boolean;
   /** Onboarded, but access has lapsed — show the soft-lock screen. */
   softLocked: boolean;
@@ -63,26 +62,17 @@ export const getEntitlement = cache(
     const plan = sub?.plan ?? null;
 
     const onboardingCompleted = Boolean(sub?.onboarding_completed_at);
-    const now = Date.now();
-    const freeEndsAt = sub?.free_ends_at ?? null;
-
-    const onFreeTier =
-      status === "free" &&
-      freeEndsAt !== null &&
-      new Date(freeEndsAt).getTime() > now;
-    const freeExpired =
-      status === "free" &&
-      (freeEndsAt === null || new Date(freeEndsAt).getTime() <= now);
+    const onTrial = status === "trialing";
 
     const paidAccess =
       status === "trialing" || status === "active" || status === "past_due";
 
-    const hasAccess = paidAccess || onFreeTier;
+    const hasAccess = paidAccess;
     const needsOnboarding = !onboardingCompleted;
     const softLocked = onboardingCompleted && !hasAccess;
 
     const limits: PlanLimits =
-      paidAccess && plan ? PLANS[plan].limits : FREE_TIER.limits;
+      paidAccess && plan ? PLANS[plan].limits : FALLBACK_LIMITS;
 
     return {
       status,
@@ -90,9 +80,8 @@ export const getEntitlement = cache(
       planName: plan ? PLANS[plan].name : null,
       onboardingCompleted,
       needsOnboarding,
-      onFreeTier,
-      freeEndsAt,
-      freeExpired,
+      onTrial,
+      trialEndsAt: sub?.trial_end ?? null,
       paidAccess,
       hasAccess,
       softLocked,
@@ -128,9 +117,7 @@ export const getContractorCount = cache((companyId: string) =>
 );
 
 export const getUsageCounts = cache(
-  async (
-    companyId: string,
-  ): Promise<Record<LimitedResource, number>> => {
+  async (companyId: string): Promise<Record<LimitedResource, number>> => {
     const [contractors, documentTypes, projects] = await Promise.all([
       countResource(companyId, "contractors"),
       countResource(companyId, "documentTypes"),
