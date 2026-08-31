@@ -76,15 +76,21 @@ function NavLink({
   );
 }
 
+function freeDaysLeft(iso: string): number {
+  return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
+}
+
 export function DashboardShell({
   companyName,
   notifications,
   unreadCount,
+  freeTierEndsAt,
   children,
 }: {
   companyName: string;
   notifications: AppNotification[];
   unreadCount: number;
+  freeTierEndsAt: string | null;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -178,6 +184,24 @@ export function DashboardShell({
             unreadCount={unreadCount}
           />
         </header>
+
+        {freeTierEndsAt && (
+          <Link
+            href="/dashboard/settings?tab=billing"
+            className="flex items-center justify-center gap-2 bg-brand-ink px-4 py-2 text-center text-sm text-ink-inverse transition-opacity hover:opacity-90"
+          >
+            <span>
+              {freeDaysLeft(freeTierEndsAt) === 0
+                ? "Free access ends today"
+                : `${freeDaysLeft(freeTierEndsAt)} ${
+                    freeDaysLeft(freeTierEndsAt) === 1 ? "day" : "days"
+                  } left of free access`}
+              {" — "}
+              <span className="font-semibold underline">Choose a plan</span>
+            </span>
+          </Link>
+        )}
+
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 lg:px-10">
           {children}
         </main>

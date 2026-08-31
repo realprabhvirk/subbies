@@ -85,8 +85,8 @@ export async function startCheckout(planId: PlanId): Promise<Result> {
       payment_method_collection: "always",
       allow_promotion_codes: true,
       billing_address_collection: "auto",
-      success_url: `${appUrl}/dashboard/settings?tab=billing&checkout=success`,
-      cancel_url: `${appUrl}/dashboard/settings?tab=billing&checkout=cancelled`,
+      success_url: `${appUrl}/billing/return`,
+      cancel_url: `${appUrl}/billing/return?state=cancelled`,
     });
 
     if (!session.url) return { ok: false, error: "Couldn't start checkout. Try again." };
