@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -14,7 +14,16 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [resetDone, setResetDone] = useState(false);
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    // One-time read of the URL flag set by the password-reset redirect.
+    if (new URLSearchParams(window.location.search).has("reset")) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setResetDone(true);
+    }
+  }, []);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,6 +63,12 @@ export default function LoginPage() {
             Access your contractor and compliance records.
           </p>
 
+          {resetDone && (
+            <p className="mt-4 rounded-md bg-approved-bg px-3 py-2 text-sm text-approved">
+              Your password has been updated. Log in with your new password.
+            </p>
+          )}
+
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="email" className="block text-sm font-medium">
@@ -71,9 +86,17 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="password" className="block text-sm font-medium">
-                Password
-              </label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="password" className="block text-sm font-medium">
+                  Password
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-medium text-brand hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <PasswordField
                 id="password"
                 autoComplete="current-password"
