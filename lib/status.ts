@@ -27,27 +27,27 @@ export const contractorStatusMeta: Record<ContractorStatus, StatusMeta> = {
     label: "Pending onboarding",
     icon: CircleDashed,
     className:
-      "text-neutral-status bg-neutral-status-bg border-neutral-status-line",
+      "text-neutral-status bg-neutral-status-bg",
   },
   awaiting_review: {
     label: "Awaiting review",
     icon: Clock,
-    className: "text-review bg-review-bg border-review-line",
+    className: "text-review bg-review-bg",
   },
   approved: {
     label: "Approved",
     icon: CircleCheck,
-    className: "text-approved bg-approved-bg border-approved-line",
+    className: "text-approved bg-approved-bg",
   },
   attention_required: {
     label: "Attention required",
     icon: TriangleAlert,
-    className: "text-attention bg-attention-bg border-attention-line",
+    className: "text-attention bg-attention-bg",
   },
   expired: {
     label: "Expired",
     icon: CircleX,
-    className: "text-expired bg-expired-bg border-expired-line",
+    className: "text-expired bg-expired-bg",
   },
 };
 
@@ -56,22 +56,22 @@ export const documentStatusMeta: Record<DocumentStatus, StatusMeta> = {
     label: "Not uploaded",
     icon: CircleDashed,
     className:
-      "text-neutral-status bg-neutral-status-bg border-neutral-status-line",
+      "text-neutral-status bg-neutral-status-bg",
   },
   uploaded: {
     label: "Awaiting review",
     icon: Clock,
-    className: "text-review bg-review-bg border-review-line",
+    className: "text-review bg-review-bg",
   },
   approved: {
     label: "Approved",
     icon: CircleCheck,
-    className: "text-approved bg-approved-bg border-approved-line",
+    className: "text-approved bg-approved-bg",
   },
   rejected: {
     label: "Rejected",
     icon: CircleX,
-    className: "text-expired bg-expired-bg border-expired-line",
+    className: "text-expired bg-expired-bg",
   },
 };
 
@@ -79,17 +79,17 @@ export const projectStatusMeta: Record<ProjectStatus, StatusMeta> = {
   active: {
     label: "Active",
     icon: CircleDot,
-    className: "text-review bg-review-bg border-review-line",
+    className: "text-review bg-review-bg",
   },
   on_hold: {
     label: "On hold",
     icon: PauseCircle,
     className:
-      "text-neutral-status bg-neutral-status-bg border-neutral-status-line",
+      "text-neutral-status bg-neutral-status-bg",
   },
   completed: {
     label: "Completed",
     icon: CircleCheck,
-    className: "text-approved bg-approved-bg border-approved-line",
+    className: "text-approved bg-approved-bg",
   },
 };

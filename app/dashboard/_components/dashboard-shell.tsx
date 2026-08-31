@@ -24,7 +24,6 @@ interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  /** Match this exact path only (used for the index route). */
   exact?: boolean;
 }
 
@@ -40,7 +39,6 @@ function isActive(pathname: string, item: NavItem) {
   return item.exact ? pathname === item.href : pathname.startsWith(item.href);
 }
 
-/** Swaps the nav icon for a spinner while that route is loading. */
 function NavIcon({ Icon }: { Icon: LucideIcon }) {
   const { pending } = useLinkStatus();
   return pending ? (
@@ -64,15 +62,23 @@ function NavLink({
       href={item.href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+      className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
         active
-          ? "bg-brand-tint text-brand-ink"
-          : "text-ink-muted hover:bg-surface-muted hover:text-ink"
+          ? "bg-brand-tint font-semibold text-brand-active"
+          : "font-medium text-ink-muted hover:bg-surface-muted hover:text-ink"
       }`}
     >
       <NavIcon Icon={item.icon} />
       {item.label}
     </Link>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-subtle">
+      {children}
+    </p>
   );
 }
 
@@ -90,32 +96,40 @@ export function DashboardShell({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navLinks = (onNavigate?: () => void) =>
-    NAV.map((item) => (
-      <NavLink
-        key={item.href}
-        item={item}
-        active={isActive(pathname, item)}
-        onNavigate={onNavigate}
-      />
-    ));
+  const nav = (onNavigate?: () => void) => (
+    <nav className="flex flex-1 flex-col gap-1 p-3">
+      <SectionLabel>Main menu</SectionLabel>
+      {NAV.map((item) => (
+        <NavLink
+          key={item.href}
+          item={item}
+          active={isActive(pathname, item)}
+          onNavigate={onNavigate}
+        />
+      ))}
+    </nav>
+  );
+
+  const account = (
+    <div className="border-t border-line p-3">
+      <p className="truncate px-3 pb-1.5 text-xs text-ink-subtle">
+        {companyName}
+      </p>
+      <SignOutButton />
+    </div>
+  );
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[16rem_1fr]">
+    <div className="min-h-screen lg:grid lg:grid-cols-[15.5rem_1fr]">
       {/* Desktop sidebar */}
       <aside className="hidden border-r border-line bg-surface lg:flex lg:flex-col">
-        <div className="flex h-16 items-center border-b border-line px-5">
+        <div className="flex h-16 items-center px-5">
           <Link href="/dashboard">
             <Logo />
           </Link>
         </div>
-        <nav className="flex flex-1 flex-col gap-1 p-3">{navLinks()}</nav>
-        <div className="border-t border-line p-3">
-          <p className="truncate px-3 pb-1 text-xs text-ink-subtle">
-            {companyName}
-          </p>
-          <SignOutButton />
-        </div>
+        {nav()}
+        {account}
       </aside>
 
       {/* Mobile header */}
@@ -143,10 +157,10 @@ export function DashboardShell({
       {mobileOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div
-            className="absolute inset-0 bg-brand-ink/40"
+            className="absolute inset-0 bg-warm-900/40 backdrop-blur-[2px]"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[80%] flex-col bg-surface shadow-xl">
+          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[80%] flex-col bg-surface shadow-lg">
             <div className="flex h-14 items-center justify-between border-b border-line px-4">
               <Logo />
               <button
@@ -158,15 +172,8 @@ export function DashboardShell({
                 <X className="h-5 w-5" strokeWidth={2} />
               </button>
             </div>
-            <nav className="flex flex-1 flex-col gap-1 p-3">
-              {navLinks(() => setMobileOpen(false))}
-            </nav>
-            <div className="border-t border-line p-3">
-              <p className="truncate px-3 pb-1 text-xs text-ink-subtle">
-                {companyName}
-              </p>
-              <SignOutButton />
-            </div>
+            {nav(() => setMobileOpen(false))}
+            {account}
           </div>
         </div>
       )}

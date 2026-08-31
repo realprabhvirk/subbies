@@ -68,7 +68,7 @@ function Group({
   return (
     <div>
       <h3 className="text-sm font-semibold text-ink-muted">{title}</h3>
-      <ul className="mt-2 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
+      <ul className="mt-2 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
         {items.map((p) => (
           <li
             key={p.assignmentId}

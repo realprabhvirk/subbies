@@ -1,61 +1,110 @@
 @import "tailwindcss";
 
 /*
-  Subbies design tokens
+  Subbies Design System (v2)
   --------------------------------------------------------------------------
-  Trustworthy compliance software: a deep navy brand, warm neutral greys,
-  and three intentional status colours (approved / attention / expired).
-  Light theme only for now — a controlled palette beats an auto dark mode
-  that renders inconsistently. Revisit if users ask for dark.
+  Off-white base, white card surfaces, warm neutral greys, and a single warm
+  orange accent used sparingly — on the primary action, active nav, key data,
+  and small status accents only, never as a large background fill.
+
+  Type: Space Grotesk (display/headings/numbers), Hanken Grotesk (body/UI),
+  IBM Plex Mono (timestamps / tabular values).
+
+  The existing semantic utility names (bg-surface, text-ink, border-line,
+  bg-brand, rounded-card, the status colours …) are kept and re-pointed at the
+  new palette, so the whole app reskins through these tokens.
 */
 
 @theme {
-  --font-sans: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, -apple-system,
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SF Mono", Menlo, Consolas,
-    monospace;
+  --font-display: var(--font-space-grotesk), var(--font-hanken), ui-sans-serif,
+    system-ui, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SF Mono", Menlo,
+    Consolas, monospace;
 
-  /* Neutrals — warm grey, not blue-grey */
-  --color-canvas: #f6f5f2;
-  --color-surface: #ffffff;
-  --color-surface-muted: #f1efea;
-  --color-line: #e4e2db;
-  --color-line-strong: #d3d0c6;
+  /* Warm neutral ramp */
+  --color-warm-0: oklch(99% 0.002 90);
+  --color-warm-25: oklch(97.5% 0.004 75);
+  --color-warm-50: oklch(96% 0.006 70);
+  --color-warm-100: oklch(93% 0.007 65);
+  --color-warm-200: oklch(88% 0.008 60);
+  --color-warm-300: oklch(80% 0.009 55);
+  --color-warm-400: oklch(68% 0.01 50);
+  --color-warm-500: oklch(56% 0.011 45);
+  --color-warm-600: oklch(45% 0.011 40);
+  --color-warm-700: oklch(35% 0.01 35);
+  --color-warm-800: oklch(25% 0.009 30);
+  --color-warm-900: oklch(17% 0.007 30);
 
-  --color-ink: #1c1b17;
-  --color-ink-muted: #64615a;
-  --color-ink-subtle: #8f8b81;
-  --color-ink-inverse: #f6f5f2;
+  /* Warm orange accent */
+  --color-accent-50: oklch(96% 0.03 55);
+  --color-accent-100: oklch(92% 0.055 52);
+  --color-accent-200: oklch(87% 0.08 50);
+  --color-accent-400: oklch(73% 0.15 42);
+  --color-accent-500: oklch(67% 0.18 38);
+  --color-accent-600: oklch(59% 0.17 35);
+  --color-accent-700: oklch(49% 0.15 33);
 
-  /* Brand — deep navy */
-  --color-brand: #1c3d5a;
-  --color-brand-hover: #16324a;
-  --color-brand-active: #112637;
-  --color-brand-ink: #0f2740;
-  --color-brand-tint: #e9eef3;
+  /* Neutrals — semantic */
+  --color-canvas: var(--color-warm-25);
+  --color-surface: var(--color-warm-0);
+  --color-surface-muted: var(--color-warm-50);
+  --color-line: var(--color-warm-100);
+  --color-line-strong: var(--color-warm-200);
 
-  /* Status — colour + always paired with an icon and a label in the UI */
-  --color-approved: #2f6a4a;
-  --color-approved-bg: #e6f0ea;
-  --color-approved-line: #bcd8c8;
+  --color-ink: var(--color-warm-900);
+  --color-ink-muted: var(--color-warm-500);
+  --color-ink-subtle: var(--color-warm-400);
+  --color-ink-inverse: var(--color-warm-0);
 
-  --color-review: #2f5d8a;
-  --color-review-bg: #e5edf5;
-  --color-review-line: #bcd0e5;
+  /* Brand = the orange accent (primary action, active nav, links, key data) */
+  --color-brand: var(--color-accent-500);
+  --color-brand-hover: var(--color-accent-600);
+  --color-brand-active: var(--color-accent-700);
+  --color-brand-ink: var(--color-warm-900); /* headings read dark, not orange */
+  --color-brand-tint: var(--color-accent-50);
+  --color-brand-tint-line: var(--color-accent-200);
 
-  --color-attention: #97671a;
-  --color-attention-bg: #f6ecd8;
-  --color-attention-line: #e3cfa4;
+  /* Status — muted semantic hues; "attention" borrows the accent */
+  --color-approved: oklch(50% 0.1 152);
+  --color-approved-bg: oklch(94% 0.038 152);
+  --color-approved-line: oklch(86% 0.055 152);
 
-  --color-expired: #a5352f;
-  --color-expired-bg: #f4e5e3;
-  --color-expired-line: #e2bdb9;
+  --color-review: oklch(50% 0.09 240);
+  --color-review-bg: oklch(94% 0.032 240);
+  --color-review-line: oklch(86% 0.05 240);
 
-  --color-neutral-status: #5c6067;
-  --color-neutral-status-bg: #eceae5;
-  --color-neutral-status-line: #d8d5cc;
+  --color-attention: var(--color-accent-700);
+  --color-attention-bg: var(--color-accent-50);
+  --color-attention-line: var(--color-accent-200);
 
-  --radius-card: 10px;
+  --color-expired: oklch(50% 0.15 25);
+  --color-expired-bg: oklch(94% 0.045 25);
+  --color-expired-line: oklch(86% 0.08 25);
+
+  --color-neutral-status: var(--color-warm-500);
+  --color-neutral-status-bg: var(--color-warm-100);
+  --color-neutral-status-line: var(--color-warm-200);
+
+  /* Radius — restrained */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-card: 12px;
+
+  /* Shadows — soft, large-blur, low-opacity only */
+  --shadow-sm: 0 1px 2px oklch(30% 0.01 40 / 0.04);
+  --shadow-md:
+    0 8px 24px oklch(30% 0.02 40 / 0.06), 0 2px 6px oklch(30% 0.02 40 / 0.04);
+  --shadow-lg:
+    0 24px 56px oklch(30% 0.02 40 / 0.09), 0 4px 12px oklch(30% 0.02 40 / 0.05);
+  --shadow-xl:
+    0 24px 56px oklch(30% 0.02 40 / 0.09), 0 4px 12px oklch(30% 0.02 40 / 0.05);
+  --shadow-accent-glow: 0 12px 40px oklch(67% 0.18 38 / 0.18);
+
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @layer base {
@@ -71,7 +120,7 @@
     background-color: var(--color-canvas);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    line-height: 1.55;
+    line-height: 1.5;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -81,10 +130,19 @@
   h2,
   h3,
   h4 {
-    color: var(--color-brand-ink);
-    line-height: 1.25;
-    letter-spacing: -0.01em;
+    font-family: var(--font-display);
+    color: var(--color-ink);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
     font-weight: 600;
+  }
+
+  /* Tabular / technical values */
+  .font-mono,
+  time,
+  [data-mono] {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
   }
 
   /* Visible, on-brand focus ring for keyboard users */
@@ -93,4 +151,61 @@
     outline-offset: 2px;
     border-radius: 4px;
   }
+
+  /* Form fields get an inset accent ring instead of the outline */
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 3px var(--color-accent-50);
+  }
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+  }
+}
+
+/*
+  Scroll-reveal for marketing sections. Where scroll-driven animations are
+  supported the element eases in as it enters the viewport; everywhere else
+  the 0s duration snaps it straight to the final (visible) state — no JS
+  dependency, no flash of hidden content.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes subbies-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .reveal {
+    animation: subbies-reveal both;
+    animation-timeline: view();
+    animation-range: entry 5% cover 22%;
+  }
+}
+
+/* Soft orange radial glow behind a small accent element (icon badge, active pill). */
+.accent-glow {
+  position: relative;
+}
+.accent-glow::before {
+  content: "";
+  position: absolute;
+  inset: -60%;
+  z-index: -1;
+  background: radial-gradient(
+    circle,
+    var(--color-accent-100) 0%,
+    transparent 70%
+  );
+  opacity: 0.7;
+  pointer-events: none;
 }

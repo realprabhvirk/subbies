@@ -1,17 +1,23 @@
-import { ShieldCheck } from "lucide-react";
-
 export function Logo({
   className = "",
   tone = "brand",
 }: {
   className?: string;
+  /** "inverse" for use on dark surfaces. */
   tone?: "brand" | "inverse";
 }) {
-  const color = tone === "inverse" ? "text-ink-inverse" : "text-brand-ink";
+  const wordColor = tone === "inverse" ? "text-ink-inverse" : "text-ink";
   return (
-    <span className={`inline-flex items-center gap-2 ${color} ${className}`}>
-      <ShieldCheck className="h-5 w-5" strokeWidth={2} aria-hidden />
-      <span className="text-lg font-semibold tracking-tight">Subbies</span>
+    <span
+      className={`inline-flex items-center gap-2 font-display font-bold tracking-tight ${wordColor} ${className}`}
+    >
+      <span
+        aria-hidden
+        className="flex h-7 w-7 items-center justify-center rounded-sm bg-brand text-sm font-bold text-white"
+      >
+        S
+      </span>
+      <span className="text-lg">Subbies</span>
     </span>
   );
 }

@@ -14,7 +14,7 @@ export function PasswordField({ className = "", ...props }: Props) {
       <input
         {...props}
         type={show ? "text" : "password"}
-        className={`w-full rounded-md border border-line-strong bg-surface px-3 py-2 pr-10 text-sm outline-none focus:border-brand ${className}`}
+        className={`w-full rounded-md border border-line-strong bg-surface px-3 py-2 pr-10 text-sm outline-none transition-shadow focus:border-brand focus:ring-[3px] focus:ring-accent-50 ${className}`}
       />
       <button
         type="button"
