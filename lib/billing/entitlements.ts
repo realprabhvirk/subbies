@@ -6,11 +6,21 @@ import { createClient } from "@/lib/supabase/server";
 import type { Subscription, SubscriptionStatus } from "@/lib/types";
 import {
   PLANS,
-  FREE_TIER,
   type PlanId,
   type PlanLimits,
   type LimitedResource,
 } from "./plans";
+
+/**
+ * Limits for an account that has no plan at all (pre-onboarding, or lapsed).
+ * Nothing is creatable in that state — access is gated before the count is,
+ * so these are a floor, not a tier.
+ */
+const NO_PLAN_LIMITS: PlanLimits = {
+  contractors: 0,
+  documentTypes: 0,
+  projects: 0,
+};
 
 export interface Entitlement {
   status: SubscriptionStatus;
@@ -22,17 +32,16 @@ export interface Entitlement {
   /** Redirect the user to /onboarding. */
   needsOnboarding: boolean;
 
-  /** On the 7-day free tier, window still open. */
-  onFreeTier: boolean;
-  freeEndsAt: string | null;
-  /** Free window has run out. */
-  freeExpired: boolean;
+  /** Inside the chosen plan's free trial — card on file, nothing charged yet. */
+  onTrial: boolean;
+  /** When the trial converts to a real charge. */
+  trialEndsAt: string | null;
 
-  /** Paid access: trialing / active / past_due. */
+  /** Access from a real subscription: trialing / active / past_due. */
   paidAccess: boolean;
-  /** The product is usable right now (paid access or open free window). */
+  /** The product is usable right now. */
   hasAccess: boolean;
-  /** Onboarded, but access has lapsed — show the soft-lock screen. */
+  /** Onboarded, but the subscription has lapsed — show the soft-lock screen. */
   softLocked: boolean;
 
   /** Effective limits for creation checks. */
@@ -63,26 +72,21 @@ export const getEntitlement = cache(
     const plan = sub?.plan ?? null;
 
     const onboardingCompleted = Boolean(sub?.onboarding_completed_at);
-    const now = Date.now();
-    const freeEndsAt = sub?.free_ends_at ?? null;
-
-    const onFreeTier =
-      status === "free" &&
-      freeEndsAt !== null &&
-      new Date(freeEndsAt).getTime() > now;
-    const freeExpired =
-      status === "free" &&
-      (freeEndsAt === null || new Date(freeEndsAt).getTime() <= now);
 
     const paidAccess =
       status === "trialing" || status === "active" || status === "past_due";
 
-    const hasAccess = paidAccess || onFreeTier;
+    const onTrial = status === "trialing";
+    const trialEndsAt = onTrial ? (sub?.trial_end ?? null) : null;
+
+    const hasAccess = paidAccess;
     const needsOnboarding = !onboardingCompleted;
     const softLocked = onboardingCompleted && !hasAccess;
 
+    // Every account is on a real plan from the moment of onboarding, so the
+    // plan's own limits apply from day one of the trial.
     const limits: PlanLimits =
-      paidAccess && plan ? PLANS[plan].limits : FREE_TIER.limits;
+      paidAccess && plan ? PLANS[plan].limits : NO_PLAN_LIMITS;
 
     return {
       status,
@@ -90,9 +94,8 @@ export const getEntitlement = cache(
       planName: plan ? PLANS[plan].name : null,
       onboardingCompleted,
       needsOnboarding,
-      onFreeTier,
-      freeEndsAt,
-      freeExpired,
+      onTrial,
+      trialEndsAt,
       paidAccess,
       hasAccess,
       softLocked,

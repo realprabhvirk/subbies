@@ -38,6 +38,8 @@ export interface SyncResult {
   newStatus: SubscriptionStatus;
   plan: "starter" | "business" | "pro" | null;
   customerId: string;
+  /** When the trial converts to a real charge, if this is a trialing sub. */
+  trialEnd: string | null;
 }
 
 const PAID_STATUSES: SubscriptionStatus[] = ["trialing", "active", "past_due"];
@@ -102,7 +104,14 @@ export async function syncSubscription(
       "customer",
       customerId,
     );
-    return { companyId: null, prevStatus, newStatus: status, plan, customerId };
+    return {
+      companyId: null,
+      prevStatus,
+      newStatus: status,
+      plan,
+      customerId,
+      trialEnd: toIso(sub.trial_end),
+    };
   }
 
   // A confirmed paid subscription also completes the onboarding gate.
@@ -130,7 +139,14 @@ export async function syncSubscription(
     console.error("syncSubscription: upsert failed", error);
   }
 
-  return { companyId, prevStatus, newStatus: status, plan, customerId };
+  return {
+    companyId,
+    prevStatus,
+    newStatus: status,
+    plan,
+    customerId,
+    trialEnd: toIso(sub.trial_end),
+  };
 }
 
 export async function getCompanyIdByCustomer(
@@ -143,16 +159,6 @@ export async function getCompanyIdByCustomer(
     .eq("stripe_customer_id", customerId)
     .maybeSingle<{ company_id: string }>();
   return data?.company_id ?? null;
-}
-
-/** Stamps the forced-onboarding gate as passed (free-access choice). */
-export async function stampOnboardingComplete(companyId: string): Promise<void> {
-  const admin = createAdminClient();
-  await admin
-    .from("subscriptions")
-    .update({ onboarding_completed_at: new Date().toISOString() })
-    .eq("company_id", companyId)
-    .is("onboarding_completed_at", null);
 }
 
 /**

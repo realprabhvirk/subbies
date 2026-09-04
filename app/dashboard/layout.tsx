@@ -18,7 +18,7 @@ export default async function DashboardLayout({
   if (!company) {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
-        <div className="w-full max-w-md rounded-card border border-line bg-surface shadow-sm p-8 shadow-sm">
+        <div className="w-full max-w-md rounded-card border border-line bg-surface p-8 shadow-sm">
           <Logo className="mb-6" />
           <h1 className="text-lg font-semibold">Account setup incomplete</h1>
           <p className="mt-2 text-sm text-ink-muted">
@@ -38,9 +38,9 @@ export default async function DashboardLayout({
   // First-time forced plan-selection gate.
   if (entitlement.needsOnboarding) redirect("/onboarding");
 
-  // Free window ran out / plan lapsed — block the dashboard entirely.
+  // Trial ended without payment / plan lapsed — block the dashboard entirely.
   if (entitlement.softLocked) {
-    return <SoftLock freeExpired={entitlement.freeExpired} />;
+    return <SoftLock />;
   }
 
   const supabase = await createClient();
@@ -66,7 +66,8 @@ export default async function DashboardLayout({
       companyName={company.name}
       notifications={notifications}
       unreadCount={unreadCount}
-      freeTierEndsAt={entitlement.onFreeTier ? entitlement.freeEndsAt : null}
+      trialEndsAt={entitlement.trialEndsAt}
+      planName={entitlement.planName}
     >
       {children}
     </DashboardShell>

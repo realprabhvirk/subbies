@@ -3,12 +3,12 @@ import Link from "next/link";
 import { Check, Minus } from "lucide-react";
 
 import { Section, Eyebrow, CtaBand } from "../_components/ui";
-import { PLANS, PLAN_IDS } from "@/lib/billing/plans";
+import { PLANS, PLAN_IDS, TRIAL_DAYS } from "@/lib/billing/plans";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Simple monthly pricing for contractor compliance tracking. Start free for 7 days — no card required.",
+    `Simple monthly pricing for contractor compliance tracking. Every plan starts with a ${TRIAL_DAYS}-day free trial.`,
 };
 
 const TIERS = PLAN_IDS.map((id) => PLANS[id]);
@@ -49,8 +49,9 @@ export default function PricingPage() {
           One monthly price. No per-contractor fees.
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-ink-muted">
-          Try everything free for 7 days — no card required. Pick a plan by the
-          size of your operation.
+          Pick a plan by the size of your operation. Every plan starts with a{" "}
+          {TRIAL_DAYS}-day free trial — nothing is charged until day{" "}
+          {TRIAL_DAYS}.
         </p>
       </Section>
 
@@ -74,9 +75,9 @@ export default function PricingPage() {
               <p className="mt-1 text-sm text-ink-muted">{tier.blurb}</p>
               <p className="mt-4">
                 <span className="text-4xl font-semibold text-brand-ink">
-                  ${tier.amount}
+                  A${tier.amount}
                 </span>
-                <span className="text-sm text-ink-muted"> / month AUD</span>
+                <span className="text-sm text-ink-muted"> / month</span>
               </p>
               <Link
                 href="/signup"
@@ -104,8 +105,9 @@ export default function PricingPage() {
           ))}
         </div>
         <p className="mt-6 text-center text-sm text-ink-subtle">
-          7 days free, no card. After that, choose a plan or your account pauses —
-          nothing is deleted.
+          {TRIAL_DAYS} days free on any plan. You enter a card at signup but
+          nothing is charged until day {TRIAL_DAYS} — cancel before then and you
+          pay nothing. Nothing is ever deleted.
         </p>
       </Section>
 
