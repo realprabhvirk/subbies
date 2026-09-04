@@ -3,7 +3,8 @@
  * Price IDs come from env (server-only — never expose to the client).
  *
  * Contractor / document-type / project limits are enforced at creation time
- * (see lib/billing/entitlements.ts). The document-storage figure is a
+ * (see lib/billing/entitlements.ts) and apply from the first day of the plan's
+ * trial — there is no separate, smaller free-tier cap. The document-storage figure is a
  * marketing number only — not enforced in-app; the real near-term constraint
  * is Supabase's project-wide storage cap.
  */
@@ -88,11 +89,15 @@ export const PLANS: Record<PlanId, PlanConfig> = {
 
 export const PLAN_IDS = Object.keys(PLANS) as PlanId[];
 
-/** The 7-day free access tier granted at signup (no card). */
-export const FREE_TIER = {
-  days: 7,
-  limits: { contractors: 3, documentTypes: 3, projects: 2 } satisfies PlanLimits,
-};
+/**
+ * Free trial length, in days, attached to whichever plan the company picks.
+ *
+ * There is no separate card-free tier: every account goes through Stripe
+ * Checkout at onboarding, is charged A$0 for TRIAL_DAYS days, and converts to
+ * the plan's real price on day TRIAL_DAYS unless it is cancelled first. The
+ * chosen plan's real limits apply from day one of the trial.
+ */
+export const TRIAL_DAYS = 7;
 
 /**
  * The configured Stripe Price ID for a plan, or null if the env var is unset
@@ -105,13 +110,6 @@ export const FREE_TIER = {
 export function priceIdForPlan(plan: PlanId): string | null {
   const id = process.env[PLANS[plan].priceIdEnv]?.trim();
   return id ? id : null;
-}
-
-/** Env var names for plans whose Price ID isn't configured. */
-export function missingPriceEnvs(): string[] {
-  return PLAN_IDS.filter((plan) => priceIdForPlan(plan) === null).map(
-    (plan) => PLANS[plan].priceIdEnv,
-  );
 }
 
 export function planForPriceId(priceId: string): PlanId | null {

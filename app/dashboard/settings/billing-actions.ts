@@ -7,7 +7,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppUrl } from "@/lib/app-url";
 import { getStripe } from "@/lib/billing/stripe";
 import { getEntitlement } from "@/lib/billing/entitlements";
-import { priceIdForPlan, PLANS, PLAN_IDS, type PlanId } from "@/lib/billing/plans";
+import {
+  priceIdForPlan,
+  PLANS,
+  PLAN_IDS,
+  TRIAL_DAYS,
+  type PlanId,
+} from "@/lib/billing/plans";
 import { describeBillingError } from "@/lib/billing/errors";
 
 type Result = { ok: boolean; url?: string; error?: string };
@@ -92,6 +98,12 @@ export async function startCheckout(planId: PlanId): Promise<Result> {
     };
   }
 
+  // The 7-day trial is a first-subscription offer. Without this, a company
+  // could cancel and re-subscribe through the soft-lock screen every week and
+  // never pay. `stripe_subscription_id` is only ever written by the webhook /
+  // reconcile path, so its presence means this company has subscribed before.
+  const hadSubscriptionBefore = entitlement.stripeSubscriptionId !== null;
+
   try {
     const customerId = await resolveCustomerId(
       company.id,
@@ -105,11 +117,20 @@ export async function startCheckout(planId: PlanId): Promise<Result> {
       customer: customerId,
       client_reference_id: company.id,
       line_items: [{ price: priceId, quantity: 1 }],
-      // No trial — the 7-day free tier serves that purpose. Checkout charges
-      // today (or applies a promo code the customer enters).
       subscription_data: {
+        // Card required up front, A$0 taken today, first real charge on day
+        // TRIAL_DAYS unless the company cancels before then.
+        ...(hadSubscriptionBefore
+          ? {}
+          : {
+              trial_period_days: TRIAL_DAYS,
+              trial_settings: {
+                end_behavior: { missing_payment_method: "cancel" as const },
+              },
+            }),
         metadata: { company_id: company.id },
       },
+      // Collect the card even though nothing is charged during the trial.
       payment_method_collection: "always",
       allow_promotion_codes: true,
       billing_address_collection: "auto",

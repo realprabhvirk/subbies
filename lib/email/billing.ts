@@ -43,6 +43,39 @@ async function send(
   return { ok: true, id: data?.id ?? null };
 }
 
+function formatDate(iso: string | null): string {
+  if (!iso) return "the end of your trial";
+  return new Intl.DateTimeFormat("en-AU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "Australia/Sydney",
+  }).format(new Date(iso));
+}
+
+/** Sent once, when a plan's free trial begins (card on file, nothing charged). */
+export function sendTrialStartedEmail(input: {
+  to: string;
+  planName: string;
+  amount: number;
+  trialDays: number;
+  trialEnd: string | null;
+}): Promise<SendResult> {
+  const endsOn = formatDate(input.trialEnd);
+  const text = `Your Subbies ${input.planName} plan is set up and your ${input.trialDays}-day free trial has started. Nothing has been charged. On ${endsOn} your card will be charged A$${input.amount} and your plan continues month to month. Cancel any time before then from Settings → Billing.`;
+  return send(
+    input.to,
+    `Your Subbies ${input.planName} trial has started`,
+    text,
+    shell(
+      `<p style="margin:0 0 16px;">Your <strong>${input.planName}</strong> plan is set up and your <strong>${input.trialDays}-day free trial</strong> has started. Nothing has been charged.</p>
+       <p style="margin:0 0 16px;">On <strong>${endsOn}</strong> your card will be charged <strong>A$${input.amount}</strong> and your plan continues month to month.</p>
+       <p style="margin:0;color:#64615a;font-size:13px;">Cancel any time before then from Settings &rarr; Billing.</p>`,
+    ),
+  );
+}
+
+/** Sent when a trial converts (or a plan starts charging immediately). */
 export function sendSubscriptionStartedEmail(input: {
   to: string;
   planName: string;
@@ -55,7 +88,7 @@ export function sendSubscriptionStartedEmail(input: {
     text,
     shell(
       `<p style="margin:0 0 16px;">Your <strong>${input.planName}</strong> plan is now active and your card has been charged <strong>A$${input.amount}</strong>.</p>
-       <p style="margin:0;color:#64615a;font-size:13px;">Manage or cancel any time from Settings → Billing.</p>`,
+       <p style="margin:0;color:#64615a;font-size:13px;">Manage or cancel any time from Settings &rarr; Billing.</p>`,
     ),
   );
 }
@@ -77,38 +110,49 @@ export function sendPaymentFailedEmail(input: {
   );
 }
 
-export function sendFreeTierEndingEmail(input: {
+/**
+ * "Your trial ends in N days" — the day-5 reminder of a 7-day trial. Tied to
+ * whichever plan's trial the company is actually in.
+ */
+export function sendTrialEndingEmail(input: {
   to: string;
+  planName: string;
+  amount: number;
   daysLeft: number;
-  upgradeUrl: string;
+  trialEnd: string | null;
+  billingUrl: string;
 }): Promise<SendResult> {
   const days = `${input.daysLeft} ${input.daysLeft === 1 ? "day" : "days"}`;
-  const text = `Your Subbies free access ends in ${days}. To keep collecting and tracking contractor documents, choose a plan from Settings → Billing (${input.upgradeUrl}). Your data stays exactly as it is.`;
+  const endsOn = formatDate(input.trialEnd);
+  const text = `Your Subbies ${input.planName} free trial ends in ${days}. On ${endsOn} your card will be charged A$${input.amount}/month and everything keeps working — no action needed. If you'd rather not continue, cancel from Settings → Billing (${input.billingUrl}) before then.`;
   return send(
     input.to,
-    `Your Subbies free access ends in ${days}`,
+    `Your Subbies trial ends in ${days}`,
     text,
     shell(
-      `<p style="margin:0 0 16px;">Your free access to Subbies ends in <strong>${days}</strong>.</p>
-       <p style="margin:0 0 20px;">Choose a plan to keep collecting and tracking contractor documents — everything you&apos;ve set up stays exactly as it is.</p>
-       ${button(input.upgradeUrl, "Choose a plan")}`,
+      `<p style="margin:0 0 16px;">Your <strong>${input.planName}</strong> free trial ends in <strong>${days}</strong>.</p>
+       <p style="margin:0 0 20px;">On <strong>${endsOn}</strong> your card will be charged <strong>A$${input.amount}/month</strong> and everything keeps working — you don&apos;t need to do anything. If you&apos;d rather not continue, you can cancel before then.</p>
+       ${button(input.billingUrl, "Manage billing")}`,
     ),
   );
 }
 
-export function sendFreeTierEndedEmail(input: {
+/** "Your trial ends today" — the day-7 reminder, sent on the final day. */
+export function sendTrialEndsTodayEmail(input: {
   to: string;
-  upgradeUrl: string;
+  planName: string;
+  amount: number;
+  billingUrl: string;
 }): Promise<SendResult> {
-  const text = `Your Subbies free access has ended. Your account and all your data are safe — choose a plan from Settings → Billing (${input.upgradeUrl}) to pick up where you left off.`;
+  const text = `Your Subbies ${input.planName} free trial ends today. Your card will be charged A$${input.amount} and your plan continues month to month — nothing changes and nothing is lost. To stop before the charge, cancel from Settings → Billing (${input.billingUrl}) today.`;
   return send(
     input.to,
-    "Your Subbies free access has ended",
+    "Your Subbies free trial ends today",
     text,
     shell(
-      `<p style="margin:0 0 16px;">Your free access to Subbies has ended.</p>
-       <p style="margin:0 0 20px;">Your account and all your data are safe. Choose a plan to pick up where you left off.</p>
-       ${button(input.upgradeUrl, "Choose a plan")}`,
+      `<p style="margin:0 0 16px;">Your <strong>${input.planName}</strong> free trial ends today.</p>
+       <p style="margin:0 0 20px;">Your card will be charged <strong>A$${input.amount}</strong> and your plan continues month to month — nothing changes and nothing is lost. To stop before the charge, cancel today.</p>
+       ${button(input.billingUrl, "Manage billing")}`,
     ),
   );
 }

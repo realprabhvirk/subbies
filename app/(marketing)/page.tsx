@@ -21,6 +21,7 @@ import {
   SecondaryLink,
   CtaBand,
 } from "./_components/ui";
+import { TRIAL_DAYS } from "@/lib/billing/plans";
 import { ProductPreview } from "./_components/product-preview";
 
 export const metadata: Metadata = {
@@ -109,8 +110,8 @@ export default function LandingPage() {
               <SecondaryLink href="/how-it-works">See how it works</SecondaryLink>
             </div>
             <p className="mt-4 text-sm text-ink-subtle">
-              7 days free, no card. Built for builders, property maintenance, and
-              facilities teams.
+              {TRIAL_DAYS} days free on any plan, cancel any time. Built for
+              builders, property maintenance, and facilities teams.
             </p>
           </div>
 

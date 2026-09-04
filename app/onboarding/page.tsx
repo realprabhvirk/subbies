@@ -3,14 +3,16 @@ import { redirect } from "next/navigation";
 
 import { requireUser, getCompany } from "@/lib/supabase/dal";
 import { getEntitlement } from "@/lib/billing/entitlements";
-import { PLANS, PLAN_IDS } from "@/lib/billing/plans";
+import { PLANS, PLAN_IDS, TRIAL_DAYS } from "@/lib/billing/plans";
 import { Logo } from "@/app/components/logo";
 import { SignOutButton } from "@/app/dashboard/_components/sign-out-button";
 import { PlanSelection } from "./_components/plan-selection";
 
 export const metadata: Metadata = { title: "Get started" };
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage(
+  props: PageProps<"/onboarding">,
+) {
   await requireUser();
   const company = await getCompany();
 
@@ -18,6 +20,9 @@ export default async function OnboardingPage() {
 
   const entitlement = await getEntitlement(company.id);
   if (!entitlement.needsOnboarding) redirect("/dashboard");
+
+  const sp = await props.searchParams;
+  const cancelled = sp.checkout === "cancelled";
 
   const plans = PLAN_IDS.map((id) => ({
     id,
@@ -40,13 +45,25 @@ export default async function OnboardingPage() {
           Welcome to Subbies, {company.name}
         </h1>
         <p className="mt-3 text-lg text-ink-muted">
-          One quick choice and you&apos;re in. Start free for a week, or pick a
-          plan now — you can switch either way later.
+          Pick the plan that fits your operation. Every plan starts with{" "}
+          {TRIAL_DAYS} days free — you&apos;ll enter a card, nothing is charged
+          today, and you can cancel any time before day {TRIAL_DAYS}.
         </p>
       </div>
 
+      {cancelled && (
+        <p className="mt-6 rounded-md bg-surface-muted px-4 py-3 text-sm text-ink-muted">
+          Checkout cancelled — no plan was started and nothing was charged. Pick
+          a plan below whenever you&apos;re ready.
+        </p>
+      )}
+
       <div className="mt-10">
-        <PlanSelection plans={plans} allowFree />
+        <PlanSelection
+          plans={plans}
+          heading="Choose your plan"
+          intro={`Billed monthly in AUD after your ${TRIAL_DAYS}-day free trial. Change or cancel any time. Have a code? Enter it at checkout.`}
+        />
       </div>
     </main>
   );

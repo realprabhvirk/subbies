@@ -6,14 +6,18 @@ import {
   syncSubscription,
   markSubscriptionCanceled,
   getCompanyIdByCustomer,
+  type SyncResult,
 } from "@/lib/billing/sync";
 import { getCompanyOwnerEmail } from "@/lib/onboarding";
 import { getAppUrl } from "@/lib/app-url";
-import { PLANS } from "@/lib/billing/plans";
+import { PLANS, TRIAL_DAYS } from "@/lib/billing/plans";
 import {
+  sendTrialStartedEmail,
   sendSubscriptionStartedEmail,
+  sendTrialEndingEmail,
   sendPaymentFailedEmail,
 } from "@/lib/email/billing";
+import { markTrialReminderSent } from "@/lib/billing/trial-reminders";
 
 export const runtime = "nodejs";
 
@@ -21,9 +25,53 @@ const RELEVANT = new Set<string>([
   "checkout.session.completed",
   "customer.subscription.created",
   "customer.subscription.updated",
+  "customer.subscription.trial_will_end",
   "customer.subscription.deleted",
   "invoice.payment_failed",
 ]);
+
+/**
+ * Sends the one-off "you're set up" email on the first transition into a live
+ * subscription. With a trial attached, that first status is `trialing`, not
+ * `active` — the previous version only fired on `active`, so with trials
+ * enabled the welcome email would never have been sent. The trial→active
+ * conversion then sends the "card charged" email.
+ */
+async function sendActivationEmail(result: SyncResult): Promise<void> {
+  if (!result.companyId || !result.plan) return;
+
+  const plan = PLANS[result.plan];
+  const wasLive =
+    result.prevStatus === "trialing" ||
+    result.prevStatus === "active" ||
+    result.prevStatus === "past_due";
+
+  const isTrialStart = result.newStatus === "trialing" && !wasLive;
+  const isCharged =
+    result.newStatus === "active" && result.prevStatus !== "active";
+
+  if (!isTrialStart && !isCharged) return;
+
+  const email = await getCompanyOwnerEmail(result.companyId);
+  if (!email) return;
+
+  if (isTrialStart) {
+    await sendTrialStartedEmail({
+      to: email,
+      planName: plan.name,
+      amount: plan.amount,
+      trialDays: TRIAL_DAYS,
+      trialEnd: result.trialEnd,
+    });
+    return;
+  }
+
+  await sendSubscriptionStartedEmail({
+    to: email,
+    planName: plan.name,
+    amount: plan.amount,
+  });
+}
 
 export async function POST(req: NextRequest) {
   const stripe = getStripe();
@@ -61,31 +109,59 @@ export async function POST(req: NextRequest) {
               : session.subscription.id;
           const sub = await stripe.subscriptions.retrieve(subId);
           const result = await syncSubscription(sub);
-
-          // First activation → confirmation email.
-          if (
-            result.companyId &&
-            result.plan &&
-            result.newStatus === "active" &&
-            result.prevStatus !== "active"
-          ) {
-            const email = await getCompanyOwnerEmail(result.companyId);
-            if (email) {
-              await sendSubscriptionStartedEmail({
-                to: email,
-                planName: PLANS[result.plan].name,
-                amount: PLANS[result.plan].amount,
-              });
-            }
-          }
+          await sendActivationEmail(result);
         }
         break;
       }
 
-      case "customer.subscription.created":
+      case "customer.subscription.created": {
+        const sub = event.data.object as Stripe.Subscription;
+        const result = await syncSubscription(sub);
+        // checkout.session.completed usually gets here first; both paths are
+        // guarded by prevStatus so the email is sent at most once.
+        await sendActivationEmail(result);
+        break;
+      }
+
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
-        await syncSubscription(sub);
+        const result = await syncSubscription(sub);
+        await sendActivationEmail(result);
+        break;
+      }
+
+      // Stripe fires this three days before a trial ends. On a 7-day trial
+      // that lands on day 4-5, which is the day-5 reminder. The daily cron is
+      // the backstop; both write the same idempotency stamp so only one sends.
+      case "customer.subscription.trial_will_end": {
+        const sub = event.data.object as Stripe.Subscription;
+        const result = await syncSubscription(sub);
+        if (result.companyId && result.plan && result.newStatus === "trialing") {
+          const claimed = await markTrialReminderSent(result.companyId, "day5");
+          if (claimed) {
+            const email = await getCompanyOwnerEmail(result.companyId);
+            if (email) {
+              const appUrl = await getAppUrl();
+              const daysLeft = result.trialEnd
+                ? Math.max(
+                    1,
+                    Math.ceil(
+                      (new Date(result.trialEnd).getTime() - Date.now()) /
+                        86_400_000,
+                    ),
+                  )
+                : 2;
+              await sendTrialEndingEmail({
+                to: email,
+                planName: PLANS[result.plan].name,
+                amount: PLANS[result.plan].amount,
+                daysLeft,
+                trialEnd: result.trialEnd,
+                billingUrl: `${appUrl}/dashboard/settings?tab=billing`,
+              });
+            }
+          }
+        }
         break;
       }
 

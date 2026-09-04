@@ -74,7 +74,7 @@ function NavLink({
   );
 }
 
-function freeDaysLeft(iso: string): number {
+function trialDaysLeft(iso: string): number {
   return Math.max(
     0,
     Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000),
@@ -93,13 +93,16 @@ export function DashboardShell({
   companyName,
   notifications,
   unreadCount,
-  freeTierEndsAt,
+  trialEndsAt,
+  planName,
   children,
 }: {
   companyName: string;
   notifications: AppNotification[];
   unreadCount: number;
-  freeTierEndsAt: string | null;
+  /** Set only while the company is inside its plan's free trial. */
+  trialEndsAt: string | null;
+  planName: string | null;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -195,19 +198,19 @@ export function DashboardShell({
           />
         </header>
 
-        {freeTierEndsAt && (
+        {trialEndsAt && (
           <Link
             href="/dashboard/settings?tab=billing"
             className="flex items-center justify-center gap-1.5 border-b border-line bg-surface-muted px-4 py-2 text-center text-sm text-ink-muted transition-colors hover:bg-surface"
           >
             <span>
-              {freeDaysLeft(freeTierEndsAt) === 0
-                ? "Free access ends today"
-                : `${freeDaysLeft(freeTierEndsAt)} ${
-                    freeDaysLeft(freeTierEndsAt) === 1 ? "day" : "days"
-                  } left of free access`}
+              {trialDaysLeft(trialEndsAt) === 0
+                ? `Your ${planName ? `${planName} ` : ""}trial ends today — your card is charged next`
+                : `${trialDaysLeft(trialEndsAt)} ${
+                    trialDaysLeft(trialEndsAt) === 1 ? "day" : "days"
+                  } left of your free trial`}
             </span>
-            <span className="font-semibold text-brand">Choose a plan</span>
+            <span className="font-semibold text-brand">Manage billing</span>
           </Link>
         )}
 

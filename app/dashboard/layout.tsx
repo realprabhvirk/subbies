@@ -38,9 +38,9 @@ export default async function DashboardLayout({
   // First-time forced plan-selection gate.
   if (entitlement.needsOnboarding) redirect("/onboarding");
 
-  // Free window ran out / plan lapsed — block the dashboard entirely.
+  // Trial ended without payment / plan lapsed — block the dashboard entirely.
   if (entitlement.softLocked) {
-    return <SoftLock freeExpired={entitlement.freeExpired} />;
+    return <SoftLock />;
   }
 
   const supabase = await createClient();
@@ -66,7 +66,8 @@ export default async function DashboardLayout({
       companyName={company.name}
       notifications={notifications}
       unreadCount={unreadCount}
-      freeTierEndsAt={entitlement.onFreeTier ? entitlement.freeEndsAt : null}
+      trialEndsAt={entitlement.trialEndsAt}
+      planName={entitlement.planName}
     >
       {children}
     </DashboardShell>

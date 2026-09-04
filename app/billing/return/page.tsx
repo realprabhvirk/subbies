@@ -32,5 +32,13 @@ export default async function BillingReturnPage(
   if (entitlement.paidAccess) {
     redirect("/dashboard/settings?tab=billing&checkout=success");
   }
+
+  // Checkout was abandoned before onboarding completed. The settings page would
+  // immediately bounce them to /onboarding by the dashboard layout's gate and
+  // swallow the message, so send them straight there instead.
+  if (entitlement.needsOnboarding) {
+    redirect("/onboarding?checkout=cancelled");
+  }
+
   redirect("/dashboard/settings?tab=billing&checkout=cancelled");
 }
