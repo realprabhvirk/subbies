@@ -75,9 +75,9 @@ export default function PricingPage() {
               <p className="mt-1 text-sm text-ink-muted">{tier.blurb}</p>
               <p className="mt-4">
                 <span className="text-4xl font-semibold text-brand-ink">
-                  ${tier.amount}
+                  A${tier.amount}
                 </span>
-                <span className="text-sm text-ink-muted"> / month AUD</span>
+                <span className="text-sm text-ink-muted"> / month</span>
               </p>
               <Link
                 href="/signup"

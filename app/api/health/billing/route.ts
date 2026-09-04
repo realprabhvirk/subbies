@@ -177,7 +177,18 @@ export async function GET(req: NextRequest) {
         .from("subscriptions")
         .select(column)
         .limit(1);
-      schema[column] = error ? `MISSING (${error.message})` : "present";
+
+      if (!error) {
+        schema[column] = "present";
+        continue;
+      }
+      // 42703 / PGRST204 mean the column genuinely isn't there (a migration
+      // that never ran). Anything else — a network failure, a bad service-role
+      // key — says nothing about the schema, so don't report it as missing.
+      const isUnknownColumn = error.code === "42703" || error.code === "PGRST204";
+      schema[column] = isUnknownColumn
+        ? `MISSING — run the migration that adds it (${error.message})`
+        : `UNKNOWN — could not query subscriptions: ${error.message}`;
     }
   } catch (err) {
     schema._error = err instanceof Error ? err.message : String(err);
