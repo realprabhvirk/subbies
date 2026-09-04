@@ -2,14 +2,7 @@ import "server-only";
 
 import { getResend, FROM_ADDRESS } from "./resend";
 import type { SendResult } from "./onboarding";
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+import { emailShell, emailButton, paragraph, escapeHtml } from "./template";
 
 export interface DocumentSubmittedEmailInput {
   to: string;
@@ -40,30 +33,16 @@ export async function sendDocumentSubmittedEmail(
     .map((n) => `<li style="margin:4px 0;">${escapeHtml(n)}</li>`)
     .join("");
 
-  const html = `<!doctype html>
-<html>
-  <body style="margin:0;padding:0;background-color:#f6f5f2;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f6f5f2;padding:32px 12px;">
-      <tr><td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border:1px solid #e4e2db;border-radius:10px;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1c1b17;">
-          <tr><td style="padding:24px 28px;border-bottom:1px solid #e4e2db;font-weight:600;font-size:16px;color:#0f2740;">Subbies</td></tr>
-          <tr><td style="padding:28px;">
-            <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
-              <strong>${escapeHtml(input.contractorName)}</strong> has submitted
-              documents for review:
-            </p>
-            <ul style="margin:0 0 24px;padding-left:20px;font-size:15px;line-height:1.6;">${items}</ul>
-            <table role="presentation" cellpadding="0" cellspacing="0">
-              <tr><td style="border-radius:6px;background-color:#1c3d5a;">
-                <a href="${input.reviewUrl}" style="display:inline-block;padding:11px 22px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">Review documents</a>
-              </td></tr>
-            </table>
-          </td></tr>
-        </table>
-      </td></tr>
-    </table>
-  </body>
-</html>`;
+  const html = emailShell({
+    preheader: `${input.contractorName} submitted ${input.documentNames.length === 1 ? "a document" : "documents"} for review.`,
+    bodyHtml: [
+      paragraph(
+        `<strong>${escapeHtml(input.contractorName)}</strong> has submitted documents for review:`,
+      ),
+      `<ul style="margin:0 0 24px;padding-left:20px;font-size:15px;line-height:1.6;">${items}</ul>`,
+      emailButton(input.reviewUrl, "Review documents"),
+    ].join("\n"),
+  });
 
   const { data, error } = await resend.emails.send({
     from: FROM_ADDRESS,

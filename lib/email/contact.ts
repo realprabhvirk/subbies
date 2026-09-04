@@ -2,14 +2,7 @@ import "server-only";
 
 import { getResend, FROM_ADDRESS } from "./resend";
 import type { SendResult } from "./onboarding";
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
+import { emailShell, paragraph, escapeHtml } from "./template";
 
 export interface ContactEmailInput {
   name: string;
@@ -17,6 +10,7 @@ export interface ContactEmailInput {
   message: string;
 }
 
+/** Internal notification to the founder — not customer-facing, but shares the same shell for visual consistency. */
 export async function sendContactEmail(
   input: ContactEmailInput,
 ): Promise<SendResult> {
@@ -27,11 +21,15 @@ export async function sendContactEmail(
   if (!to) return { ok: false, reason: "not_configured" };
 
   const text = `From: ${input.name} <${input.email}>\n\n${input.message}`;
-  const html = `<!doctype html>
-<html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1c1b17;">
-  <p style="margin:0 0 8px;"><strong>From:</strong> ${escapeHtml(input.name)} &lt;${escapeHtml(input.email)}&gt;</p>
-  <p style="margin:16px 0 0;white-space:pre-wrap;">${escapeHtml(input.message)}</p>
-</body></html>`;
+  const html = emailShell({
+    preheader: `New contact form message from ${input.name}.`,
+    bodyHtml: [
+      paragraph(
+        `<strong>From:</strong> ${escapeHtml(input.name)} &lt;${escapeHtml(input.email)}&gt;`,
+      ),
+      `<p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:#120e0e;white-space:pre-wrap;">${escapeHtml(input.message)}</p>`,
+    ].join("\n"),
+  });
 
   const { data, error } = await resend.emails.send({
     from: FROM_ADDRESS,
