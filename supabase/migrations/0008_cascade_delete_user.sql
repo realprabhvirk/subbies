@@ -9,10 +9,13 @@
 -- still points at it, and everything else (contractors, documents, projects,
 -- subscriptions, notifications) already cascades off companies.
 --
--- This finds whatever that FK is actually named (it varies: companies_user_id_fkey,
--- companies_user_id_fkey1, an auto-generated name, etc.) and replaces it with
--- an equivalent one that cascades. No data is touched.
+-- Drops whatever that FK is currently named and replaces it with an
+-- equivalent one that cascades. Tries the common name directly, then falls
+-- back to looking it up for environments where it's named something else.
+-- Safe to re-run. No data is touched.
 -- ---------------------------------------------------------------------------
+
+alter table public.companies drop constraint if exists companies_user_id_fkey;
 
 do $$
 declare
@@ -37,8 +40,8 @@ begin
   if fk_name is not null then
     execute format('alter table public.companies drop constraint %I', fk_name);
   end if;
-
-  alter table public.companies
-    add constraint companies_user_id_fkey
-    foreign key (user_id) references auth.users(id) on delete cascade;
 end $$;
+
+alter table public.companies
+  add constraint companies_user_id_fkey
+  foreign key (user_id) references auth.users(id) on delete cascade;
