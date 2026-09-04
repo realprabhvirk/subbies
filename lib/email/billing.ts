@@ -47,7 +47,7 @@ export function sendTrialStartedEmail(input: {
   const endsOn = formatDate(input.trialEnd);
   const text = `Your Subbies ${input.planName} plan is set up and your ${input.trialDays}-day free trial has started. Nothing has been charged. On ${endsOn} your card will be charged A$${input.amount} and your plan continues month to month. Cancel any time before then from Settings → Billing.`;
   const html = emailShell({
-    preheader: `Your ${input.trialDays}-day free trial has started — nothing charged yet.`,
+    preheader: `Your ${input.trialDays}-day free trial has started. Nothing charged yet.`,
     bodyHtml: [
       paragraph(
         `Your <strong>${input.planName}</strong> plan is set up and your <strong>${input.trialDays}-day free trial</strong> has started. Nothing has been charged.`,
@@ -71,9 +71,9 @@ export function sendSubscriptionStartedEmail(input: {
   planName: string;
   amount: number;
 }): Promise<SendResult> {
-  const text = `Your Subbies ${input.planName} plan is now active and your card has been charged A$${input.amount}. Your subscription continues month to month — manage or cancel any time from Settings → Billing.`;
+  const text = `Your Subbies ${input.planName} plan is now active and your card has been charged A$${input.amount}. Your subscription continues month to month. Manage or cancel any time from Settings → Billing.`;
   const html = emailShell({
-    preheader: `Your ${input.planName} plan is active — thanks for subscribing.`,
+    preheader: `Your ${input.planName} plan is active. Thanks for subscribing.`,
     bodyHtml: [
       calloutBox(
         "approved",
@@ -120,9 +120,9 @@ export function sendTrialEndingEmail(input: {
 }): Promise<SendResult> {
   const days = `${input.daysLeft} ${input.daysLeft === 1 ? "day" : "days"}`;
   const endsOn = formatDate(input.trialEnd);
-  const text = `Your Subbies ${input.planName} free trial ends in ${days}. On ${endsOn} your card will be charged A$${input.amount}/month and everything keeps working — no action needed. If you'd rather not continue, cancel from Settings → Billing (${input.billingUrl}) before then.`;
+  const text = `Your Subbies ${input.planName} free trial ends in ${days}. On ${endsOn} your card will be charged A$${input.amount}/month and everything keeps working. No action needed. If you'd rather not continue, cancel from Settings → Billing (${input.billingUrl}) before then.`;
   const html = emailShell({
-    preheader: `Your free trial ends in ${days} — here's what happens next.`,
+    preheader: `Your free trial ends in ${days}. Here's what happens next.`,
     bodyHtml: [
       paragraph(
         `Your <strong>${input.planName}</strong> free trial ends in <strong>${days}</strong>.`,
@@ -144,7 +144,7 @@ export function sendTrialEndsTodayEmail(input: {
   amount: number;
   billingUrl: string;
 }): Promise<SendResult> {
-  const text = `Your Subbies ${input.planName} free trial ends today. Your card will be charged A$${input.amount} and your plan continues month to month — nothing changes and nothing is lost. To stop before the charge, cancel from Settings → Billing (${input.billingUrl}) today.`;
+  const text = `Your Subbies ${input.planName} free trial ends today. Your card will be charged A$${input.amount} and your plan continues month to month. Nothing changes and nothing is lost. To stop before the charge, cancel from Settings → Billing (${input.billingUrl}) today.`;
   const html = emailShell({
     preheader: "Your free trial ends today.",
     bodyHtml: [

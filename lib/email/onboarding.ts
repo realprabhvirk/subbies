@@ -18,7 +18,7 @@ export type SendResult =
   | { ok: false; reason: "not_configured" | "send_failed"; error?: string };
 
 function buildSubject(companyName: string): string {
-  return `${companyName} — documents needed before you start work`;
+  return `${companyName}: documents needed before you start work`;
 }
 
 function buildText(input: OnboardingEmailInput): string {
@@ -31,7 +31,7 @@ function buildText(input: OnboardingEmailInput): string {
     "",
     list,
     "",
-    "Upload your documents here (no login needed — the link is unique to you):",
+    "Upload your documents here (no login needed, the link is unique to you):",
     input.onboardUrl,
     "",
     `If you have any questions, reply to this email and it will reach ${input.companyName}.`,
@@ -119,7 +119,7 @@ export async function sendContractorApprovedEmail(
     : "Hi,";
 
   const html = emailShell({
-    preheader: `${input.companyName} has approved all your documents — you're cleared to work.`,
+    preheader: `${input.companyName} has approved all your documents. You're cleared to work.`,
     bodyHtml: [
       paragraph(htmlGreeting),
       calloutBox(
@@ -137,7 +137,7 @@ export async function sendContractorApprovedEmail(
     from: FROM_ADDRESS,
     to: input.to,
     replyTo: input.replyTo ?? undefined,
-    subject: `${input.companyName} — you're approved to work`,
+    subject: `${input.companyName}: you're approved to work`,
     text,
     html,
   });
@@ -184,7 +184,7 @@ export async function sendDocumentRejectedEmail(
     : "Hi,";
 
   const html = emailShell({
-    preheader: `${input.documentName} needs to be re-uploaded — here's why.`,
+    preheader: `${input.documentName} needs to be re-uploaded. Here's why.`,
     bodyHtml: [
       paragraph(htmlGreeting),
       paragraph(
@@ -203,7 +203,7 @@ export async function sendDocumentRejectedEmail(
     from: FROM_ADDRESS,
     to: input.to,
     replyTo: input.replyTo ?? undefined,
-    subject: `${input.companyName} — ${input.documentName} needs re-uploading`,
+    subject: `${input.companyName}: ${input.documentName} needs re-uploading`,
     text,
     html,
   });

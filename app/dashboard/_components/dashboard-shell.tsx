@@ -205,7 +205,7 @@ export function DashboardShell({
           >
             <span>
               {trialDaysLeft(trialEndsAt) === 0
-                ? `Your ${planName ? `${planName} ` : ""}trial ends today — your card is charged next`
+                ? `Your ${planName ? `${planName} ` : ""}trial ends today: your card is charged next`
                 : `${trialDaysLeft(trialEndsAt)} ${
                     trialDaysLeft(trialEndsAt) === 1 ? "day" : "days"
                   } left of your free trial`}

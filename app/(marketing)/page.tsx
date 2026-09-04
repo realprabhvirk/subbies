@@ -26,7 +26,7 @@ import { ProductPreview } from "./_components/product-preview";
 
 export const metadata: Metadata = {
   title: {
-    absolute: "Subbies — contractor onboarding & compliance tracking",
+    absolute: "Subbies: contractor onboarding & compliance tracking",
   },
   description:
     "Stop chasing contractors for paperwork and know whether they're approved to work. Collect, review, and track compliance documents in one place.",
@@ -41,7 +41,7 @@ const STEPS = [
   {
     icon: Inbox,
     title: "Collect",
-    body: "They upload everything from their phone — no login, no account, no app to install.",
+    body: "They upload everything from their phone. No login, no account, no app to install.",
   },
   {
     icon: ClipboardCheck,
@@ -59,7 +59,7 @@ const FEATURES = [
   {
     icon: ShieldCheck,
     title: "One place to review",
-    body: "Every certificate, licence, and insurance document for every contractor — reviewed and approved from one screen.",
+    body: "Every certificate, licence, and insurance document for every contractor, reviewed and approved from one screen.",
   },
   {
     icon: CalendarClock,
@@ -180,7 +180,7 @@ export default function LandingPage() {
               <p className="mt-4 text-ink-muted">
                 Assign contractors to a project and Subbies shows their live
                 compliance status right there. No cross-checking spreadsheets
-                before a site walk — one screen tells you who&apos;s good to go
+                before a site walk. One screen tells you who&apos;s good to go
                 and who isn&apos;t.
               </p>
               <p className="mt-3 text-ink-muted">
@@ -205,7 +205,7 @@ export default function LandingPage() {
               />
               <div className="absolute inset-x-3 bottom-3 rounded-md border border-line bg-surface/95 p-3 backdrop-blur">
                 <p className="px-1 pb-1.5 text-xs font-medium text-ink-subtle">
-                  Smith Street — on site
+                  Smith Street: on site
                 </p>
                 <ul className="space-y-1">
                   {CREW.map((c) => {
@@ -248,12 +248,12 @@ export default function LandingPage() {
                 <p className="mt-2 max-w-md text-ink-muted">
                   Every competing tool asks the contractor to make an account.
                   That&apos;s the step where onboarding stalls. Subbies is one
-                  link — nothing to sign up for, nothing to install.
+                  link, nothing to sign up for, nothing to install.
                 </p>
               </div>
               <div className="rounded-md border border-line bg-surface p-4 text-sm shadow-sm">
                 <p className="font-medium text-brand-ink">
-                  Northside Builders — documents needed before you start work
+                  Northside Builders: documents needed before you start work
                 </p>
                 <p className="mt-2 text-ink-muted">
                   Hi Dave, please provide:

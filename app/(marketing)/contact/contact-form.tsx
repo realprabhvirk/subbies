@@ -21,7 +21,7 @@ export function ContactForm() {
         <CircleCheck className="h-5 w-5" strokeWidth={2} aria-hidden />
         <p className="mt-2 font-medium">Message sent</p>
         <p className="mt-1 text-approved/90">
-          Thanks — we&apos;ll get back to you at the email you gave us.
+          Thanks! We&apos;ll get back to you at the email you gave us.
         </p>
       </div>
     );

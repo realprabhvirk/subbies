@@ -12,7 +12,7 @@ import { Section, Eyebrow, PrimaryLink, SecondaryLink, CtaBand } from "../_compo
 export const metadata: Metadata = {
   title: "How Subbies works",
   description:
-    "A closer look at how Subbies collects, reviews, and tracks contractor compliance documents — and why contractors actually respond.",
+    "A closer look at how Subbies collects, reviews, and tracks contractor compliance documents, and why contractors actually respond.",
 };
 
 const STEPS = [
@@ -21,14 +21,14 @@ const STEPS = [
     title: "1. Onboard the contractor",
     lead: "Add their details once, pick the documents you need from your own list, and send.",
     points: [
-      "Your document types are yours to define — Public Liability, trade licences, workers comp, site inductions, whatever you require.",
+      "Your document types are yours to define: Public Liability, trade licences, workers comp, site inductions, whatever you require.",
       "Each contractor gets a plain, professional email that looks like it came from your office, not a marketing tool.",
       "Need to chase? Resend the same request in one click.",
     ],
   },
   {
     icon: Inbox,
-    title: "2. They upload — from anywhere",
+    title: "2. They upload from anywhere",
     lead: "The contractor opens one secure link. No account, no password, no app.",
     points: [
       "They see a simple checklist of what's required and what's still outstanding.",
@@ -61,7 +61,7 @@ const STEPS = [
 const DIFFERENT = [
   {
     title: "Contractors don't have to sign up",
-    body: "Every competing tool asks the contractor to create an account. That single step is where onboarding stalls. Subbies removes it entirely — one link, done.",
+    body: "Every competing tool asks the contractor to create an account. That single step is where onboarding stalls. Subbies removes it entirely. One link, done.",
   },
   {
     title: "It's built around approval, not storage",
@@ -84,7 +84,7 @@ const FAQ = [
   },
   {
     q: "Where are the documents stored?",
-    a: "In private, encrypted storage. Files are only ever accessed through short-lived signed links — they're never publicly reachable.",
+    a: "In private, encrypted storage. Files are only ever accessed through short-lived signed links. They're never publicly reachable.",
   },
   {
     q: "Can I customise which documents I ask for?",
@@ -96,7 +96,7 @@ const FAQ = [
   },
   {
     q: "Is there a free trial?",
-    a: "Yes — every plan starts with a free trial and you're not charged until it ends. You can cancel any time from your billing settings.",
+    a: "Yes. Every plan starts with a free trial and you're not charged until it ends. You can cancel any time from your billing settings.",
   },
 ];
 
@@ -111,7 +111,7 @@ export default function HowItWorksPage() {
         <p className="mt-5 max-w-2xl text-lg text-ink-muted">
           You need a contractor to start work. They need to prove they&apos;re
           insured and licensed. Subbies makes that exchange fast for you and
-          almost effortless for them — then keeps it current long after.
+          almost effortless for them, then keeps it current long after.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <PrimaryLink href="/signup">Get started</PrimaryLink>
@@ -134,7 +134,7 @@ export default function HowItWorksPage() {
             </p>
             <p>
               Multiply that by every contractor, every renewal, every job. The
-              information exists — it&apos;s just scattered across inboxes and
+              information exists. It&apos;s just scattered across inboxes and
               phones with no single answer to the only question that matters:{" "}
               <span className="text-ink">is this person cleared to work?</span>
             </p>

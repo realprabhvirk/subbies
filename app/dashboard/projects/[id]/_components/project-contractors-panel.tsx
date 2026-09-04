@@ -95,7 +95,7 @@ export function ProjectContractorsPanel({
                 {available.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.businessName}
-                    {c.trade ? ` — ${c.trade}` : ""}
+                    {c.trade ? ` (${c.trade})` : ""}
                   </option>
                 ))}
               </select>
@@ -152,7 +152,7 @@ export function ProjectContractorsPanel({
                 </Link>
                 <p className="truncate text-sm text-ink-muted">
                   {[a.roleOnProject ?? a.trade].filter(Boolean).join(" · ") ||
-                    "—"}
+                    "–"}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -179,7 +179,7 @@ export function ProjectContractorsPanel({
       {assigned.some((a) => hasComplianceIssue(a.status)) && (
         <p className="text-xs text-ink-subtle">
           Contractors marked anything other than “Approved” have an outstanding
-          compliance issue — open the contractor to see what&apos;s missing.
+          compliance issue. Open the contractor to see what&apos;s missing.
         </p>
       )}
     </div>

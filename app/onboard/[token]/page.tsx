@@ -33,7 +33,7 @@ export default async function OnboardPage(props: PageProps<"/onboard/[token]">) 
         </h1>
         <p className="mt-2 text-sm text-ink-muted">
           {companyName} needs the documents below before work can begin. This
-          page is unique to you — no login required. You can come back to this
+          page is unique to you. No login required. You can come back to this
           link any time.
         </p>
 
@@ -45,7 +45,7 @@ export default async function OnboardPage(props: PageProps<"/onboard/[token]">) 
           }`}
         >
           {allDone
-            ? "Everything requested has been submitted. There's nothing more to do right now — you'll hear from " +
+            ? "Everything requested has been submitted. There's nothing more to do right now. You'll hear from " +
               companyName +
               " if anything needs changing."
             : `${outstanding} ${outstanding === 1 ? "document" : "documents"} still to upload. Accepted formats: PDF, JPG, PNG, HEIC (max 15 MB).`}

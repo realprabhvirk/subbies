@@ -46,14 +46,14 @@ export default async function OnboardingPage(
         </h1>
         <p className="mt-3 text-lg text-ink-muted">
           Pick the plan that fits your operation. Every plan starts with{" "}
-          {TRIAL_DAYS} days free — you&apos;ll enter a card, nothing is charged
+          {TRIAL_DAYS} days free. You&apos;ll enter a card, nothing is charged
           today, and you can cancel any time before day {TRIAL_DAYS}.
         </p>
       </div>
 
       {cancelled && (
         <p className="mt-6 rounded-md bg-surface-muted px-4 py-3 text-sm text-ink-muted">
-          Checkout cancelled — no plan was started and nothing was charged. Pick
+          Checkout cancelled. No plan was started and nothing was charged. Pick
           a plan below whenever you&apos;re ready.
         </p>
       )}

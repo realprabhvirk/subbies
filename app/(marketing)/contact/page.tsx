@@ -19,7 +19,7 @@ export default function ContactPage() {
           </h1>
           <p className="mt-4 text-ink-muted">
             Questions about whether Subbies fits your business, founding-customer
-            pricing, or anything else — send a note and we&apos;ll reply
+            pricing, or anything else, send a note and we&apos;ll reply
             personally.
           </p>
         </div>

@@ -139,7 +139,7 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
           )}
           {view.status === "rejected" && (
             <p className="mt-0.5 text-sm text-ink-muted">
-              Rejected{view.rejectionReason ? ` — ${view.rejectionReason}` : ""}.
+              Rejected{view.rejectionReason ? `: ${view.rejectionReason}` : ""}.
               Waiting on a replacement.
             </p>
           )}
@@ -222,7 +222,7 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
                 onChange={(e) => setReason(e.target.value)}
                 rows={2}
                 maxLength={500}
-                placeholder="e.g. The certificate has expired — please upload a current one."
+                placeholder="e.g. The certificate has expired, please upload a current one."
                 className="w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
               />
               <div className="flex gap-2">

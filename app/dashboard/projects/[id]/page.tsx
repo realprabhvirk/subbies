@@ -108,8 +108,8 @@ export default async function ProjectDetailPage(
   const dateRange =
     project.start_date || project.end_date
       ? [
-          project.start_date ? fmtDate(project.start_date) : "—",
-          project.end_date ? fmtDate(project.end_date) : "—",
+          project.start_date ? fmtDate(project.start_date) : "–",
+          project.end_date ? fmtDate(project.end_date) : "–",
         ].join(" → ")
       : null;
 

@@ -50,7 +50,7 @@ export default function PricingPage() {
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-lg text-ink-muted">
           Pick a plan by the size of your operation. Every plan starts with a{" "}
-          {TRIAL_DAYS}-day free trial — nothing is charged until day{" "}
+          {TRIAL_DAYS}-day free trial. Nothing is charged until day{" "}
           {TRIAL_DAYS}.
         </p>
       </Section>
@@ -106,7 +106,7 @@ export default function PricingPage() {
         </div>
         <p className="mt-6 text-center text-sm text-ink-subtle">
           {TRIAL_DAYS} days free on any plan. You enter a card at signup but
-          nothing is charged until day {TRIAL_DAYS} — cancel before then and you
+          nothing is charged until day {TRIAL_DAYS}. Cancel before then and you
           pay nothing. Nothing is ever deleted.
         </p>
       </Section>
@@ -168,7 +168,7 @@ export default function PricingPage() {
 
       <CtaBand
         heading="Not sure which plan fits?"
-        sub="Start free — you can change plan any time, and everything you set up carries over."
+        sub="Start free. You can change plan any time, and everything you set up carries over."
       />
     </>
   );

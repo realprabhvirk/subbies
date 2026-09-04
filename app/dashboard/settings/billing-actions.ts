@@ -159,7 +159,7 @@ export async function openBillingPortal(): Promise<Result> {
 
   const entitlement = await getEntitlement(company.id);
   if (!entitlement.stripeCustomerId) {
-    return { ok: false, error: "No billing account yet — start a plan first." };
+    return { ok: false, error: "No billing account yet. Start a plan first." };
   }
 
   try {

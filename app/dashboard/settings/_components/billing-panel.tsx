@@ -33,7 +33,7 @@ const RESOURCE_LABEL: Record<LimitedResource, string> = {
 };
 
 function fmt(iso: string | null): string {
-  if (!iso) return "—";
+  if (!iso) return "–";
   return new Intl.DateTimeFormat("en-AU", {
     day: "numeric",
     month: "long",
@@ -101,14 +101,14 @@ export function BillingPanel({
           <CircleCheck className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
           <span>
             {entitlement.onTrial
-              ? "You're all set — your free trial has started. Nothing has been charged."
+              ? "You're all set. Your free trial has started. Nothing has been charged."
               : "Your plan is active. Thanks for subscribing."}
           </span>
         </div>
       )}
       {checkout === "cancelled" && (
         <div className="rounded-md bg-surface-muted px-4 py-3 text-sm text-ink-muted">
-          Checkout cancelled — no plan was started.
+          Checkout cancelled. No plan was started.
         </div>
       )}
 
@@ -118,7 +118,7 @@ export function BillingPanel({
             <div className="mb-4 flex items-start gap-2 rounded-md bg-attention-bg px-3 py-2 text-sm text-attention">
               <Clock className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
               <span>
-                You&apos;re on a free trial —{" "}
+                You&apos;re on a free trial,{" "}
                 <strong>
                   {daysUntil(entitlement.trialEndsAt)}{" "}
                   {daysUntil(entitlement.trialEndsAt) === 1 ? "day" : "days"} left
@@ -134,7 +134,7 @@ export function BillingPanel({
               <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
               <span>
                 Your last payment didn&apos;t go through. Update your card to keep
-                your {entitlement.planName} plan — we&apos;ll keep retrying for a
+                your {entitlement.planName} plan. We&apos;ll keep retrying for a
                 few days.
               </span>
             </div>
@@ -145,7 +145,7 @@ export function BillingPanel({
             {entitlement.planAmount !== null && (
               <span className="font-normal text-ink-muted">
                 {" "}
-                — A${entitlement.planAmount}/month
+                (A${entitlement.planAmount}/month)
               </span>
             )}
           </p>
@@ -155,7 +155,7 @@ export function BillingPanel({
               : entitlement.status === "past_due"
                 ? "Payment overdue."
                 : entitlement.onTrial
-                  ? `Free trial — your first payment is on ${fmt(entitlement.trialEndsAt)}.`
+                  ? `Free trial. Your first payment is on ${fmt(entitlement.trialEndsAt)}.`
                   : `Renews ${fmt(entitlement.currentPeriodEnd)}.`}
           </p>
 
@@ -267,7 +267,7 @@ export function BillingPanel({
                 <dt className="text-ink-muted">{RESOURCE_LABEL[r]}</dt>
                 <dd className={atLimit ? "font-medium text-attention" : "text-ink"}>
                   {used} / {limit === null ? "unlimited" : limit}
-                  {atLimit && " — limit reached"}
+                  {atLimit && " (limit reached)"}
                 </dd>
               </div>
             );

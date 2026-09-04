@@ -89,7 +89,7 @@ export function DocumentTypesManager({
         <div className="flex flex-col items-center rounded-card border border-dashed border-line-strong bg-surface px-6 py-16 text-center">
           <p className="text-sm font-medium">No document types yet</p>
           <p className="mt-1 max-w-sm text-sm text-ink-muted">
-            Add the documents you need from contractors — for example Public
+            Add the documents you need from contractors, for example Public
             Liability insurance, a trade licence, or a workers compensation
             certificate.
           </p>

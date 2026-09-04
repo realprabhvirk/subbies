@@ -35,7 +35,7 @@ export async function sendContactEmail(
     from: FROM_ADDRESS,
     to,
     replyTo: input.email,
-    subject: `Subbies contact — ${input.name}`,
+    subject: `Subbies contact: ${input.name}`,
     text,
     html,
   });
