@@ -94,15 +94,29 @@ export const FREE_TIER = {
   limits: { contractors: 3, documentTypes: 3, projects: 2 } satisfies PlanLimits,
 };
 
-export function priceIdForPlan(plan: PlanId): string {
-  const id = process.env[PLANS[plan].priceIdEnv];
-  if (!id) throw new Error(`Missing env ${PLANS[plan].priceIdEnv}`);
-  return id;
+/**
+ * The configured Stripe Price ID for a plan, or null if the env var is unset
+ * or blank.
+ *
+ * Trimmed deliberately: a Price ID pasted into a dashboard env field with a
+ * trailing space or newline is indistinguishable from a correct one by eye,
+ * but Stripe rejects it with `resource_missing`.
+ */
+export function priceIdForPlan(plan: PlanId): string | null {
+  const id = process.env[PLANS[plan].priceIdEnv]?.trim();
+  return id ? id : null;
+}
+
+/** Env var names for plans whose Price ID isn't configured. */
+export function missingPriceEnvs(): string[] {
+  return PLAN_IDS.filter((plan) => priceIdForPlan(plan) === null).map(
+    (plan) => PLANS[plan].priceIdEnv,
+  );
 }
 
 export function planForPriceId(priceId: string): PlanId | null {
   for (const plan of PLAN_IDS) {
-    if (process.env[PLANS[plan].priceIdEnv] === priceId) return plan;
+    if (priceIdForPlan(plan) === priceId) return plan;
   }
   return null;
 }

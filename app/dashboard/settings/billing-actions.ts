@@ -7,7 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppUrl } from "@/lib/app-url";
 import { getStripe } from "@/lib/billing/stripe";
 import { getEntitlement } from "@/lib/billing/entitlements";
-import { priceIdForPlan, PLAN_IDS, type PlanId } from "@/lib/billing/plans";
+import { priceIdForPlan, PLANS, PLAN_IDS, type PlanId } from "@/lib/billing/plans";
+import { describeBillingError } from "@/lib/billing/errors";
 
 type Result = { ok: boolean; url?: string; error?: string };
 
@@ -34,7 +35,7 @@ async function resolveCustomerId(
     metadata: { company_id: companyId },
   });
 
-  await admin.from("subscriptions").upsert(
+  const { error } = await admin.from("subscriptions").upsert(
     {
       company_id: companyId,
       stripe_customer_id: customer.id,
@@ -42,6 +43,20 @@ async function resolveCustomerId(
     },
     { onConflict: "company_id" },
   );
+
+  // Not fatal to this checkout, but it means we'd mint a fresh Stripe customer
+  // on every attempt and lose track of the one that actually pays — so it has
+  // to be loud rather than swallowed.
+  if (error) {
+    console.error("resolveCustomerId: failed to persist stripe_customer_id", {
+      companyId,
+      customerId: customer.id,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+  }
 
   return customer.id;
 }
@@ -64,6 +79,19 @@ export async function startCheckout(planId: PlanId): Promise<Result> {
     };
   }
 
+  // Resolved before anything is created in Stripe so a misconfigured Price ID
+  // fails with a message that names the env var instead of a generic retry.
+  const priceId = priceIdForPlan(planId);
+  if (!priceId) {
+    console.error(
+      `startCheckout: ${PLANS[planId].priceIdEnv} is not set in this environment`,
+    );
+    return {
+      ok: false,
+      error: `Billing isn't fully configured: ${PLANS[planId].priceIdEnv} is missing from this deployment's environment settings.`,
+    };
+  }
+
   try {
     const customerId = await resolveCustomerId(
       company.id,
@@ -76,7 +104,7 @@ export async function startCheckout(planId: PlanId): Promise<Result> {
       mode: "subscription",
       customer: customerId,
       client_reference_id: company.id,
-      line_items: [{ price: priceIdForPlan(planId), quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       // No trial — the 7-day free tier serves that purpose. Checkout charges
       // today (or applies a promo code the customer enters).
       subscription_data: {
@@ -89,11 +117,15 @@ export async function startCheckout(planId: PlanId): Promise<Result> {
       cancel_url: `${appUrl}/billing/return?state=cancelled`,
     });
 
-    if (!session.url) return { ok: false, error: "Couldn't start checkout. Try again." };
+    if (!session.url) {
+      console.error("startCheckout: Stripe returned a session with no URL", session.id);
+      return { ok: false, error: "Couldn't start checkout. Try again." };
+    }
     return { ok: true, url: session.url };
   } catch (err) {
-    console.error("startCheckout failed", err);
-    return { ok: false, error: "Couldn't start checkout. Try again." };
+    const failure = describeBillingError(err, "Couldn't start checkout. Try again.");
+    console.error("startCheckout failed", { plan: planId, ...failure.log });
+    return { ok: false, error: failure.message };
   }
 }
 
@@ -117,12 +149,12 @@ export async function openBillingPortal(): Promise<Result> {
     });
     return { ok: true, url: session.url };
   } catch (err) {
-    console.error("openBillingPortal failed", err);
-    return {
-      ok: false,
-      error:
-        "Couldn't open the billing portal. If this persists, the Stripe customer portal may need to be enabled.",
-    };
+    const failure = describeBillingError(
+      err,
+      "Couldn't open the billing portal. If this persists, the Stripe customer portal may need to be enabled in your Stripe dashboard.",
+    );
+    console.error("openBillingPortal failed", failure.log);
+    return { ok: false, error: failure.message };
   }
 }
 
@@ -151,8 +183,9 @@ export async function cancelSubscription(): Promise<{ ok: boolean; error?: strin
     revalidatePath("/dashboard/settings");
     return { ok: true };
   } catch (err) {
-    console.error("cancelSubscription failed", err);
-    return { ok: false, error: "Couldn't cancel. Try again." };
+    const failure = describeBillingError(err, "Couldn't cancel. Try again.");
+    console.error("cancelSubscription failed", failure.log);
+    return { ok: false, error: failure.message };
   }
 }
 
@@ -181,7 +214,8 @@ export async function resumeSubscription(): Promise<{ ok: boolean; error?: strin
     revalidatePath("/dashboard/settings");
     return { ok: true };
   } catch (err) {
-    console.error("resumeSubscription failed", err);
-    return { ok: false, error: "Couldn't resume. Try again." };
+    const failure = describeBillingError(err, "Couldn't resume. Try again.");
+    console.error("resumeSubscription failed", failure.log);
+    return { ok: false, error: failure.message };
   }
 }
