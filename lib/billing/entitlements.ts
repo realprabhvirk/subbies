@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
+import { getCompanyContext } from "@/lib/supabase/dal";
 import type { Subscription, SubscriptionStatus } from "@/lib/types";
 import {
   PLANS,
@@ -55,6 +56,14 @@ export interface Entitlement {
 
 export const getSubscriptionRow = cache(
   async (companyId: string): Promise<Subscription | null> => {
+    // The signed-in user's own subscription already came back embedded in the
+    // company query (see getCompanyContext), so the common case costs nothing.
+    // Any other company id still falls through to a real query.
+    const context = await getCompanyContext();
+    if (context && context.company.id === companyId) {
+      return context.subscription;
+    }
+
     const supabase = await createClient();
     const { data } = await supabase
       .from("subscriptions")

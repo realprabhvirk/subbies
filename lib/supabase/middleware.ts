@@ -33,10 +33,16 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // IMPORTANT: do not run code between createServerClient and getUser().
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // IMPORTANT: do not run code between createServerClient and the auth call.
+  //
+  // getClaims() verifies the JWT signature locally via WebCrypto against a
+  // cached JWKS when the project uses asymmetric signing keys, so this gate
+  // costs no network round trip — it used to call getUser(), which hit the
+  // auth server on every single request to every dashboard page. On a project
+  // still using a symmetric JWT secret it falls back to a server call, which
+  // is exactly the previous behaviour.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims?.sub ? claimsData.claims : null;
 
   const { pathname } = request.nextUrl;
 
