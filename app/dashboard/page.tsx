@@ -43,11 +43,21 @@ export default async function DashboardPage() {
   if (!company) return null;
 
   const supabase = await createClient();
-  const { data: contractorData, error } = await supabase
-    .from("contractors")
-    .select("id, business_name, trade, status")
-    .eq("company_id", company.id)
-    .order("created_at", { ascending: false });
+  // The contractor list and the project rollup below are independent of each
+  // other, so they go out together rather than one after the other.
+  const [{ data: contractorData, error }, { data: projectRows }] =
+    await Promise.all([
+      supabase
+        .from("contractors")
+        .select("id, business_name, trade, status")
+        .eq("company_id", company.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("projects")
+        .select("id, project_contractors(removed_at, contractors(status))")
+        .eq("company_id", company.id)
+        .neq("status", "completed"),
+    ]);
 
   const contractors = (contractorData ?? []) as ContractorRow[];
 
@@ -65,12 +75,6 @@ export default async function DashboardPage() {
 
   // Projects whose currently-assigned contractors include a compliance issue.
   let projectsWithIssues = 0;
-  const { data: projectRows } = await supabase
-    .from("projects")
-    .select("id, project_contractors(removed_at, contractors(status))")
-    .eq("company_id", company.id)
-    .neq("status", "completed");
-
   for (const project of (projectRows ?? []) as unknown as {
     id: string;
     project_contractors:

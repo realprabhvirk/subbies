@@ -24,6 +24,9 @@ export default async function ProjectsPage() {
 
   const supabase = await createClient();
 
+  // Independent of the project queries below, so start it now and await later.
+  const limitCheckPromise = canAddProject(company.id);
+
   const { data: projectData, error } = await supabase
     .from("projects")
     .select("id, name, address, status, start_date, end_date, created_at")
@@ -93,7 +96,7 @@ export default async function ProjectsPage() {
       (a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status],
     );
 
-  const limitCheck = await canAddProject(company.id);
+  const limitCheck = await limitCheckPromise;
 
   return (
     <ProjectsManager

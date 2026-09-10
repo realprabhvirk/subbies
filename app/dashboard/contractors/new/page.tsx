@@ -14,9 +14,9 @@ export default async function NewContractorPage() {
   const company = await getCompany();
   if (!company) return null;
 
-  const limitCheck = await canAddContractor(company.id);
-
   const supabase = await createClient();
+  // Independent of each other.
+  const limitCheckPromise = canAddContractor(company.id);
   const { data, error } = await supabase
     .from("document_types")
     .select(
@@ -26,6 +26,7 @@ export default async function NewContractorPage() {
     .order("name", { ascending: true });
 
   const documentTypes = (data ?? []) as DocumentType[];
+  const limitCheck = await limitCheckPromise;
 
   return (
     <div className="space-y-8">

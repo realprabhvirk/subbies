@@ -29,14 +29,17 @@ export default async function ContractorsPage(
     typeof searchParams.email === "string" ? searchParams.email : null;
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("contractors")
-    .select("id, business_name, contact_name, email, trade, status, created_at")
-    .eq("company_id", company.id)
-    .order("created_at", { ascending: false });
+  // Independent of each other: the limit check never reads the list.
+  const [{ data, error }, limitCheck] = await Promise.all([
+    supabase
+      .from("contractors")
+      .select("id, business_name, contact_name, email, trade, status, created_at")
+      .eq("company_id", company.id)
+      .order("created_at", { ascending: false }),
+    canAddContractor(company.id),
+  ]);
 
   const contractors = (data ?? []) as ContractorRow[];
-  const limitCheck = await canAddContractor(company.id);
 
   // Per-contractor document progress.
   const progress = new Map<string, { approved: number; total: number }>();

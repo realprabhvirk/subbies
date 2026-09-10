@@ -13,6 +13,8 @@ export default async function DocumentTypesPage() {
   if (!company) return null;
 
   const supabase = await createClient();
+  // Independent of each other: the limit check never reads the list.
+  const limitCheckPromise = canAddDocumentType(company.id);
   const { data, error } = await supabase
     .from("document_types")
     .select(
@@ -32,7 +34,7 @@ export default async function DocumentTypesPage() {
     );
   }
 
-  const limitCheck = await canAddDocumentType(company.id);
+  const limitCheck = await limitCheckPromise;
 
   return (
     <DocumentTypesManager
