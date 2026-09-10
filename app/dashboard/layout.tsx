@@ -1,12 +1,15 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/server";
 import { requireUser, getCompany } from "@/lib/supabase/dal";
 import { getEntitlement } from "@/lib/billing/entitlements";
-import type { AppNotification } from "@/lib/types";
 import { Logo } from "@/app/components/logo";
 import { SignOutButton } from "./_components/sign-out-button";
 import { DashboardShell } from "./_components/dashboard-shell";
+import {
+  NotificationsSlot,
+  NotificationsBellFallback,
+} from "./_components/notifications-slot";
 import { SoftLock } from "./_components/soft-lock";
 
 export default async function DashboardLayout({
@@ -43,29 +46,17 @@ export default async function DashboardLayout({
     return <SoftLock />;
   }
 
-  const supabase = await createClient();
-  const [{ data: notifData }, { count }] = await Promise.all([
-    supabase
-      .from("notifications")
-      .select("id, company_id, contractor_id, type, message, read_at, created_at")
-      .eq("company_id", company.id)
-      .order("created_at", { ascending: false })
-      .limit(10),
-    supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("company_id", company.id)
-      .is("read_at", null),
-  ]);
-
-  const notifications = (notifData ?? []) as AppNotification[];
-  const unreadCount = count ?? 0;
-
+  // Everything above this point gates access and has to resolve first. The
+  // bell does not, so it streams in its own boundary and the shell paints
+  // without waiting on it.
   return (
     <DashboardShell
       companyName={company.name}
-      notifications={notifications}
-      unreadCount={unreadCount}
+      notificationsSlot={
+        <Suspense fallback={<NotificationsBellFallback />}>
+          <NotificationsSlot />
+        </Suspense>
+      }
       trialEndsAt={entitlement.trialEndsAt}
       planName={entitlement.planName}
     >

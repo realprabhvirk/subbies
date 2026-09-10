@@ -14,11 +14,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import type { AppNotification } from "@/lib/types";
 import { Logo } from "@/app/components/logo";
 import { Spinner } from "@/app/components/spinner";
 import { SignOutButton } from "./sign-out-button";
-import { NotificationsBell } from "./notifications-bell";
 
 interface NavItem {
   href: string;
@@ -91,15 +89,14 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export function DashboardShell({
   companyName,
-  notifications,
-  unreadCount,
+  notificationsSlot,
   trialEndsAt,
   planName,
   children,
 }: {
   companyName: string;
-  notifications: AppNotification[];
-  unreadCount: number;
+  /** Server-rendered bell, streamed in its own Suspense boundary. */
+  notificationsSlot: React.ReactNode;
   /** Set only while the company is inside its plan's free trial. */
   trialEndsAt: string | null;
   planName: string | null;
@@ -150,10 +147,7 @@ export function DashboardShell({
           <Logo />
         </Link>
         <div className="flex items-center gap-1">
-          <NotificationsBell
-            notifications={notifications}
-            unreadCount={unreadCount}
-          />
+          {notificationsSlot}
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
@@ -192,10 +186,7 @@ export function DashboardShell({
 
       <div className="flex min-w-0 flex-col">
         <header className="hidden h-16 items-center justify-end border-b border-line bg-surface px-6 lg:flex">
-          <NotificationsBell
-            notifications={notifications}
-            unreadCount={unreadCount}
-          />
+          {notificationsSlot}
         </header>
 
         {trialEndsAt && (
