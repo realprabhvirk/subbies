@@ -5,6 +5,7 @@ import Link from "next/link";
 import { CircleCheck } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
+import { getSiteUrl } from "@/lib/site-url";
 import { Logo } from "@/app/components/logo";
 import { Spinner } from "@/app/components/spinner";
 
@@ -20,9 +21,14 @@ export default function ForgotPasswordPage() {
 
     startTransition(async () => {
       const supabase = createClient();
+      // getSiteUrl() prefers NEXT_PUBLIC_APP_URL over the current origin, so a
+      // reset requested from a preview deployment still lands on the canonical
+      // production host. Note this value is only honoured if it is also in the
+      // Supabase redirect allowlist — otherwise Supabase silently substitutes
+      // the project's Site URL, which is what sends links to localhost.
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         email.trim(),
-        { redirectTo: `${window.location.origin}/reset-password` },
+        { redirectTo: `${getSiteUrl()}/reset-password` },
       );
       // Don't reveal whether the address has an account.
       if (resetError && resetError.status !== 400) {
