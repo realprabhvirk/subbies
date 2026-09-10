@@ -22,10 +22,10 @@ export const EMAIL_COLORS = {
   border: "#ebe7e3", // --color-line (warm-100)
   ink: "#120e0e", // --color-ink (warm-900)
   inkMuted: "#7a736f", // --color-ink-muted (warm-500)
-  brand: "#ee6438", // --color-brand (accent-500)
-  brandHover: "#ce4d2d", // --color-brand-hover (accent-600)
-  attention: "#a43520", // --color-attention (accent-700)
-  attentionBg: "#ffeddf", // --color-attention-bg (accent-50)
+  brand: "#1E3A5F", // --color-brand (accent-500)
+  brandHover: "#2C4F7C", // --color-brand-hover (accent-600) — lighter than base, per spec
+  attention: "#a43520", // --color-attention — frozen orange, unchanged by the brand recolor
+  attentionBg: "#ffeddf", // --color-attention-bg — frozen orange, unchanged by the brand recolor
   approved: "#2f7346", // --color-approved
   approvedBg: "#d9f3df", // --color-approved-bg
   expired: "#a83634", // --color-expired

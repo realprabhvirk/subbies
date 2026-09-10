@@ -37,14 +37,15 @@
   --color-warm-800: oklch(25% 0.009 30);
   --color-warm-900: oklch(17% 0.007 30);
 
-  /* Warm orange accent */
-  --color-accent-50: oklch(96% 0.03 55);
-  --color-accent-100: oklch(92% 0.055 52);
-  --color-accent-200: oklch(87% 0.08 50);
-  --color-accent-400: oklch(73% 0.15 42);
-  --color-accent-500: oklch(67% 0.18 38);
-  --color-accent-600: oklch(59% 0.17 35);
-  --color-accent-700: oklch(49% 0.15 33);
+  /* Steel blue accent (brand). Note: 600 (hover) is deliberately lighter
+     than 500 (base) per the brand spec — #2C4F7C hover over #1E3A5F base. */
+  --color-accent-50: #EAF0F6;
+  --color-accent-100: #D3E0EC;
+  --color-accent-200: #B8CDE0;
+  --color-accent-400: #4A6D93;
+  --color-accent-500: #1E3A5F;
+  --color-accent-600: #2C4F7C;
+  --color-accent-700: #16283F;
 
   /* Neutrals — semantic */
   --color-canvas: var(--color-warm-25);
@@ -66,7 +67,12 @@
   --color-brand-tint: var(--color-accent-50);
   --color-brand-tint-line: var(--color-accent-200);
 
-  /* Status — muted semantic hues; "attention" borrows the accent */
+  /* Status — muted semantic hues, independent of the brand accent.
+     "attention" used to be defined as the accent color (the old design had
+     one orange doing double duty as both brand and "needs attention"
+     status). Now that the brand is steel blue, attention is frozen to that
+     original orange directly so "expiring soon" / rejected-document status
+     stays exactly the amber it always was. */
   --color-approved: oklch(50% 0.1 152);
   --color-approved-bg: oklch(94% 0.038 152);
   --color-approved-line: oklch(86% 0.055 152);
@@ -75,9 +81,9 @@
   --color-review-bg: oklch(94% 0.032 240);
   --color-review-line: oklch(86% 0.05 240);
 
-  --color-attention: var(--color-accent-700);
-  --color-attention-bg: var(--color-accent-50);
-  --color-attention-line: var(--color-accent-200);
+  --color-attention: oklch(49% 0.15 33); /* was --color-accent-700 */
+  --color-attention-bg: oklch(96% 0.03 55); /* was --color-accent-50 */
+  --color-attention-line: oklch(87% 0.08 50); /* was --color-accent-200 */
 
   --color-expired: oklch(50% 0.15 25);
   --color-expired-bg: oklch(94% 0.045 25);
@@ -101,7 +107,7 @@
     0 24px 56px oklch(30% 0.02 40 / 0.09), 0 4px 12px oklch(30% 0.02 40 / 0.05);
   --shadow-xl:
     0 24px 56px oklch(30% 0.02 40 / 0.09), 0 4px 12px oklch(30% 0.02 40 / 0.05);
-  --shadow-accent-glow: 0 12px 40px oklch(67% 0.18 38 / 0.18);
+  --shadow-accent-glow: 0 12px 40px rgba(30, 58, 95, 0.18); /* #1E3A5F @ 18% */
 
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
