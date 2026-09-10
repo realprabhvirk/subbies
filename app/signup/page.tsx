@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
+import { normalizeEmail } from "@/lib/auth/normalize-email";
 import { Logo } from "@/app/components/logo";
 import { Spinner } from "@/app/components/spinner";
 import { PasswordField } from "@/app/components/password-field";
@@ -24,13 +25,36 @@ export default function SignupPage() {
     startTransition(async () => {
       const supabase = createClient();
 
+      // Normalized *before* it ever reaches Supabase — auth.users.email is the
+      // only place this app stores an account's email at all (companies has
+      // no email column of its own), so this is the one point that actually
+      // decides whether prabh+1@gmail.com and prabh+work@gmail.com collide.
+      // Signing both up with the same normalized string means Supabase's own
+      // unique constraint on auth.users.email is what blocks the second one —
+      // a real database-level guarantee, not just an app-layer check.
+      const normalizedEmail = normalizeEmail(email);
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
+        email: normalizedEmail,
         password,
       });
 
       if (authError) {
-        setError(authError.message);
+        setError(
+          authError.message === "User already registered"
+            ? "An account with this email already exists. Try logging in instead."
+            : authError.message,
+        );
+        return;
+      }
+
+      // Supabase's anti-enumeration behavior for an already-registered email:
+      // rather than an explicit error, it can return a 200 with a user object
+      // whose identities array is empty and no session. Treat that the same
+      // as the explicit error above instead of silently proceeding to create
+      // a company row against a session that doesn't exist.
+      if (authData.user && authData.user.identities?.length === 0) {
+        setError("An account with this email already exists. Try logging in instead.");
         return;
       }
 

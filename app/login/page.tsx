@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
+import { normalizeEmail } from "@/lib/auth/normalize-email";
 import { Logo } from "@/app/components/logo";
 import { Spinner } from "@/app/components/spinner";
 import { PasswordField } from "@/app/components/password-field";
@@ -31,8 +32,11 @@ export default function LoginPage() {
 
     startTransition(async () => {
       const supabase = createClient();
+      // The account was created under its normalized email (see signup), so
+      // someone typing the +tag variant they originally used has to be
+      // normalized the same way here or it just won't match.
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+        email: normalizeEmail(email),
         password,
       });
 

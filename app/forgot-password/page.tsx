@@ -6,6 +6,7 @@ import { CircleCheck } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { getSiteUrl } from "@/lib/site-url";
+import { normalizeEmail } from "@/lib/auth/normalize-email";
 import { Logo } from "@/app/components/logo";
 import { Spinner } from "@/app/components/spinner";
 
@@ -26,8 +27,12 @@ export default function ForgotPasswordPage() {
       // production host. Note this value is only honoured if it is also in the
       // Supabase redirect allowlist — otherwise Supabase silently substitutes
       // the project's Site URL, which is what sends links to localhost.
+      //
+      // Normalized the same way as signup: the account is stored under its
+      // normalized email, so requesting a reset via a +tag variant has to be
+      // normalized to find it.
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-        email.trim(),
+        normalizeEmail(email),
         { redirectTo: `${getSiteUrl()}/reset-password` },
       );
       // Don't reveal whether the address has an account.
