@@ -6,12 +6,14 @@ import {
   CalendarClock,
   CircleX,
   ArrowRight,
-  TriangleAlert,
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
 import { StatusBadge } from "@/app/components/status-badge";
+import { Card, CardHeader, StatCard, type StatTone } from "@/app/components/card";
+import { Alert } from "@/app/components/alert";
+import { ButtonLink } from "@/app/components/button";
 import { hasComplianceIssue } from "@/lib/projects";
 import type { ContractorStatus, DocumentStatus } from "@/lib/types";
 
@@ -30,6 +32,13 @@ interface DocRow {
   contractor_id: string;
   status: DocumentStatus;
   expiry_date: string | null;
+}
+
+/** Up to two initials from a business name, for the avatar tile. */
+function initialsOf(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "–";
+  return (words[0][0] + (words[1]?.[0] ?? "")).toUpperCase();
 }
 
 function startOfToday(): number {
@@ -113,31 +122,47 @@ export default async function DashboardPage() {
     ["pending", "awaiting_review", "attention_required"].includes(c.status),
   ).length;
 
-  const stats = [
+  // Share of the roster each figure represents, so a number reads against the
+  // total without needing a chart. Guarded: no contractors means no bar.
+  const total = contractors.length;
+  const shareOf = (n: number) => (total > 0 ? n / total : undefined);
+
+  const stats: {
+    label: string;
+    value: number;
+    icon: typeof CircleCheck;
+    tone: StatTone;
+    note?: string;
+    share?: number;
+  }[] = [
     {
       label: "Approved",
       value: approvedCount,
       icon: CircleCheck,
-      tone: "text-approved",
+      tone: "approved",
+      share: shareOf(approvedCount),
     },
     {
       label: "Pending onboarding",
       value: pendingCount,
       icon: CircleDashed,
-      tone: "text-neutral-status",
+      tone: "neutral",
+      share: shareOf(pendingCount),
     },
     {
       label: "Expiring soon",
       value: expiringContractorIds.size,
       icon: CalendarClock,
-      tone: "text-attention",
+      tone: "attention",
       note: `Within ${EXPIRING_WINDOW_DAYS} days`,
+      share: shareOf(expiringContractorIds.size),
     },
     {
       label: "Expired",
       value: expiredContractorIds.size,
       icon: CircleX,
-      tone: "text-expired",
+      tone: "expired",
+      share: shareOf(expiredContractorIds.size),
     },
   ];
 
@@ -152,64 +177,74 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <header>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          An overview of {company.name}&apos;s contractors and what needs
-          attention.
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-subtle">
+          Dashboard
+        </p>
+        <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">
+          Keep your crew compliant.
+        </h1>
+        <p className="mt-2 max-w-xl text-sm text-ink-muted">
+          Track documents, stay ahead of expiry dates, and keep{" "}
+          {company.name}&apos;s projects moving.
         </p>
       </header>
 
       {error && (
-        <p className="rounded-md bg-expired-bg px-4 py-3 text-sm text-expired">
+        <Alert tone="error">
           We couldn&apos;t load your contractors just now. Refresh to try again.
-        </p>
+        </Alert>
       )}
 
       {projectsWithIssues > 0 && (
-        <Link
-          href="/dashboard/projects"
-          className="flex items-center justify-between gap-3 rounded-md bg-attention-bg px-4 py-3 text-sm text-attention transition-opacity hover:opacity-90"
-        >
-          <span className="flex items-center gap-2">
-            <TriangleAlert className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+        <Link href="/dashboard/projects" className="block">
+          <Alert
+            tone="warning"
+            className="transition-opacity hover:opacity-90"
+            action={
+              <ArrowRight
+                className="mt-0.5 h-4 w-4 shrink-0"
+                strokeWidth={2}
+                aria-hidden
+              />
+            }
+          >
             {projectsWithIssues}{" "}
             {projectsWithIssues === 1 ? "project has" : "projects have"} a
             contractor that isn&apos;t compliant
-          </span>
-          <ArrowRight className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+          </Alert>
         </Link>
       )}
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={stat.label}
-              className="rounded-card border border-line bg-surface shadow-sm p-5"
-            >
-              <div className="flex items-center gap-2 text-sm font-medium text-ink-muted">
-                <Icon className={`h-4 w-4 ${stat.tone}`} strokeWidth={2} aria-hidden />
-                {stat.label}
-              </div>
-              <p className="mt-3 text-3xl font-semibold text-brand-ink tabular-nums">
-                {stat.value}
-              </p>
-              {stat.note && (
-                <p className="mt-1 text-xs text-ink-subtle">{stat.note}</p>
-              )}
-            </div>
-          );
-        })}
+        {stats.map((stat) => (
+          <StatCard
+            key={stat.label}
+            label={stat.label}
+            value={stat.value}
+            icon={stat.icon}
+            tone={stat.tone}
+            note={stat.note}
+            share={stat.share}
+          />
+        ))}
       </section>
 
-      <section className="rounded-card border border-line bg-surface shadow-sm">
-        <div className="border-b border-line px-5 py-4">
-          <h2 className="text-base font-semibold">Action required</h2>
-          <p className="mt-0.5 text-sm text-ink-muted">
-            Contractors with documents to review or issues to resolve.
-          </p>
-        </div>
+      <Card padded={false}>
+        <CardHeader
+          title="Action required"
+          description="Contractors with documents to review or issues to resolve."
+          action={
+            actionRequired.length > 0 ? (
+              <ButtonLink
+                href="/dashboard/contractors"
+                variant="secondary"
+                size="sm"
+              >
+                View all
+              </ButtonLink>
+            ) : undefined
+          }
+        />
 
         {contractors.length === 0 ? (
           <p className="px-5 py-10 text-center text-sm text-ink-muted">
@@ -234,13 +269,21 @@ export default async function DashboardPage() {
                   href={`/dashboard/contractors/${c.id}`}
                   className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-surface-muted"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{c.business_name}</p>
-                    {c.trade && (
-                      <p className="truncate text-sm text-ink-muted">
-                        {c.trade}
-                      </p>
-                    )}
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span
+                      aria-hidden
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-muted text-[11px] font-semibold text-ink-muted"
+                    >
+                      {initialsOf(c.business_name)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{c.business_name}</p>
+                      {c.trade && (
+                        <p className="truncate text-sm text-ink-muted">
+                          {c.trade}
+                        </p>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <StatusBadge
@@ -260,7 +303,8 @@ export default async function DashboardPage() {
             ))}
           </ul>
         )}
-      </section>
+      </Card>
+
     </div>
   );
 }

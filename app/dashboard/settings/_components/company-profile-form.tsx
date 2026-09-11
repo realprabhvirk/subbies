@@ -4,11 +4,12 @@ import { useActionState, useEffect, useState } from "react";
 import { CircleCheck } from "lucide-react";
 
 import { Spinner } from "@/app/components/spinner";
+import { fieldClasses } from "@/app/components/input";
 import type { Company } from "@/lib/types";
 import { updateCompanyProfile, type CompanyProfileState } from "../actions";
 
-const inputClass =
-  "w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-brand";
+// The shared field treatment, so these forms can't drift from the rest.
+const inputClass = fieldClasses();
 
 export function CompanyProfileForm({ company }: { company: Company }) {
   const [state, formAction, pending] = useActionState<

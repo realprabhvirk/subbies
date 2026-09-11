@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Plus, CircleCheck, TriangleAlert } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
 import { canAddContractor } from "@/lib/billing/entitlements";
 import { StatusBadge } from "@/app/components/status-badge";
+import { Alert } from "@/app/components/alert";
+import { EmptyState } from "@/app/components/empty-state";
+import { ButtonLink } from "@/app/components/button";
 import type { Contractor, DocumentStatus } from "@/lib/types";
 import { ResendButton } from "./_components/resend-button";
 
@@ -15,6 +18,13 @@ type ContractorRow = Pick<
   Contractor,
   "id" | "business_name" | "contact_name" | "email" | "trade" | "status" | "created_at"
 >;
+
+/** Up to two initials from a business name, for the avatar tile. */
+function initialsOf(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "–";
+  return (words[0][0] + (words[1]?.[0] ?? "")).toUpperCase();
+}
 
 export default async function ContractorsPage(
   props: PageProps<"/dashboard/contractors">,
@@ -78,96 +88,75 @@ export default async function ContractorsPage(
           </p>
         </div>
         {limitCheck.allowed ? (
-          <Link
-            href="/dashboard/contractors/new"
-            className="inline-flex shrink-0 items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-          >
+          <ButtonLink href="/dashboard/contractors/new" className="shrink-0">
             <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
             Add contractor
-          </Link>
+          </ButtonLink>
         ) : (
-          <Link
+          <ButtonLink
             href="/dashboard/settings?tab=billing"
-            className="inline-flex shrink-0 items-center gap-2 rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+            variant="secondary"
+            className="shrink-0"
           >
             Upgrade to add more
-          </Link>
+          </ButtonLink>
         )}
       </header>
 
       {!limitCheck.allowed && (
-        <div className="flex items-start gap-2 rounded-md bg-attention-bg px-4 py-3 text-sm text-attention">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-          <span>
-            You&apos;re at your plan&apos;s limit of {limitCheck.limit}{" "}
-            contractors.{" "}
-            <Link
-              href="/dashboard/settings?tab=billing"
-              className="font-medium underline"
-            >
-              Upgrade your plan
-            </Link>{" "}
-            to add more.
-          </span>
-        </div>
+        <Alert tone="warning">
+          You&apos;re at your plan&apos;s limit of {limitCheck.limit}{" "}
+          contractors.{" "}
+          <Link
+            href="/dashboard/settings?tab=billing"
+            className="font-medium underline"
+          >
+            Upgrade your plan
+          </Link>{" "}
+          to add more.
+        </Alert>
       )}
 
       {created && (
-        <div
-          className={`flex items-start gap-2 rounded-md px-4 py-3 text-sm ${
-            emailIssue
-              ? "bg-attention-bg text-attention"
-              : "bg-approved-bg text-approved"
-          }`}
-        >
-          {emailIssue ? (
-            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+        <Alert tone={emailIssue ? "warning" : "success"}>
+          {emailIssue === "not_configured" ? (
+            <>
+              <strong>{created}</strong> was added, but the onboarding email
+              couldn&apos;t be sent because email isn&apos;t configured yet. Use{" "}
+              <em>Resend request</em> once it&apos;s set up.
+            </>
+          ) : emailIssue === "send_failed" ? (
+            <>
+              <strong>{created}</strong> was added, but the onboarding email
+              failed to send. Try <em>Resend request</em> in a moment.
+            </>
           ) : (
-            <CircleCheck className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+            <>
+              <strong>{created}</strong> was added and the onboarding request
+              has been emailed.
+            </>
           )}
-          <span>
-            {emailIssue === "not_configured" ? (
-              <>
-                <strong>{created}</strong> was added, but the onboarding email
-                couldn&apos;t be sent because email isn&apos;t configured yet.
-                Use <em>Resend request</em> once it&apos;s set up.
-              </>
-            ) : emailIssue === "send_failed" ? (
-              <>
-                <strong>{created}</strong> was added, but the onboarding email
-                failed to send. Try <em>Resend request</em> in a moment.
-              </>
-            ) : (
-              <>
-                <strong>{created}</strong> was added and the onboarding request
-                has been emailed.
-              </>
-            )}
-          </span>
-        </div>
+        </Alert>
       )}
 
       {error && (
-        <p className="rounded-md bg-expired-bg px-4 py-3 text-sm text-expired">
+        <Alert tone="error">
           We couldn&apos;t load your contractors. Refresh to try again.
-        </p>
+        </Alert>
       )}
 
       {contractors.length === 0 ? (
-        <div className="flex flex-col items-center rounded-card border border-dashed border-line-strong bg-surface px-6 py-16 text-center">
-          <p className="text-sm font-medium">No contractors yet</p>
-          <p className="mt-1 max-w-sm text-sm text-ink-muted">
-            Add a contractor to request their compliance documents and send them
-            a secure upload link.
-          </p>
-          <Link
-            href="/dashboard/contractors/new"
-            className="mt-5 inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-          >
-            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-            Add contractor
-          </Link>
-        </div>
+        <EmptyState
+          icon={Users}
+          title="No contractors yet"
+          description="Add a contractor to request their compliance documents and send them a secure upload link."
+          action={
+            <ButtonLink href="/dashboard/contractors/new">
+              <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+              Add contractor
+            </ButtonLink>
+          }
+        />
       ) : (
         <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
           {contractors.map((c) => {
@@ -177,16 +166,24 @@ export default async function ContractorsPage(
                 key={c.id}
                 className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4"
               >
-                <div className="min-w-0 grow">
-                  <Link
-                    href={`/dashboard/contractors/${c.id}`}
-                    className="font-medium hover:text-brand hover:underline"
+                <div className="flex min-w-0 grow items-center gap-3">
+                  <span
+                    aria-hidden
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-muted text-xs font-semibold text-ink-muted"
                   >
-                    {c.business_name}
-                  </Link>
-                  <p className="truncate text-sm text-ink-muted">
-                    {[c.trade, c.email].filter(Boolean).join(" · ")}
-                  </p>
+                    {initialsOf(c.business_name)}
+                  </span>
+                  <div className="min-w-0">
+                    <Link
+                      href={`/dashboard/contractors/${c.id}`}
+                      className="font-medium hover:text-brand hover:underline"
+                    >
+                      {c.business_name}
+                    </Link>
+                    <p className="truncate text-sm text-ink-muted">
+                      {[c.trade, c.email].filter(Boolean).join(" · ")}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-4">

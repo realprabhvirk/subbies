@@ -4,6 +4,7 @@ import { useActionState, useMemo, useState } from "react";
 import { Check } from "lucide-react";
 
 import { Spinner } from "@/app/components/spinner";
+import { fieldClasses } from "@/app/components/input";
 import type { DocumentType } from "@/lib/types";
 import { createContractor, type NewContractorState } from "../../actions";
 
@@ -34,8 +35,8 @@ function Field({
   );
 }
 
-const inputClass =
-  "w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-brand";
+// The shared field treatment, so these forms can't drift from the rest.
+const inputClass = fieldClasses();
 
 export function NewContractorForm({
   documentTypes,

@@ -6,6 +6,7 @@ import { FileText, Check, X } from "lucide-react";
 
 import { StatusBadge } from "@/app/components/status-badge";
 import { Spinner } from "@/app/components/spinner";
+import { fieldClasses } from "@/app/components/input";
 import type { DocumentStatus } from "@/lib/types";
 import { approveDocument, rejectDocument, getDocumentFileUrl } from "../actions";
 
@@ -223,7 +224,7 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
                 rows={2}
                 maxLength={500}
                 placeholder="e.g. The certificate has expired, please upload a current one."
-                className="w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
+                className={fieldClasses()}
               />
               <div className="flex gap-2">
                 <button

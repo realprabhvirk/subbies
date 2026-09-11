@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeEmail } from "@/lib/auth/normalize-email";
 import { Logo } from "@/app/components/logo";
-import { Spinner } from "@/app/components/spinner";
+import { Button } from "@/app/components/button";
+import { Field, fieldClasses } from "@/app/components/input";
 import { PasswordField } from "@/app/components/password-field";
 
 export default function LoginPage() {
@@ -66,7 +67,7 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        <Logo className="mb-8" />
+        <Logo className="mb-8" height={32} showTagline priority />
         <div className="rounded-card border border-line bg-surface p-6 shadow-sm sm:p-8">
           <h1 className="text-xl font-semibold">Log in</h1>
           <p className="mt-1 text-sm text-ink-muted">
@@ -86,10 +87,7 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleLogin} className="mt-6 space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="email" className="block text-sm font-medium">
-                Email
-              </label>
+            <Field label="Email" htmlFor="email">
               <input
                 id="email"
                 type="email"
@@ -97,9 +95,9 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
+                className={fieldClasses()}
               />
-            </div>
+            </Field>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
@@ -128,14 +126,9 @@ export default function LoginPage() {
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={pending}
-              className="flex w-full items-center justify-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
-            >
-              {pending && <Spinner className="h-4 w-4" />}
+            <Button type="submit" pending={pending} fullWidth>
               {pending ? "Logging in…" : "Log in"}
-            </button>
+            </Button>
           </form>
         </div>
 

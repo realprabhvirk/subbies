@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useTransition } from "react";
 
 import { Spinner } from "@/app/components/spinner";
+import { fieldClasses } from "@/app/components/input";
 import type { ProjectStatus } from "@/lib/types";
 import { createProject, updateProject, type ProjectFormState } from "../actions";
 
@@ -21,8 +22,8 @@ const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
   { value: "completed", label: "Completed" },
 ];
 
-const inputClass =
-  "w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-brand";
+// The shared field treatment, so these forms can't drift from the rest.
+const inputClass = fieldClasses();
 
 export function ProjectDialog({
   project,
