@@ -3,7 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { Check } from "lucide-react";
 
-import { Spinner } from "@/app/components/spinner";
+import { Button } from "@/app/components/button";
 import { fieldClasses } from "@/app/components/input";
 import type { DocumentType } from "@/lib/types";
 import { createContractor, type NewContractorState } from "../../actions";
@@ -186,13 +186,9 @@ export function NewContractorForm({
         {stepOneError && <p className="text-sm text-expired">{stepOneError}</p>}
 
         <div className="flex justify-end pt-1">
-          <button
-            type="button"
-            onClick={handleContinue}
-            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-          >
+          <Button type="button" onClick={handleContinue}>
             Continue
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -263,21 +259,12 @@ export function NewContractorForm({
         )}
 
         <div className="flex items-center justify-between pt-1">
-          <button
-            type="button"
-            onClick={() => setStep(1)}
-            className="rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted"
-          >
+          <Button type="button" variant="secondary" onClick={() => setStep(1)}>
             Back
-          </button>
-          <button
-            type="submit"
-            disabled={pending || selected.size === 0}
-            className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
-          >
-            {pending && <Spinner className="h-4 w-4" />}
+          </Button>
+          <Button type="submit" disabled={selected.size === 0} pending={pending}>
             {pending ? "Sending request…" : "Send onboarding request"}
-          </button>
+          </Button>
         </div>
       </div>
     </form>

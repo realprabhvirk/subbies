@@ -7,6 +7,8 @@ import { UserPlus, X } from "lucide-react";
 
 import { StatusBadge } from "@/app/components/status-badge";
 import { Spinner } from "@/app/components/spinner";
+import { Button } from "@/app/components/button";
+import { fieldClasses } from "@/app/components/input";
 import { hasComplianceIssue, type AssignedContractor } from "@/lib/projects";
 import type { ContractorStatus } from "@/lib/types";
 import { assignContractor, removeContractor } from "../../actions";
@@ -89,7 +91,7 @@ export function ProjectContractorsPanel({
                 id="assign-pick"
                 value={pick}
                 onChange={(e) => setPick(e.target.value)}
-                className="w-full rounded-md border border-line-strong bg-surface px-3 py-1.5 text-sm outline-none focus:border-brand"
+                className={fieldClasses()}
               >
                 <option value="">Select…</option>
                 {available.map((c) => (
@@ -111,22 +113,19 @@ export function ProjectContractorsPanel({
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 placeholder="e.g. Electrical"
-                className="w-full rounded-md border border-line-strong bg-surface px-3 py-1.5 text-sm outline-none focus:border-brand"
+                className={fieldClasses()}
               />
             </div>
-            <button
+            <Button
               type="button"
+              size="sm"
               onClick={assign}
-              disabled={pending || !pick}
-              className="inline-flex items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
+              disabled={!pick}
+              pending={pending && !removingId}
             >
-              {pending && !removingId ? (
-                <Spinner className="h-4 w-4" />
-              ) : (
-                <UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden />
-              )}
+              <UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden />
               Assign
-            </button>
+            </Button>
           </div>
         )}
         {error && <p className="mt-2 text-sm text-expired">{error}</p>}

@@ -2,9 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CircleCheck, TriangleAlert, CreditCard, Clock } from "lucide-react";
+import { CreditCard, Users, FileText, FolderKanban } from "lucide-react";
 
-import { Spinner } from "@/app/components/spinner";
+import { Alert } from "@/app/components/alert";
+import { Button } from "@/app/components/button";
+import { StatCard, type StatTone } from "@/app/components/card";
 import { PlanCards, type BillingPlan } from "@/app/components/plan-cards";
 import type { SubscriptionStatus } from "@/lib/types";
 import type { LimitedResource } from "@/lib/billing/plans";
@@ -30,6 +32,12 @@ const RESOURCE_LABEL: Record<LimitedResource, string> = {
   contractors: "Contractors",
   documentTypes: "Document types",
   projects: "Projects",
+};
+
+const RESOURCE_ICON: Record<LimitedResource, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
+  contractors: Users,
+  documentTypes: FileText,
+  projects: FolderKanban,
 };
 
 function fmt(iso: string | null): string {
@@ -97,14 +105,11 @@ export function BillingPanel({
   return (
     <div className="space-y-6">
       {checkout === "success" && (
-        <div className="flex items-start gap-2 rounded-md bg-approved-bg px-4 py-3 text-sm text-approved">
-          <CircleCheck className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-          <span>
-            {entitlement.onTrial
-              ? "You're all set. Your free trial has started. Nothing has been charged."
-              : "Your plan is active. Thanks for subscribing."}
-          </span>
-        </div>
+        <Alert tone="success">
+          {entitlement.onTrial
+            ? "You're all set. Your free trial has started. Nothing has been charged."
+            : "Your plan is active. Thanks for subscribing."}
+        </Alert>
       )}
       {checkout === "cancelled" && (
         <div className="rounded-md bg-surface-muted px-4 py-3 text-sm text-ink-muted">
@@ -115,41 +120,37 @@ export function BillingPanel({
       {entitlement.paidAccess ? (
         <div className="rounded-card border border-line bg-surface p-6">
           {entitlement.onTrial && !entitlement.cancelAtPeriodEnd && (
-            <div className="mb-4 flex items-start gap-2 rounded-md bg-attention-bg px-3 py-2 text-sm text-attention">
-              <Clock className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-              <span>
-                You&apos;re on a free trial,{" "}
-                <strong>
-                  {daysUntil(entitlement.trialEndsAt)}{" "}
-                  {daysUntil(entitlement.trialEndsAt) === 1 ? "day" : "days"} left
-                </strong>
-                . Your card is charged on {fmt(entitlement.trialEndsAt)} unless
-                you cancel before then.
-              </span>
-            </div>
+            <Alert tone="warning" className="mb-4">
+              You&apos;re on a free trial,{" "}
+              <strong>
+                {daysUntil(entitlement.trialEndsAt)}{" "}
+                {daysUntil(entitlement.trialEndsAt) === 1 ? "day" : "days"} left
+              </strong>
+              . Your card is charged on {fmt(entitlement.trialEndsAt)} unless you
+              cancel before then.
+            </Alert>
           )}
 
           {entitlement.status === "past_due" && (
-            <div className="mb-4 flex items-start gap-2 rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">
-              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-              <span>
-                Your last payment didn&apos;t go through. Update your card to keep
-                your {entitlement.planName} plan. We&apos;ll keep retrying for a
-                few days.
-              </span>
-            </div>
+            <Alert tone="error" className="mb-4">
+              Your last payment didn&apos;t go through. Update your card to keep
+              your {entitlement.planName} plan. We&apos;ll keep retrying for a few
+              days.
+            </Alert>
           )}
 
-          <p className="text-sm font-semibold">
+          {/* Plan name gets the same weight as a stat number — the price is
+              real but secondary information, so it drops to a caption
+              underneath rather than sharing the headline's line. */}
+          <p className="font-display text-2xl font-semibold text-brand-ink">
             {entitlement.planName}
-            {entitlement.planAmount !== null && (
-              <span className="font-normal text-ink-muted">
-                {" "}
-                (A${entitlement.planAmount}/month)
-              </span>
-            )}
           </p>
-          <p className="mt-1 text-sm text-ink-muted">
+          {entitlement.planAmount !== null && (
+            <p className="mt-0.5 text-sm text-ink-muted">
+              A${entitlement.planAmount}/month
+            </p>
+          )}
+          <p className="mt-2 text-sm text-ink-muted">
             {entitlement.cancelAtPeriodEnd
               ? `Cancels ${fmt(entitlement.currentPeriodEnd)}. You keep access until then.`
               : entitlement.status === "past_due"
@@ -160,40 +161,36 @@ export function BillingPanel({
           </p>
 
           <div className="mt-5 flex flex-wrap gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={() => run("portal", openBillingPortal)}
               disabled={pending}
-              className="inline-flex items-center gap-2 rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-muted disabled:opacity-60"
+              pending={busyAction === "portal"}
             >
-              {busyAction === "portal" ? (
-                <Spinner className="h-4 w-4" />
-              ) : (
-                <CreditCard className="h-4 w-4" strokeWidth={2} aria-hidden />
-              )}
+              <CreditCard className="h-4 w-4" strokeWidth={2} aria-hidden />
               Manage billing
-            </button>
+            </Button>
 
             {entitlement.cancelAtPeriodEnd ? (
-              <button
+              <Button
                 type="button"
                 onClick={() => run("resume", resumeSubscription)}
                 disabled={pending}
-                className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
+                pending={busyAction === "resume"}
               >
-                {busyAction === "resume" && <Spinner className="h-4 w-4" />}
                 Keep my plan
-              </button>
+              </Button>
             ) : (
               !confirmCancel && (
-                <button
+                <Button
                   type="button"
+                  variant="danger-outline"
                   onClick={() => setConfirmCancel(true)}
                   disabled={pending}
-                  className="rounded-md px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:text-expired disabled:opacity-60"
                 >
                   Cancel plan
-                </button>
+                </Button>
               )
             )}
           </div>
@@ -206,23 +203,25 @@ export function BillingPanel({
                 until you choose a plan again. Nothing is deleted.
               </p>
               <div className="mt-3 flex gap-2">
-                <button
+                <Button
                   type="button"
+                  variant="danger"
+                  size="sm"
                   onClick={() => run("cancel", cancelSubscription)}
                   disabled={pending}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-expired px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+                  pending={busyAction === "cancel"}
                 >
-                  {busyAction === "cancel" && <Spinner className="h-3.5 w-3.5" />}
                   Confirm cancellation
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setConfirmCancel(false)}
                   disabled={pending}
-                  className="rounded-md border border-line-strong px-3 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-muted"
                 >
                   Keep plan
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -255,24 +254,36 @@ export function BillingPanel({
         </p>
       )}
 
-      <div className="rounded-card border border-line bg-surface p-5">
+      <div>
         <p className="text-sm font-semibold">Usage</p>
-        <dl className="mt-2 space-y-1.5 text-sm">
+        <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {(Object.keys(RESOURCE_LABEL) as LimitedResource[]).map((r) => {
             const limit = limits[r];
             const used = usage[r];
             const atLimit = limit !== null && used >= limit;
+            const tone: StatTone = atLimit ? "attention" : "neutral";
             return (
-              <div key={r} className="flex justify-between">
-                <dt className="text-ink-muted">{RESOURCE_LABEL[r]}</dt>
-                <dd className={atLimit ? "font-medium text-attention" : "text-ink"}>
-                  {used} / {limit === null ? "unlimited" : limit}
-                  {atLimit && " (limit reached)"}
-                </dd>
-              </div>
+              <StatCard
+                key={r}
+                label={RESOURCE_LABEL[r]}
+                value={used}
+                icon={RESOURCE_ICON[r]}
+                tone={tone}
+                // A fraction against infinity ("1 / unlimited") reads oddly —
+                // the count stands alone as the headline number, with the
+                // ceiling (or lack of one) as a caption underneath instead.
+                note={
+                  limit === null
+                    ? "No limit"
+                    : atLimit
+                      ? `Limit reached — ${limit} max`
+                      : `of ${limit}`
+                }
+                share={limit !== null ? used / limit : undefined}
+              />
             );
           })}
-        </dl>
+        </div>
       </div>
     </div>
   );

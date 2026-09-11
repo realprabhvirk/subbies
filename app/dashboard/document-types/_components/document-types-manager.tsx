@@ -1,12 +1,12 @@
 "use client";
 
 import { useActionState, useEffect, useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, X, CalendarClock, BellRing } from "lucide-react";
 
-import { Spinner } from "@/app/components/spinner";
 import { fieldClasses } from "@/app/components/input";
+import { Button, ButtonLink } from "@/app/components/button";
+import { EmptyState } from "@/app/components/empty-state";
 import { ReminderScheduleField } from "./reminder-schedule-field";
 import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
 import type { DocumentType } from "@/lib/types";
@@ -61,21 +61,22 @@ export function DocumentTypesManager({
           </p>
         </div>
         {atLimit ? (
-          <Link
+          <ButtonLink
             href="/dashboard/settings?tab=billing"
-            className="inline-flex shrink-0 items-center gap-2 rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+            variant="secondary"
+            className="shrink-0"
           >
             Upgrade to add more
-          </Link>
+          </ButtonLink>
         ) : (
-          <button
+          <Button
             type="button"
             onClick={() => setDialog({ mode: "create" })}
-            className="inline-flex shrink-0 items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
+            className="shrink-0"
           >
             <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
             Add document type
-          </button>
+          </Button>
         )}
       </header>
 
@@ -88,22 +89,16 @@ export function DocumentTypesManager({
       )}
 
       {types.length === 0 ? (
-        <div className="flex flex-col items-center rounded-card border border-dashed border-line-strong bg-surface px-6 py-16 text-center">
-          <p className="text-sm font-medium">No document types yet</p>
-          <p className="mt-1 max-w-sm text-sm text-ink-muted">
-            Add the documents you need from contractors, for example Public
-            Liability insurance, a trade licence, or a workers compensation
-            certificate.
-          </p>
-          <button
-            type="button"
-            onClick={() => setDialog({ mode: "create" })}
-            className="mt-5 inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-          >
-            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-            Add document type
-          </button>
-        </div>
+        <EmptyState
+          title="No document types yet"
+          description="Add the documents you need from contractors, for example Public Liability insurance, a trade licence, or a workers compensation certificate."
+          action={
+            <Button type="button" onClick={() => setDialog({ mode: "create" })}>
+              <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+              Add document type
+            </Button>
+          }
+        />
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {types.map((type) => (
@@ -163,23 +158,24 @@ export function DocumentTypesManager({
                     can&apos;t be undone.
                   </p>
                   <div className="mt-3 flex gap-2">
-                    <button
+                    <Button
                       type="button"
+                      variant="danger"
+                      size="sm"
                       onClick={() => handleDelete(type.id)}
-                      disabled={isDeleting}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-expired px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 disabled:opacity-60"
+                      pending={isDeleting}
                     >
-                      {isDeleting && <Spinner className="h-3.5 w-3.5" />}
                       {isDeleting ? "Deleting…" : "Delete"}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setDeletingId(null)}
                       disabled={isDeleting}
-                      className="rounded-md border border-line-strong px-3 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-muted"
                     >
                       Cancel
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -322,26 +318,16 @@ function DocumentTypeDialog({
           )}
 
           <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={busy}
-              className="rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted disabled:opacity-60"
-            >
+            <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={busy}
-              className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
-            >
-              {busy && <Spinner className="h-4 w-4" />}
+            </Button>
+            <Button type="submit" pending={busy}>
               {busy
                 ? "Saving…"
                 : isEdit
                   ? "Save changes"
                   : "Add document type"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

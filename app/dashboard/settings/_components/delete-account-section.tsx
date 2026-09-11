@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { TriangleAlert } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
-import { Spinner } from "@/app/components/spinner";
+import { Button } from "@/app/components/button";
 import {
   requestAccountDeletionCode,
   verifyAccountDeletionCode,
@@ -99,15 +99,15 @@ export function DeleteAccountSection() {
       </div>
 
       {step === "warning" && (
-        <button
+        <Button
           type="button"
+          variant="danger-outline"
           onClick={sendCode}
-          disabled={pending}
-          className="mt-4 inline-flex items-center gap-2 rounded-md border border-expired-line px-4 py-2 text-sm font-medium text-expired transition-colors hover:bg-expired-bg disabled:opacity-60"
+          pending={pending}
+          className="mt-4"
         >
-          {pending && <Spinner className="h-4 w-4" />}
           Delete my account
-        </button>
+        </Button>
       )}
 
       {step === "code" && (
@@ -128,14 +128,14 @@ export function DeleteAccountSection() {
             className="w-full max-w-[10rem] rounded-md border border-line-strong bg-surface px-3 py-2 text-center text-lg tracking-[0.3em] outline-none focus:border-brand"
           />
           <div className="flex flex-wrap items-center gap-3">
-            <button
+            <Button
               type="submit"
-              disabled={pending || code.length !== 6}
-              className="inline-flex items-center gap-2 rounded-md bg-expired px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+              variant="danger"
+              disabled={code.length !== 6}
+              pending={pending}
             >
-              {pending && <Spinner className="h-4 w-4" />}
               Verify code
-            </button>
+            </Button>
             <button
               type="button"
               onClick={sendCode}
@@ -181,15 +181,15 @@ export function DeleteAccountSection() {
           </label>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
+            <Button
               type="button"
+              variant="danger"
               onClick={finalizeDeletion}
-              disabled={pending || !consentChecked}
-              className="inline-flex items-center gap-2 rounded-md bg-expired px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={!consentChecked}
+              pending={pending}
             >
-              {pending && <Spinner className="h-4 w-4" />}
               Delete My Account
-            </button>
+            </Button>
             <button
               type="button"
               onClick={resetAll}

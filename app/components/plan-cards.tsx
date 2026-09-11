@@ -2,7 +2,7 @@
 
 import { Check } from "lucide-react";
 
-import { Spinner } from "@/app/components/spinner";
+import { Button } from "@/app/components/button";
 import type { PlanId } from "@/lib/billing/plans";
 
 export interface BillingPlan {
@@ -51,19 +51,16 @@ export function PlanCards({
             </span>
             <span className="text-sm text-ink-muted">/month</span>
           </p>
-          <button
+          <Button
             type="button"
+            variant={plan.featured ? "primary" : "secondary"}
             onClick={() => onChoose(plan.id)}
             disabled={disabled}
-            className={`mt-4 inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-60 ${
-              plan.featured
-                ? "bg-brand text-white hover:bg-brand-hover"
-                : "border border-line-strong text-ink hover:bg-surface-muted"
-            }`}
+            pending={busyPlanId === plan.id}
+            className="mt-4"
           >
-            {busyPlanId === plan.id && <Spinner className="h-4 w-4" />}
             {ctaLabel} {plan.name}
-          </button>
+          </Button>
           <ul className="mt-5 space-y-2 text-sm">
             {plan.features.map((f) => (
               <li key={f} className="flex items-start gap-2">

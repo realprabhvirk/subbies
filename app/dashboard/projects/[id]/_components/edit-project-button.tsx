@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
 
+import { Button } from "@/app/components/button";
 import { ProjectDialog, type ProjectDialogData } from "../../_components/project-dialog";
 
 export function EditProjectButton({ project }: { project: ProjectDialogData }) {
@@ -12,14 +13,10 @@ export function EditProjectButton({ project }: { project: ProjectDialogData }) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted"
-      >
+      <Button type="button" variant="secondary" size="sm" onClick={() => setOpen(true)}>
         <Pencil className="h-4 w-4" strokeWidth={2} aria-hidden />
         Edit details
-      </button>
+      </Button>
       {open && (
         <ProjectDialog
           project={project}
