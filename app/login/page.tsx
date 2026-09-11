@@ -16,13 +16,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [resetDone, setResetDone] = useState(false);
+  const [accountDeleted, setAccountDeleted] = useState(false);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    // One-time read of the URL flag set by the password-reset redirect.
-    if (new URLSearchParams(window.location.search).has("reset")) {
+    // One-time read of the URL flags set by the password-reset redirect and
+    // by the account-deletion flow.
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("reset")) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setResetDone(true);
+    }
+    if (params.has("deleted")) {
+      setAccountDeleted(true);
     }
   }, []);
 
@@ -70,6 +76,12 @@ export default function LoginPage() {
           {resetDone && (
             <p className="mt-4 rounded-md bg-approved-bg px-3 py-2 text-sm text-approved">
               Your password has been updated. Log in with your new password.
+            </p>
+          )}
+
+          {accountDeleted && (
+            <p className="mt-4 rounded-md bg-surface-muted px-3 py-2 text-sm text-ink-muted">
+              Your account and all its data have been permanently deleted.
             </p>
           )}
 

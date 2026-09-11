@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getAppUrl } from "@/lib/app-url";
 import { getStripe } from "@/lib/billing/stripe";
 import { getEntitlement } from "@/lib/billing/entitlements";
+import { hasUsedTrial, shouldSkipTrial } from "@/lib/billing/trial-eligibility";
 import {
   priceIdForPlan,
   PLANS,
@@ -104,6 +105,13 @@ export async function startCheckout(planId: PlanId): Promise<Result> {
   // reconcile path, so its presence means this company has subscribed before.
   const hadSubscriptionBefore = entitlement.stripeSubscriptionId !== null;
 
+  // The second, wider check: this *company* may be brand new, but the email
+  // behind it might not be — a deleted account's owner signing up again under
+  // the same address gets a fresh company row with no subscription history,
+  // which hadSubscriptionBefore alone wouldn't catch. See lib/billing/trial-eligibility.ts.
+  const emailUsedTrialBefore = user?.email ? await hasUsedTrial(user.email) : false;
+  const skipTrial = shouldSkipTrial({ hadSubscriptionBefore, emailUsedTrialBefore });
+
   try {
     const customerId = await resolveCustomerId(
       company.id,
@@ -119,8 +127,10 @@ export async function startCheckout(planId: PlanId): Promise<Result> {
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
         // Card required up front, A$0 taken today, first real charge on day
-        // TRIAL_DAYS unless the company cancels before then.
-        ...(hadSubscriptionBefore
+        // TRIAL_DAYS unless the company cancels before then. Skipped
+        // entirely (charged immediately) if this company or this email has
+        // already had a trial before.
+        ...(skipTrial
           ? {}
           : {
               trial_period_days: TRIAL_DAYS,

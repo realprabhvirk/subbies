@@ -8,6 +8,7 @@ import { reconcileCompanyFromStripe } from "@/lib/billing/sync";
 import { PLANS, PLAN_IDS } from "@/lib/billing/plans";
 import { CompanyProfileForm } from "./_components/company-profile-form";
 import { ChangePasswordForm } from "./_components/change-password-form";
+import { DeleteAccountSection } from "./_components/delete-account-section";
 import { BillingPanel } from "./_components/billing-panel";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -122,6 +123,7 @@ export default async function SettingsPage(
             <p className="mt-1 text-sm text-ink-muted">{user?.email}</p>
           </div>
           <ChangePasswordForm />
+          <DeleteAccountSection />
         </div>
       )}
 
