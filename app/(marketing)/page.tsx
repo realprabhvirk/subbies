@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { Section, Eyebrow, Reveal, PrimaryLink, CtaBand } from "./_components/ui";
 import { TRIAL_DAYS } from "@/lib/billing/plans";
-import { PlaceholderImage } from "./_components/placeholder-image";
 import { ProductPreview } from "./_components/product-preview";
 import { UploadPreview } from "./_components/upload-preview";
 import { ReminderPreview } from "./_components/reminder-preview";
@@ -69,16 +69,14 @@ export default function LandingPage() {
           it's doing a job (contrast), not decoration. */}
       <section className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <PlaceholderImage
-            label="Hero image"
-            spec="1920×1080 · wide job-site, crew, or builder-at-work shot"
-            dark
-            className="h-full w-full"
+          <Image
+            src="/marketing/hero-construction.webp"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
           />
-          {/* Swap-in note: once a real photo lands at this path, replace
-              PlaceholderImage above with next/image (fill + object-cover)
-              inside this same absolutely-positioned wrapper — the scrim
-              below needs no change. */}
           <div className="absolute inset-0 bg-gradient-to-t from-warm-900/85 via-warm-900/55 to-warm-900/20" />
         </div>
 
@@ -160,17 +158,23 @@ export default function LandingPage() {
                       cropping one to 4:3 would just clip rows off it. */}
                   <div className="shrink-0 p-4 pb-0">
                     {step.visual === "photo-onboard" && (
-                      <PlaceholderImage
-                        label="Onboarding photo"
-                        spec="4:3 · adding a contractor on site or in the office"
-                        className="aspect-[4/3] w-full rounded-md"
+                      <Image
+                        src="/marketing/how-it-works-1.webp"
+                        alt="A tradesperson carefully working a piece of timber by hand"
+                        width={900}
+                        height={675}
+                        sizes="(min-width: 640px) 50vw, 100vw"
+                        className="aspect-[4/3] w-full rounded-md object-cover"
                       />
                     )}
                     {step.visual === "photo-track" && (
-                      <PlaceholderImage
-                        label="Craftsmanship photo"
-                        spec="4:3 · close-up trade detail"
-                        className="aspect-[4/3] w-full rounded-md"
+                      <Image
+                        src="/marketing/how-it-works-2.webp"
+                        alt="A tradesperson guiding a track saw through a cut"
+                        width={900}
+                        height={675}
+                        sizes="(min-width: 640px) 50vw, 100vw"
+                        className="aspect-[4/3] w-full rounded-md object-cover"
                       />
                     )}
                     {step.visual === "upload" && (
@@ -205,11 +209,20 @@ export default function LandingPage() {
       <Section className="py-16 sm:py-20">
         <Reveal>
           <div className="grid items-center gap-10 rounded-card border border-line bg-surface p-6 shadow-sm sm:p-10 lg:grid-cols-[0.85fr_1.15fr]">
-            <div className="mx-auto w-full max-w-[13rem] lg:mx-0">
-              <PlaceholderImage
-                label="Founder photo"
-                spec="1:1 · optional"
-                className="aspect-square w-full rounded-full"
+            {/* The placeholder here was framed as a circular founder headshot
+                — sourcing landed on a genuine crew-at-work shot instead (the
+                brief's other allowed option for this slot), and a wide
+                action photo cropped into a circle reads badly, so the frame
+                is a rounded rectangle instead. Same slot, same section,
+                same position — sized to match the image's real aspect. */}
+            <div className="mx-auto w-full max-w-xs lg:mx-0">
+              <Image
+                src="/marketing/trust-crew.webp"
+                alt="Two site supervisors reviewing rebar layout on a job site"
+                width={900}
+                height={675}
+                sizes="(min-width: 1024px) 20vw, 80vw"
+                className="aspect-[4/3] w-full rounded-card object-cover"
               />
             </div>
             <div>
