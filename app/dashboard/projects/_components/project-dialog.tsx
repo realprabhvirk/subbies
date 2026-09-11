@@ -60,12 +60,15 @@ export function ProjectDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div className="absolute inset-0 bg-warm-900/40 backdrop-blur-[2px]" onClick={onClose} />
+      <div
+        className="dialog-backdrop absolute inset-0 bg-warm-900/40 backdrop-blur-[2px]"
+        onClick={onClose}
+      />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="project-dialog-title"
-        className="relative w-full max-w-md rounded-t-card border border-line bg-surface p-6 shadow-xl sm:rounded-card"
+        className="dialog-panel relative w-full max-w-md rounded-t-card border border-line bg-surface p-6 shadow-xl sm:rounded-card"
       >
         <div className="flex items-start justify-between">
           <h2 id="project-dialog-title" className="text-lg font-semibold">

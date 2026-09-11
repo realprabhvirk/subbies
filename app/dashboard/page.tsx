@@ -199,7 +199,7 @@ export default async function DashboardPage() {
         <Link href="/dashboard/projects" className="block">
           <Alert
             tone="warning"
-            className="transition-opacity hover:opacity-90"
+            className="transition-[opacity,box-shadow,transform] duration-[var(--duration-fast)] ease-[var(--ease-standard)] hover:-translate-y-px hover:opacity-90 hover:shadow-sm"
             action={
               <ArrowRight
                 className="mt-0.5 h-4 w-4 shrink-0"
@@ -267,7 +267,7 @@ export default async function DashboardPage() {
               <li key={c.id}>
                 <Link
                   href={`/dashboard/contractors/${c.id}`}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-surface-muted"
+                  className="group flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <span
@@ -293,7 +293,7 @@ export default async function DashboardPage() {
                       }
                     />
                     <ArrowRight
-                      className="h-4 w-4 text-ink-subtle"
+                      className="h-4 w-4 text-ink-subtle transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)] group-hover:translate-x-0.5"
                       strokeWidth={2}
                       aria-hidden
                     />

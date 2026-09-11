@@ -29,7 +29,7 @@ const TONE: Record<IconButtonTone, string> = {
 };
 
 const BASE =
-  "inline-flex shrink-0 items-center justify-center rounded-md p-1.5 transition-colors disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex shrink-0 items-center justify-center rounded-md p-1.5 transition-[background-color,color,transform] duration-[var(--duration-fast)] ease-[var(--ease-standard)] hover:scale-[1.06] active:scale-100 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100";
 
 type IconButtonProps = Omit<React.ComponentProps<"button">, "className"> & {
   tone?: IconButtonTone;

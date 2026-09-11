@@ -3,22 +3,30 @@
  *
  * `padded={false}` is for cards whose content manages its own padding —
  * tables, lists with full-bleed dividers, anything with a header band.
+ *
+ * `interactive` adds the hover lift + deeper shadow for a card that's
+ * genuinely a clickable unit. Leave it false (the default) for a card that
+ * only displays information — a StatCard, a static form panel — since a
+ * card that visibly reacts to hover but goes nowhere reads as a bug, not
+ * polish.
  */
 
 export function Card({
   className = "",
   padded = true,
+  interactive = false,
   children,
 }: {
   className?: string;
   padded?: boolean;
+  interactive?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div
-      className={`rounded-card border border-line bg-surface shadow-sm ${
-        padded ? "p-5" : ""
-      } ${className}`}
+      className={`rounded-card border border-line bg-surface shadow-sm transition-[box-shadow,transform] duration-[var(--duration-base)] ease-[var(--ease-standard)] ${
+        interactive ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-md" : ""
+      } ${padded ? "p-5" : ""} ${className}`}
     >
       {children}
     </div>

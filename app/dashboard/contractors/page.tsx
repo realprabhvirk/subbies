@@ -164,7 +164,7 @@ export default async function ContractorsPage(
             return (
               <li
                 key={c.id}
-                className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4"
+                className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted"
               >
                 <div className="flex min-w-0 grow items-center gap-3">
                   <span
