@@ -1,67 +1,31 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 
-import { requireUser, getCompany } from "@/lib/supabase/dal";
-import { getEntitlement } from "@/lib/billing/entitlements";
-import { Logo } from "@/app/components/logo";
-import { SignOutButton } from "./_components/sign-out-button";
-import { DashboardShell } from "./_components/dashboard-shell";
-import {
-  NotificationsSlot,
-  NotificationsBellFallback,
-} from "./_components/notifications-slot";
-import { SoftLock } from "./_components/soft-lock";
+import { DashboardGate } from "./_components/dashboard-gate";
+import { DashboardShellSkeleton } from "./_components/dashboard-shell-skeleton";
 
-export default async function DashboardLayout({
+/**
+ * Deliberately not async, and does no data access of its own. The previous
+ * version of this file WAS the async gate (requireUser/getCompany/
+ * getEntitlement), which meant every dashboard route — Dashboard,
+ * Contractors, Projects, Document types, Settings — blocked on that same
+ * round trip on every single navigation with nothing on screen while it ran:
+ * loading.tsx exists for every one of those routes, but a same-segment
+ * layout's own blocking data access sits above where loading.tsx's Suspense
+ * boundary applies, so none of them could help. See dashboard-gate.tsx for
+ * the full explanation and the Next.js docs reference.
+ *
+ * Splitting the gate into its own component and wrapping it here is exactly
+ * the fix Next's own docs describe for this situation: wrap the layout's
+ * runtime data access in its own Suspense boundary. DashboardShellSkeleton
+ * matches the real shell's geometry so there's no layout jump when the real
+ * one streams in.
+ */
+export default function DashboardLayout({
   children,
 }: LayoutProps<"/dashboard">) {
-  const user = await requireUser();
-  const company = await getCompany();
-
-  if (!company) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
-        <div className="w-full max-w-md rounded-card border border-line bg-surface p-8 shadow-sm">
-          <Logo className="mb-6" />
-          <h1 className="text-lg font-semibold">Account setup incomplete</h1>
-          <p className="mt-2 text-sm text-ink-muted">
-            Your login exists but it isn&apos;t linked to a company yet. Sign out
-            and sign up again, or contact support if this keeps happening.
-          </p>
-          <div className="mt-6">
-            <SignOutButton variant="inline" />
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  const entitlement = await getEntitlement(company.id);
-
-  // First-time forced plan-selection gate.
-  if (entitlement.needsOnboarding) redirect("/onboarding");
-
-  // Trial ended without payment / plan lapsed — block the dashboard entirely.
-  if (entitlement.softLocked) {
-    return <SoftLock />;
-  }
-
-  // Everything above this point gates access and has to resolve first. The
-  // bell does not, so it streams in its own boundary and the shell paints
-  // without waiting on it.
   return (
-    <DashboardShell
-      companyName={company.name}
-      userEmail={user.email}
-      notificationsSlot={
-        <Suspense fallback={<NotificationsBellFallback />}>
-          <NotificationsSlot />
-        </Suspense>
-      }
-      trialEndsAt={entitlement.trialEndsAt}
-      planName={entitlement.planName}
-    >
-      {children}
-    </DashboardShell>
+    <Suspense fallback={<DashboardShellSkeleton />}>
+      <DashboardGate>{children}</DashboardGate>
+    </Suspense>
   );
 }
