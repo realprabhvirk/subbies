@@ -1,28 +1,13 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import {
-  Send,
-  Inbox,
-  ClipboardCheck,
-  CalendarClock,
-  ShieldCheck,
-  FolderKanban,
-  MailX,
-  CircleCheck,
-  TriangleAlert,
-  Clock,
-} from "lucide-react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
-import {
-  Section,
-  Eyebrow,
-  Reveal,
-  PrimaryLink,
-  SecondaryLink,
-  CtaBand,
-} from "./_components/ui";
+import { Section, Eyebrow, Reveal, PrimaryLink, CtaBand } from "./_components/ui";
 import { TRIAL_DAYS } from "@/lib/billing/plans";
+import { PlaceholderImage } from "./_components/placeholder-image";
 import { ProductPreview } from "./_components/product-preview";
+import { UploadPreview } from "./_components/upload-preview";
+import { ReminderPreview } from "./_components/reminder-preview";
 
 export const metadata: Metadata = {
   title: {
@@ -32,271 +17,245 @@ export const metadata: Metadata = {
     "Stop chasing contractors for paperwork and know whether they're approved to work. Collect, review, and track compliance documents in one place.",
 };
 
-const STEPS = [
+type StepVisual = "photo-onboard" | "upload" | "review" | "photo-track";
+
+const STEPS: { title: string; body: string; visual: StepVisual }[] = [
   {
-    icon: Send,
     title: "Onboard",
     body: "Add a contractor, choose which documents you need, and send one secure link.",
+    visual: "photo-onboard",
   },
   {
-    icon: Inbox,
     title: "Collect",
     body: "They upload everything from their phone. No login, no account, no app to install.",
+    visual: "upload",
   },
   {
-    icon: ClipboardCheck,
     title: "Review",
     body: "Check each document, set its expiry date, approve or send it back with a reason.",
+    visual: "review",
   },
   {
-    icon: CalendarClock,
     title: "Track",
     body: "Everyone's status stays current, and reminders go out before anything expires.",
+    visual: "photo-track",
   },
 ];
 
 const FEATURES = [
   {
-    icon: ShieldCheck,
-    title: "One place to review",
-    body: "Every certificate, licence, and insurance document for every contractor, reviewed and approved from one screen.",
+    title: "No contractor logins",
+    body: "Every competing tool asks the contractor to make an account. That's the step where onboarding stalls — Subbies is one link, nothing to sign up for.",
+    preview: <UploadPreview />,
   },
   {
-    icon: CalendarClock,
-    title: "Expiry tracking",
-    body: "Set an expiry when you approve a document. Subbies reminds the contractor before it lapses and escalates to you if they ignore it.",
+    title: "Automatic expiry reminders",
+    body: "Set an expiry when you approve a document. Subbies reminds the contractor before it lapses, and escalates to you if they ignore it.",
+    preview: <ReminderPreview />,
   },
   {
-    icon: FolderKanban,
-    title: "Projects",
-    body: "See who's assigned to each job and confirm they're compliant before they're on site.",
+    title: "One compliance dashboard",
+    body: "Every certificate, licence, and insurance document for every contractor, reviewed and tracked from one screen — not a shared spreadsheet.",
+    preview: <ProductPreview />,
   },
 ];
-
-const CREW = [
-  { name: "Northside Electrical", role: "Electrical", status: "ok" as const },
-  { name: "BJ Plumbing & Gas", role: "Plumbing", status: "review" as const },
-  { name: "Apex Scaffolding", role: "Scaffolding", status: "attention" as const },
-];
-
-const CREW_STATUS = {
-  ok: { label: "Approved", icon: CircleCheck, cls: "text-approved bg-approved-bg" },
-  review: { label: "Awaiting review", icon: Clock, cls: "text-review bg-review-bg" },
-  attention: {
-    label: "Attention",
-    icon: TriangleAlert,
-    cls: "text-attention bg-attention-bg",
-  },
-};
 
 export default function LandingPage() {
   return (
     <>
-      {/* Hero */}
-      <Section className="pt-14 pb-16 sm:pt-20">
-        <div className="grid items-center gap-12 lg:grid-cols-[1.02fr_0.98fr]">
-          <div>
-            <Eyebrow>Contractor onboarding &amp; compliance</Eyebrow>
-            <h1 className="mt-4 text-[2.6rem] font-semibold leading-[1.08] tracking-tight sm:text-6xl">
+      {/* Hero — full-bleed photo slot with a dark scrim for legible text.
+          The scrim is a plain top-to-bottom gradient over a real photo, which
+          is not the same thing as a decorative gradient-blob background —
+          it's doing a job (contrast), not decoration. */}
+      <section className="relative isolate overflow-hidden">
+        <div className="absolute inset-0 -z-10">
+          <PlaceholderImage
+            label="Hero image"
+            spec="1920×1080 · wide job-site, crew, or builder-at-work shot"
+            dark
+            className="h-full w-full"
+          />
+          {/* Swap-in note: once a real photo lands at this path, replace
+              PlaceholderImage above with next/image (fill + object-cover)
+              inside this same absolutely-positioned wrapper — the scrim
+              below needs no change. */}
+          <div className="absolute inset-0 bg-gradient-to-t from-warm-900/85 via-warm-900/55 to-warm-900/20" />
+        </div>
+
+        <div className="mx-auto max-w-5xl px-4 py-24 sm:px-6 sm:py-32 lg:py-40">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/70">
+              Contractor onboarding &amp; compliance
+            </p>
+            <h1 className="mt-4 text-[2.6rem] font-semibold leading-[1.08] tracking-tight text-white sm:text-6xl">
               Stop chasing contractors for paperwork
             </h1>
-            <p className="mt-5 max-w-xl text-lg text-ink-muted">
+            <p className="mt-5 max-w-xl text-lg text-white/85">
               Collect insurance certificates, licences, and workers comp from
-              your subcontractors, review them in one place, and know at a glance
-              who is approved to work.
+              your subcontractors, review them in one place, and know at a
+              glance who is approved to work.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
               <PrimaryLink href="/signup">Start free</PrimaryLink>
-              <SecondaryLink href="/how-it-works">See how it works</SecondaryLink>
+              <Link
+                href="/how-it-works"
+                className="group inline-flex items-center gap-1.5 text-sm font-medium text-white/90 transition-colors duration-[var(--duration-fast)] hover:text-white"
+              >
+                See how it works
+                <ArrowRight
+                  className="h-4 w-4 transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)] group-hover:translate-x-0.5"
+                  strokeWidth={2}
+                  aria-hidden
+                />
+              </Link>
             </div>
-            <p className="mt-4 text-sm text-ink-subtle">
+            <p className="mt-5 text-sm text-white/60">
               {TRIAL_DAYS} days free on any plan, cancel any time. Built for
               builders, property maintenance, and facilities teams.
             </p>
           </div>
-
-          <div className="relative">
-            <div className="overflow-hidden rounded-card border border-line shadow-sm">
-              <Image
-                src="/marketing/blueprint.jpg"
-                alt="A builder marking up a set of plans"
-                width={1400}
-                height={788}
-                priority
-                sizes="(min-width: 1024px) 46vw, 100vw"
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <div className="absolute -bottom-8 -left-6 hidden w-[19rem] sm:block">
-              <ProductPreview />
-            </div>
-          </div>
         </div>
+      </section>
+
+      {/* The problem — text-led, deliberately light on imagery. The photo
+          did the confidence-building in the hero; this section's job is to
+          name the pain plainly and move on. */}
+      <Section className="py-16 sm:py-20">
+        <Reveal className="mx-auto max-w-2xl text-center">
+          <Eyebrow>The problem</Eyebrow>
+          <h2 className="mt-3 text-2xl font-semibold sm:text-[2rem]">
+            You&apos;re not short on subcontractors. You&apos;re short on
+            certainty about them.
+          </h2>
+          <p className="mt-4 text-ink-muted">
+            Insurance certificates that quietly lapse. A licence you meant to
+            check before the job started. A spreadsheet three people are
+            editing at once, none of them sure which version is current. It
+            costs an afternoon every time you chase it down, and it&apos;s
+            invisible right up until it isn&apos;t — an expired policy on
+            site, discovered at the worst possible moment.
+          </p>
+        </Reveal>
       </Section>
 
-      {/* How it works */}
+      {/* How it works — each step paired with either the real product UI or
+          a supporting photo, never an icon standing in on its own. */}
       <div className="border-y border-line bg-surface">
-        <Section className="py-18 py-16">
+        <Section className="py-16 sm:py-20">
           <Reveal>
             <Eyebrow>How it works</Eyebrow>
             <h2 className="mt-3 max-w-2xl text-2xl font-semibold sm:text-[2rem]">
-              From &ldquo;we need someone Monday&rdquo; to approved, without the
-              back-and-forth
+              From &ldquo;we need someone Monday&rdquo; to approved, without
+              the back-and-forth
             </h2>
           </Reveal>
-          <ol className="mt-12 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((step, i) => {
-              const Icon = step.icon;
-              return (
-                <Reveal key={step.title} className="relative">
-                  <li>
-                    <div className="flex items-baseline gap-3">
-                      <span className="text-3xl font-semibold text-line-strong tabular-nums">
-                        {i + 1}
-                      </span>
-                      <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-brand-tint text-brand-ink">
-                        <Icon className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
+          <ol className="mt-12 grid gap-6 sm:grid-cols-2">
+            {STEPS.map((step, i) => (
+              <Reveal key={step.title}>
+                <li className="flex h-full flex-col overflow-hidden rounded-card border border-line bg-canvas shadow-sm">
+                  {/* The two photo slots get a fixed 4:3 box (that's the shot
+                      to source). The two product-UI mockups render at their
+                      own natural height instead of being force-fit into the
+                      same ratio — they're real card chrome, not a photo, and
+                      cropping one to 4:3 would just clip rows off it. */}
+                  <div className="shrink-0 p-4 pb-0">
+                    {step.visual === "photo-onboard" && (
+                      <PlaceholderImage
+                        label="Onboarding photo"
+                        spec="4:3 · adding a contractor on site or in the office"
+                        className="aspect-[4/3] w-full rounded-md"
+                      />
+                    )}
+                    {step.visual === "photo-track" && (
+                      <PlaceholderImage
+                        label="Craftsmanship photo"
+                        spec="4:3 · close-up trade detail"
+                        className="aspect-[4/3] w-full rounded-md"
+                      />
+                    )}
+                    {step.visual === "upload" && (
+                      <div aria-hidden className="overflow-hidden rounded-md">
+                        <UploadPreview />
+                      </div>
+                    )}
+                    {step.visual === "review" && (
+                      <div aria-hidden className="overflow-hidden rounded-md">
+                        <ProductPreview />
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-subtle">
+                        Step {i + 1}
                       </span>
                     </div>
-                    <h3 className="mt-4 text-lg font-semibold">{step.title}</h3>
+                    <h3 className="mt-1.5 text-lg font-semibold">{step.title}</h3>
                     <p className="mt-1.5 text-sm text-ink-muted">{step.body}</p>
-                  </li>
-                </Reveal>
-              );
-            })}
+                  </div>
+                </li>
+              </Reveal>
+            ))}
           </ol>
         </Section>
       </div>
 
-      {/* Contractor-side / projects — photo + product UI */}
+      {/* Trust — the weakest part of most pre-launch SaaS marketing. No logo
+          wall we don't have yet; a concrete, honest angle instead. */}
       <Section className="py-16 sm:py-20">
         <Reveal>
-          <div className="grid items-center gap-10 lg:grid-cols-2">
-            <div>
-              <Eyebrow>On the job</Eyebrow>
-              <h2 className="mt-3 text-2xl font-semibold sm:text-[2rem]">
-                Know everyone on site is cleared to work
-              </h2>
-              <p className="mt-4 text-ink-muted">
-                Assign contractors to a project and Subbies shows their live
-                compliance status right there. No cross-checking spreadsheets
-                before a site walk. One screen tells you who&apos;s good to go
-                and who isn&apos;t.
-              </p>
-              <p className="mt-3 text-ink-muted">
-                And the contractor never has to log in. They get a single
-                emailed link, upload from their phone, and you review it.
-              </p>
-              <div className="mt-6">
-                <SecondaryLink href="/how-it-works">
-                  See the full workflow
-                </SecondaryLink>
-              </div>
-            </div>
-
-            <div className="relative overflow-hidden rounded-card border border-line shadow-sm">
-              <Image
-                src="/marketing/crew.jpg"
-                alt="A site supervisor with a crew of contractors on a concrete slab"
-                width={1400}
-                height={933}
-                sizes="(min-width: 1024px) 46vw, 100vw"
-                className="h-72 w-full object-cover sm:h-80"
+          <div className="grid items-center gap-10 rounded-card border border-line bg-surface p-6 shadow-sm sm:p-10 lg:grid-cols-[0.85fr_1.15fr]">
+            <div className="mx-auto w-full max-w-[13rem] lg:mx-0">
+              <PlaceholderImage
+                label="Founder photo"
+                spec="1:1 · optional"
+                className="aspect-square w-full rounded-full"
               />
-              <div className="absolute inset-x-3 bottom-3 rounded-md border border-line bg-surface/95 p-3 backdrop-blur">
-                <p className="px-1 pb-1.5 text-xs font-medium text-ink-subtle">
-                  Smith Street: on site
-                </p>
-                <ul className="space-y-1">
-                  {CREW.map((c) => {
-                    const s = CREW_STATUS[c.status];
-                    const Icon = s.icon;
-                    return (
-                      <li
-                        key={c.name}
-                        className="flex items-center justify-between gap-2 rounded px-1 py-1 text-xs"
-                      >
-                        <span className="truncate font-medium">{c.name}</span>
-                        <span
-                          className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 font-medium ${s.cls}`}
-                        >
-                          <Icon className="h-3 w-3" strokeWidth={2} aria-hidden />
-                          {s.label}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
+            </div>
+            <div>
+              <Eyebrow>Why Subbies exists</Eyebrow>
+              <p className="mt-3 text-xl font-medium leading-relaxed text-ink sm:text-2xl">
+                &ldquo;Built by someone who&apos;s spent real afternoons
+                chasing subcontractors for the same insurance certificate
+                twice, because there was nowhere it was supposed to live.&rdquo;
+              </p>
+              <p className="mt-4 text-sm text-ink-muted">
+                Subbies isn&apos;t a feature bolted onto a bigger project
+                management suite — it&apos;s built for exactly one job: know
+                who&apos;s compliant, without the spreadsheet. What you see
+                on this page is the real product, not a mockup of one.
+              </p>
             </div>
           </div>
         </Reveal>
       </Section>
 
-      {/* No contractor logins — the wide feature */}
+      {/* Feature highlights — real screenshots, not stock icons. */}
       <div className="border-y border-line bg-surface">
-        <Section className="py-16">
+        <Section className="py-16 sm:py-20">
           <Reveal>
-            <div className="grid gap-8 rounded-card border border-line bg-canvas p-6 sm:p-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-              <div>
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand-tint text-brand-ink">
-                  <MailX className="h-5 w-5" strokeWidth={2} aria-hidden />
-                </span>
-                <h3 className="mt-4 text-xl font-semibold">
-                  No contractor logins
-                </h3>
-                <p className="mt-2 max-w-md text-ink-muted">
-                  Every competing tool asks the contractor to make an account.
-                  That&apos;s the step where onboarding stalls. Subbies is one
-                  link, nothing to sign up for, nothing to install.
-                </p>
-              </div>
-              <div className="rounded-md border border-line bg-surface p-4 text-sm shadow-sm">
-                <p className="font-medium text-brand-ink">
-                  Northside Builders: documents needed before you start work
-                </p>
-                <p className="mt-2 text-ink-muted">
-                  Hi Dave, please provide:
-                </p>
-                <ul className="mt-2 list-disc pl-5 text-ink-muted">
-                  <li>Public Liability insurance</li>
-                  <li>Electrical licence</li>
-                  <li>Workers compensation</li>
-                </ul>
-                <span className="mt-4 inline-flex rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white">
-                  Upload your documents
-                </span>
-              </div>
-            </div>
+            <Eyebrow>What you get</Eyebrow>
+            <h2 className="mt-3 max-w-2xl text-2xl font-semibold sm:text-[2rem]">
+              The parts that actually take time, handled
+            </h2>
           </Reveal>
-        </Section>
-      </div>
-
-      {/* Feature grid */}
-      <Section className="py-16">
-        <Reveal>
-          <Eyebrow>What you get</Eyebrow>
-          <h2 className="mt-3 max-w-2xl text-2xl font-semibold sm:text-[2rem]">
-            The parts that actually take time, handled
-          </h2>
-        </Reveal>
-        <div className="mt-10 grid gap-4 sm:grid-cols-3">
-          {FEATURES.map((f) => {
-            const Icon = f.icon;
-            return (
-              <Reveal key={f.title}>
-                <div className="h-full rounded-card border border-line bg-surface p-6">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand-tint text-brand-ink">
-                    <Icon className="h-5 w-5" strokeWidth={2} aria-hidden />
-                  </span>
-                  <h3 className="mt-4 text-base font-semibold">{f.title}</h3>
-                  <p className="mt-1.5 text-sm text-ink-muted">{f.body}</p>
+          <div className="mt-10 grid gap-6 lg:grid-cols-3">
+            {FEATURES.map((f) => (
+              <Reveal key={f.title} className="h-full">
+                <div className="flex h-full flex-col overflow-hidden rounded-card border border-line bg-canvas shadow-sm">
+                  <div aria-hidden className="p-4 pb-0">
+                    {f.preview}
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-base font-semibold">{f.title}</h3>
+                    <p className="mt-1.5 text-sm text-ink-muted">{f.body}</p>
+                  </div>
                 </div>
               </Reveal>
-            );
-          })}
-        </div>
-      </Section>
+            ))}
+          </div>
+        </Section>
+      </div>
 
       <CtaBand />
     </>

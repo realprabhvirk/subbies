@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+
+import { ButtonLink } from "@/app/components/button";
 
 export function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
@@ -34,6 +35,12 @@ export function Section({
   );
 }
 
+// Both link helpers below are thin wrappers around the shared Button
+// primitives (app/components/button.tsx) rather than a second, marketing-only
+// button style — so the hover lift/shadow treatment defined once there
+// reaches every marketing page through this one file, and a future change to
+// how buttons feel doesn't need a separate marketing-side edit.
+
 export function PrimaryLink({
   href,
   children,
@@ -42,13 +49,10 @@ export function PrimaryLink({
   children: React.ReactNode;
 }) {
   return (
-    <Link
-      href={href}
-      className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-[background,transform] hover:bg-brand-hover active:scale-[0.98]"
-    >
+    <ButtonLink href={href} size="lg">
       {children}
       <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
-    </Link>
+    </ButtonLink>
   );
 }
 
@@ -60,12 +64,9 @@ export function SecondaryLink({
   children: React.ReactNode;
 }) {
   return (
-    <Link
-      href={href}
-      className="inline-flex items-center rounded-md border border-line-strong px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
-    >
+    <ButtonLink href={href} variant="secondary" size="lg">
       {children}
-    </Link>
+    </ButtonLink>
   );
 }
 
@@ -84,19 +85,8 @@ export function CtaBand({
           {sub}
         </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
-          <Link
-            href="/signup"
-            className="inline-flex items-center gap-2 rounded-md bg-brand px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-[background,transform] hover:bg-brand-hover active:scale-[0.98]"
-          >
-            Create your account
-            <ArrowRight className="h-4 w-4" strokeWidth={2} aria-hidden />
-          </Link>
-          <Link
-            href="/how-it-works"
-            className="inline-flex items-center rounded-md border border-line-strong px-5 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
-          >
-            See how it works
-          </Link>
+          <PrimaryLink href="/signup">Create your account</PrimaryLink>
+          <SecondaryLink href="/how-it-works">See how it works</SecondaryLink>
         </div>
       </div>
     </Section>

@@ -87,7 +87,7 @@ export function ProjectsManager({
           {projects.map((p) => (
             <li
               key={p.id}
-              className="flex flex-col rounded-card border border-line bg-surface shadow-sm p-5"
+              className="flex flex-col rounded-card border border-line bg-surface shadow-sm p-5 transition-[box-shadow,transform] duration-[var(--duration-base)] ease-[var(--ease-standard)] hover:-translate-y-0.5 hover:shadow-md"
             >
               <div className="flex items-start justify-between gap-3">
                 <Link

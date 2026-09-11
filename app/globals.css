@@ -121,10 +121,16 @@
   --radius-card: 12px;
   --radius-full: 999px;
 
-  /* Shadows — soft, large-blur, low-opacity only */
-  --shadow-sm: 0 1px 2px oklch(30% 0.01 40 / 0.04);
+  /* Shadows — soft, large-blur, low-opacity only.
+     shadow-sm was near-invisible (a 1px/4% hairline) — every card and button
+     read as flat at rest regardless of what sat on top of it. Given a second,
+     wider layer so resting surfaces read as gently raised; shadow-md deepened
+     to match, so the step up on hover is still a real step, not a rounding
+     error. */
+  --shadow-sm:
+    0 1px 2px oklch(30% 0.02 40 / 0.05), 0 2px 6px oklch(30% 0.02 40 / 0.05);
   --shadow-md:
-    0 8px 24px oklch(30% 0.02 40 / 0.06), 0 2px 6px oklch(30% 0.02 40 / 0.04);
+    0 10px 28px oklch(30% 0.02 40 / 0.08), 0 2px 8px oklch(30% 0.02 40 / 0.05);
   --shadow-lg:
     0 24px 56px oklch(30% 0.02 40 / 0.09), 0 4px 12px oklch(30% 0.02 40 / 0.05);
   --shadow-xl:
@@ -214,6 +220,35 @@
   select:focus-visible,
   textarea:focus-visible {
     outline: none;
+  }
+}
+
+/*
+  Dialog enter animation — the project and document-type dialogs previously
+  just appeared, fully rendered, the instant their state flipped to open.
+  These play once on mount (there's no exit animation: closing unmounts the
+  dialog immediately, which is the right tradeoff here — an exit transition
+  needs the close to wait for it, and a form the user just cancelled out of
+  shouldn't linger). Reduced-motion gets the same zero-duration snap as
+  .reveal, never a flash of an invisible dialog.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes subbies-backdrop-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes subbies-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.98);
+    }
+  }
+  .dialog-backdrop {
+    animation: subbies-backdrop-in var(--duration-base) var(--ease-out) both;
+  }
+  .dialog-panel {
+    animation: subbies-panel-in var(--duration-base) var(--ease-out) both;
   }
 }
 
