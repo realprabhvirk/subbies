@@ -4,7 +4,7 @@ import { requireUser, getCompany } from "@/lib/supabase/dal";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/billing/stripe";
 import { getEntitlement } from "@/lib/billing/entitlements";
-import { recordUsedTrial } from "@/lib/billing/trial-eligibility";
+import { recordUsedTrial, isTrialLedgerReachable } from "@/lib/billing/trial-eligibility";
 import {
   requestDeletionCode,
   verifyDeletionCode,
@@ -78,6 +78,23 @@ export async function confirmAccountDeletion(code: string): Promise<ConfirmDelet
   const check = await verifyDeletionCode(user.id, code.trim());
   if (!check.ok) {
     return { ok: false, error: CODE_ERROR_MESSAGE[check.reason] };
+  }
+
+  // 0. Preflight. Step 2 below writes the trial ledger, and step 1 cancels
+  //    billing irreversibly — so if the ledger is unreachable (most likely
+  //    migration 0009 never run), find that out now, while nothing has been
+  //    touched, instead of after the subscription is already cancelled. That
+  //    ordering is what stops a broken ledger from leaving someone cancelled
+  //    but not deleted.
+  if (!(await isTrialLedgerReachable())) {
+    console.error(
+      "confirmAccountDeletion: aborting before any irreversible step — trial ledger unreachable",
+    );
+    return {
+      ok: false,
+      error:
+        "Account deletion isn't available right now. Nothing was changed or cancelled. Contact support.",
+    };
   }
 
   const company = await getCompany();

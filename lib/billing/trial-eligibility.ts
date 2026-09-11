@@ -2,9 +2,12 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeEmail } from "@/lib/auth/normalize-email";
-import { shouldSkipTrial } from "./trial-eligibility-policy";
+import {
+  shouldSkipTrial,
+  emailUsedTrialFromLookup,
+} from "./trial-eligibility-policy";
 
-export { shouldSkipTrial };
+export { shouldSkipTrial, emailUsedTrialFromLookup };
 
 /**
  * Permanent ledger of normalized emails that have already consumed a free
@@ -36,14 +39,39 @@ export async function hasUsedTrial(email: string): Promise<boolean> {
     .maybeSingle<{ email: string }>();
 
   if (error) {
-    console.error("hasUsedTrial: lookup failed", error);
-    // Fail closed: if we can't tell whether this email already had a trial,
-    // don't hand out one we can't verify is owed. Checkout still works —
-    // the only difference is the card is charged immediately instead of
-    // after a trial, which is the same outcome as a real repeat customer.
-    return true;
+    // Loud, because a broken ledger means the anti-abuse check is silently
+    // not running — but it must NOT deny the trial to everyone. See
+    // emailUsedTrialFromLookup for why this fails open rather than closed.
+    // PGRST205 here means migration 0009 hasn't been run on this project.
+    console.error("hasUsedTrial: lookup failed, allowing the trial", error);
   }
-  return data !== null;
+
+  return emailUsedTrialFromLookup({
+    found: data !== null,
+    lookupFailed: Boolean(error),
+  });
+}
+
+/**
+ * Cheap probe that the ledger table is actually reachable.
+ *
+ * Used as a preflight in the deletion flow specifically so a missing or
+ * broken ledger is caught BEFORE the irreversible Stripe cancellation,
+ * rather than after it — otherwise a failure to record the ledger leaves
+ * someone with their subscription cancelled and their account still there.
+ */
+export async function isTrialLedgerReachable(): Promise<boolean> {
+  const admin = createAdminClient();
+  const { error } = await admin.from("used_trial_emails").select("email").limit(1);
+
+  if (error) {
+    console.error(
+      "isTrialLedgerReachable: used_trial_emails is unreachable — has migration 0009 been run?",
+      error,
+    );
+    return false;
+  }
+  return true;
 }
 
 /** Idempotent — safe to call even if this email is already recorded. */
