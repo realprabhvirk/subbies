@@ -4,6 +4,7 @@ import { useActionState, useEffect, useTransition } from "react";
 import { X } from "lucide-react";
 
 import { Button } from "@/app/components/button";
+import { IconButton } from "@/app/components/icon-button";
 import { fieldClasses } from "@/app/components/input";
 import type { ProjectStatus } from "@/lib/types";
 import { createProject, updateProject, type ProjectFormState } from "../actions";
@@ -70,14 +71,9 @@ export function ProjectDialog({
           <h2 id="project-dialog-title" className="text-lg font-semibold">
             {isEdit ? "Edit project" : "New project"}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-muted"
-            aria-label="Close"
-          >
+          <IconButton onClick={onClose} aria-label="Close">
             <X className="h-5 w-5" strokeWidth={2} />
-          </button>
+          </IconButton>
         </div>
 
         <form action={formAction} className="mt-5 space-y-4">

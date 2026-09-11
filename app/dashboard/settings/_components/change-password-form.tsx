@@ -5,6 +5,7 @@ import { CircleCheck } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/app/components/button";
+import { Field } from "@/app/components/input";
 import { PasswordField } from "@/app/components/password-field";
 
 export function ChangePasswordForm() {
@@ -54,10 +55,7 @@ export function ChangePasswordForm() {
         </p>
       </div>
 
-      <div className="space-y-1.5">
-        <label htmlFor="new-password" className="block text-sm font-medium">
-          New password
-        </label>
+      <Field label="New password" htmlFor="new-password">
         <PasswordField
           id="new-password"
           autoComplete="new-password"
@@ -66,12 +64,9 @@ export function ChangePasswordForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-      </div>
+      </Field>
 
-      <div className="space-y-1.5">
-        <label htmlFor="confirm-password" className="block text-sm font-medium">
-          Confirm new password
-        </label>
+      <Field label="Confirm new password" htmlFor="confirm-password">
         <PasswordField
           id="confirm-password"
           autoComplete="new-password"
@@ -80,7 +75,7 @@ export function ChangePasswordForm() {
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
         />
-      </div>
+      </Field>
 
       {error && (
         <p className="rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">

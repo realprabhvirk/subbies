@@ -4,36 +4,11 @@ import { useActionState, useMemo, useState } from "react";
 import { Check } from "lucide-react";
 
 import { Button } from "@/app/components/button";
-import { fieldClasses } from "@/app/components/input";
+import { Field, fieldClasses } from "@/app/components/input";
 import type { DocumentType } from "@/lib/types";
 import { createContractor, type NewContractorState } from "../../actions";
 
 const STEP_ONE_FIELDS = ["business_name", "contact_name", "email", "phone", "trade"] as const;
-
-function Field({
-  id,
-  label,
-  error,
-  children,
-  hint,
-}: {
-  id: string;
-  label: string;
-  error?: string;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-sm font-medium">
-        {label}
-      </label>
-      {children}
-      {hint && !error && <p className="text-xs text-ink-subtle">{hint}</p>}
-      {error && <p className="text-sm text-expired">{error}</p>}
-    </div>
-  );
-}
 
 // The shared field treatment, so these forms can't drift from the rest.
 const inputClass = fieldClasses();
@@ -115,7 +90,7 @@ export function NewContractorForm({
           step === 1 ? "" : "hidden"
         }`}
       >
-        <Field id="business_name" label="Business name" error={state?.fieldErrors?.business_name}>
+        <Field htmlFor="business_name" label="Business name" error={state?.fieldErrors?.business_name}>
           <input
             id="business_name"
             name="business_name"
@@ -128,7 +103,7 @@ export function NewContractorForm({
           />
         </Field>
 
-        <Field id="contact_name" label="Contact name" error={state?.fieldErrors?.contact_name}>
+        <Field htmlFor="contact_name" label="Contact name" error={state?.fieldErrors?.contact_name}>
           <input
             id="contact_name"
             name="contact_name"
@@ -141,7 +116,7 @@ export function NewContractorForm({
         </Field>
 
         <Field
-          id="email"
+          htmlFor="email"
           label="Email"
           error={state?.fieldErrors?.email}
           hint="Where the secure upload link is sent."
@@ -158,7 +133,7 @@ export function NewContractorForm({
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field id="phone" label="Phone" error={state?.fieldErrors?.phone}>
+          <Field htmlFor="phone" label="Phone" error={state?.fieldErrors?.phone}>
             <input
               id="phone"
               name="phone"
@@ -169,7 +144,7 @@ export function NewContractorForm({
               className={inputClass}
             />
           </Field>
-          <Field id="trade" label="Trade" error={state?.fieldErrors?.trade}>
+          <Field htmlFor="trade" label="Trade" error={state?.fieldErrors?.trade}>
             <input
               id="trade"
               name="trade"

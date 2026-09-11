@@ -7,6 +7,7 @@ import { Plus, Pencil, MapPin, Users, TriangleAlert } from "lucide-react";
 
 import { StatusBadge } from "@/app/components/status-badge";
 import { ButtonLink, Button } from "@/app/components/button";
+import { IconButton } from "@/app/components/icon-button";
 import { EmptyState } from "@/app/components/empty-state";
 import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
 import type { ProjectStatus } from "@/lib/types";
@@ -97,8 +98,7 @@ export function ProjectsManager({
                 </Link>
                 <div className="flex shrink-0 items-center gap-1">
                   <StatusBadge kind="project" status={p.status} />
-                  <button
-                    type="button"
+                  <IconButton
                     onClick={() =>
                       setDialog({
                         mode: "edit",
@@ -112,11 +112,10 @@ export function ProjectsManager({
                         },
                       })
                     }
-                    className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
                     aria-label={`Edit ${p.name}`}
                   >
                     <Pencil className="h-4 w-4" strokeWidth={2} />
-                  </button>
+                  </IconButton>
                 </div>
               </div>
 

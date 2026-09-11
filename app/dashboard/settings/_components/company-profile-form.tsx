@@ -4,12 +4,9 @@ import { useActionState, useEffect, useState } from "react";
 import { CircleCheck } from "lucide-react";
 
 import { Button } from "@/app/components/button";
-import { fieldClasses } from "@/app/components/input";
+import { Input } from "@/app/components/input";
 import type { Company } from "@/lib/types";
 import { updateCompanyProfile, type CompanyProfileState } from "../actions";
-
-// The shared field treatment, so these forms can't drift from the rest.
-const inputClass = fieldClasses();
 
 export function CompanyProfileForm({ company }: { company: Company }) {
   const [state, formAction, pending] = useActionState<
@@ -30,57 +27,46 @@ export function CompanyProfileForm({ company }: { company: Company }) {
 
   return (
     <form action={formAction} className="space-y-4 rounded-card border border-line bg-surface shadow-sm p-6">
-      <div className="space-y-1.5">
-        <label htmlFor="name" className="block text-sm font-medium">
-          Company name
-        </label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          required
-          maxLength={120}
-          defaultValue={company.name}
-          className={inputClass}
-        />
-        {state?.fieldErrors?.name && (
-          <p className="text-sm text-expired">{state.fieldErrors.name}</p>
-        )}
-      </div>
+      <Input
+        id="name"
+        name="name"
+        type="text"
+        required
+        maxLength={120}
+        defaultValue={company.name}
+        label="Company name"
+        error={state?.fieldErrors?.name}
+      />
 
-      <div className="space-y-1.5">
-        <label htmlFor="address" className="block text-sm font-medium">
-          Address <span className="font-normal text-ink-subtle">(optional)</span>
-        </label>
-        <input
-          id="address"
-          name="address"
-          type="text"
-          maxLength={250}
-          defaultValue={company.address ?? ""}
-          className={inputClass}
-        />
-        {state?.fieldErrors?.address && (
-          <p className="text-sm text-expired">{state.fieldErrors.address}</p>
-        )}
-      </div>
+      <Input
+        id="address"
+        name="address"
+        type="text"
+        maxLength={250}
+        defaultValue={company.address ?? ""}
+        label={
+          <>
+            Address{" "}
+            <span className="font-normal text-ink-subtle">(optional)</span>
+          </>
+        }
+        error={state?.fieldErrors?.address}
+      />
 
-      <div className="space-y-1.5">
-        <label htmlFor="phone" className="block text-sm font-medium">
-          Phone <span className="font-normal text-ink-subtle">(optional)</span>
-        </label>
-        <input
-          id="phone"
-          name="phone"
-          type="tel"
-          maxLength={40}
-          defaultValue={company.phone ?? ""}
-          className={inputClass}
-        />
-        {state?.fieldErrors?.phone && (
-          <p className="text-sm text-expired">{state.fieldErrors.phone}</p>
-        )}
-      </div>
+      <Input
+        id="phone"
+        name="phone"
+        type="tel"
+        maxLength={40}
+        defaultValue={company.phone ?? ""}
+        label={
+          <>
+            Phone{" "}
+            <span className="font-normal text-ink-subtle">(optional)</span>
+          </>
+        }
+        error={state?.fieldErrors?.phone}
+      />
 
       {state?.error && (
         <p className="rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">

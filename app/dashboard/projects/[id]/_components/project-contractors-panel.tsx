@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { UserPlus, X } from "lucide-react";
 
 import { StatusBadge } from "@/app/components/status-badge";
-import { Spinner } from "@/app/components/spinner";
 import { Button } from "@/app/components/button";
+import { IconButton } from "@/app/components/icon-button";
 import { fieldClasses } from "@/app/components/input";
 import { hasComplianceIssue, type AssignedContractor } from "@/lib/projects";
 import type { ContractorStatus } from "@/lib/types";
@@ -156,19 +156,15 @@ export function ProjectContractorsPanel({
               </div>
               <div className="flex items-center gap-3">
                 <StatusBadge kind="contractor" status={a.status} />
-                <button
-                  type="button"
+                <IconButton
+                  tone="danger"
                   onClick={() => remove(a.projectContractorId)}
                   disabled={pending}
-                  className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-expired-bg hover:text-expired disabled:opacity-60"
+                  pending={removingId === a.projectContractorId}
                   aria-label={`Remove ${a.businessName} from this project`}
                 >
-                  {removingId === a.projectContractorId ? (
-                    <Spinner className="h-4 w-4" />
-                  ) : (
-                    <X className="h-4 w-4" strokeWidth={2} />
-                  )}
-                </button>
+                  <X className="h-4 w-4" strokeWidth={2} />
+                </IconButton>
               </div>
             </li>
           ))}

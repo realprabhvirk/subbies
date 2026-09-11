@@ -6,6 +6,7 @@ import { TriangleAlert } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/app/components/button";
+import { fieldClasses } from "@/app/components/input";
 import {
   requestAccountDeletionCode,
   verifyAccountDeletionCode,
@@ -116,6 +117,16 @@ export function DeleteAccountSection() {
             We sent a 6-digit code to your account email. Enter it below to
             continue. It expires in 10 minutes.
           </p>
+          {/* Hand-written until now, which left it the one field in the app
+              whose focus ring snapped rather than faded (no `transition-shadow`)
+              and which re-declared a `focus:border-brand` that globals.css
+              already applies to every input. The size and tracking overrides
+              are the only part actually specific to a 6-digit code.
+
+              `text-lg!` needs the important flag: fieldClasses() carries
+              `text-sm`, and Tailwind emits `.text-sm` *after* `.text-lg` in the
+              stylesheet, so without it the later rule wins on equal specificity
+              and the code renders at body size regardless of class order here. */}
           <input
             type="text"
             inputMode="numeric"
@@ -125,7 +136,10 @@ export function DeleteAccountSection() {
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
             placeholder="000000"
-            className="w-full max-w-[10rem] rounded-md border border-line-strong bg-surface px-3 py-2 text-center text-lg tracking-[0.3em] outline-none focus:border-brand"
+            className={fieldClasses(
+              false,
+              "max-w-[10rem] text-center text-lg! tracking-[0.3em]",
+            )}
           />
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -136,22 +150,22 @@ export function DeleteAccountSection() {
             >
               Verify code
             </Button>
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={sendCode}
               disabled={pending || cooldown > 0}
-              className="text-sm font-medium text-brand hover:underline disabled:cursor-not-allowed disabled:text-ink-subtle disabled:no-underline"
             >
               {cooldown > 0 ? `Resend code (${cooldown}s)` : "Resend code"}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="ghost"
               onClick={resetAll}
               disabled={pending}
-              className="text-sm text-ink-muted hover:text-ink"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </form>
       )}
@@ -190,14 +204,14 @@ export function DeleteAccountSection() {
             >
               Delete My Account
             </Button>
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={resetAll}
               disabled={pending}
-              className="text-sm text-ink-muted hover:text-ink"
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       )}
