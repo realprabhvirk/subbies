@@ -7,6 +7,7 @@ import {
   CircleX,
   CircleDot,
   PauseCircle,
+  Ban,
 } from "lucide-react";
 
 import type {
@@ -72,6 +73,11 @@ export const documentStatusMeta: Record<DocumentStatus, StatusMeta> = {
     label: "Rejected",
     icon: CircleX,
     className: "text-expired bg-expired-bg",
+  },
+  revoked: {
+    label: "Revoked",
+    icon: Ban,
+    className: "text-neutral-status bg-neutral-status-bg",
   },
 };
 

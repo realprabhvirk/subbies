@@ -12,7 +12,17 @@ export type ContractorStatus =
   | "attention_required"
   | "expired";
 
-export type DocumentStatus = "requested" | "uploaded" | "approved" | "rejected";
+export type DocumentStatus =
+  | "requested"
+  | "uploaded"
+  | "approved"
+  | "rejected"
+  // The company cancelled the request before the contractor responded.
+  // Terminal: excluded from compliance-status derivation entirely (see
+  // lib/contractor-status.ts) and hidden from the contractor's checklist —
+  // it's as if the request never existed, except the row (and its history)
+  // stays for the audit trail.
+  | "revoked";
 
 export interface Company {
   id: string;
@@ -55,6 +65,19 @@ export interface ContractorDocument {
   reminder_count: number;
   created_at: string;
   updated_at: string;
+}
+
+/**
+ * One uploaded file attached to a contractor_documents row. A document
+ * requirement can have several of these (e.g. a primary certificate plus a
+ * supporting page) — see supabase/migrations/0011_contractor_document_files.sql.
+ */
+export interface ContractorDocumentFile {
+  id: string;
+  contractor_document_id: string;
+  file_path: string;
+  file_name: string | null;
+  created_at: string;
 }
 
 export interface ContractorToken {

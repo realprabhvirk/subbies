@@ -26,15 +26,21 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
+interface DocFileRow {
+  id: string;
+  file_path: string;
+  file_name: string | null;
+}
+
 interface DocRow {
   id: string;
   status: DocumentStatus;
-  file_url: string | null;
   expiry_date: string | null;
   rejection_reason: string | null;
   created_at: string;
   updated_at: string;
   document_types: { name: string; default_duration_months: number } | null;
+  contractor_document_files: DocFileRow[] | null;
 }
 
 interface AssignmentRow {
@@ -82,7 +88,7 @@ export default async function ContractorDetailPage(
     supabase
       .from("contractor_documents")
       .select(
-        "id, status, file_url, expiry_date, rejection_reason, created_at, updated_at, document_types(name, default_duration_months)",
+        "id, status, expiry_date, rejection_reason, created_at, updated_at, document_types(name, default_duration_months), contractor_document_files(id, file_path, file_name)",
       )
       .eq("contractor_id", contractor.id),
     supabase
@@ -103,7 +109,10 @@ export default async function ContractorDetailPage(
       documentName: d.document_types?.name ?? "Document",
       defaultDurationMonths: d.document_types?.default_duration_months ?? 12,
       status: d.status,
-      hasFile: Boolean(d.file_url),
+      files: (d.contractor_document_files ?? []).map((f) => ({
+        id: f.id,
+        fileName: f.file_name,
+      })),
       expiryDate: d.expiry_date,
       rejectionReason: d.rejection_reason,
     }))
