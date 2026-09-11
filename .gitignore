@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Design system source (not app code)
 /Branding/
+
+# Design system reference export (unzipped for reference, not app code)
+/design-reference/

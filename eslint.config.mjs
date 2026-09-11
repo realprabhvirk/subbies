@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Unzipped design-system export kept for visual reference only. It is not
+    // app code, it is not shipped, and it is gitignored — linting it just
+    // reports other people's style choices as errors in our runs.
+    "design-reference/**",
   ]),
 ]);
 

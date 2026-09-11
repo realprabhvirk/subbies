@@ -10,7 +10,8 @@ import { Spinner } from "@/app/components/spinner";
 export function SignOutButton({
   variant = "menu",
 }: {
-  variant?: "menu" | "inline";
+  /** "sidebar" is the dark navigation rail; the others sit on light surfaces. */
+  variant?: "menu" | "inline" | "sidebar";
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -22,6 +23,24 @@ export function SignOutButton({
       router.refresh();
     });
   };
+
+  if (variant === "sidebar") {
+    return (
+      <button
+        type="button"
+        onClick={handleSignOut}
+        disabled={pending}
+        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink disabled:opacity-60"
+      >
+        {pending ? (
+          <Spinner className="h-4 w-4" />
+        ) : (
+          <LogOut className="h-4 w-4" strokeWidth={2} aria-hidden />
+        )}
+        {pending ? "Signing out…" : "Sign out"}
+      </button>
+    );
+  }
 
   if (variant === "inline") {
     return (

@@ -15,7 +15,7 @@ import { SoftLock } from "./_components/soft-lock";
 export default async function DashboardLayout({
   children,
 }: LayoutProps<"/dashboard">) {
-  await requireUser();
+  const user = await requireUser();
   const company = await getCompany();
 
   if (!company) {
@@ -52,6 +52,7 @@ export default async function DashboardLayout({
   return (
     <DashboardShell
       companyName={company.name}
+      userEmail={user.email}
       notificationsSlot={
         <Suspense fallback={<NotificationsBellFallback />}>
           <NotificationsSlot />
