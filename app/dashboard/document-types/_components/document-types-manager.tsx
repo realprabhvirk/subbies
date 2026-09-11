@@ -6,6 +6,7 @@ import { Plus, Pencil, Trash2, X, CalendarClock, BellRing } from "lucide-react";
 
 import { fieldClasses } from "@/app/components/input";
 import { Button, ButtonLink } from "@/app/components/button";
+import { IconButton } from "@/app/components/icon-button";
 import { EmptyState } from "@/app/components/empty-state";
 import { ReminderScheduleField } from "./reminder-schedule-field";
 import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
@@ -109,25 +110,22 @@ export function DocumentTypesManager({
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-base font-semibold">{type.name}</h2>
                 <div className="flex shrink-0 gap-1">
-                  <button
-                    type="button"
+                  <IconButton
                     onClick={() => setDialog({ mode: "edit", type })}
-                    className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
                     aria-label={`Edit ${type.name}`}
                   >
                     <Pencil className="h-4 w-4" strokeWidth={2} />
-                  </button>
-                  <button
-                    type="button"
+                  </IconButton>
+                  <IconButton
+                    tone="danger"
                     onClick={() => {
                       setDeleteError(null);
                       setDeletingId(type.id);
                     }}
-                    className="rounded-md p-1.5 text-ink-muted transition-colors hover:bg-expired-bg hover:text-expired"
                     aria-label={`Delete ${type.name}`}
                   >
                     <Trash2 className="h-4 w-4" strokeWidth={2} />
-                  </button>
+                  </IconButton>
                 </div>
               </div>
 
@@ -244,14 +242,9 @@ function DocumentTypeDialog({
           <h2 id="doc-type-dialog-title" className="text-lg font-semibold">
             {isEdit ? "Edit document type" : "Add document type"}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md p-1.5 text-ink-muted hover:bg-surface-muted"
-            aria-label="Close"
-          >
+          <IconButton onClick={onClose} aria-label="Close">
             <X className="h-5 w-5" strokeWidth={2} />
-          </button>
+          </IconButton>
         </div>
 
         <form action={formAction} className="mt-5 space-y-4">

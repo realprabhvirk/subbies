@@ -23,7 +23,12 @@ export function Field({
   error,
   children,
 }: {
-  label?: string;
+  /**
+   * ReactNode rather than string so a label can carry an inline qualifier —
+   * the de-emphasised "(optional)" the settings forms use — without those
+   * forms having to re-implement this wrapper to get it.
+   */
+  label?: React.ReactNode;
   htmlFor?: string;
   hint?: string;
   error?: string;
@@ -47,7 +52,7 @@ export function Field({
 }
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
-  label?: string;
+  label?: React.ReactNode;
   hint?: string;
   error?: string;
 };
