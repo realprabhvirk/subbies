@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
 import { StatusBadge } from "@/app/components/status-badge";
 import { buildContractorActivity } from "@/lib/contractor-activity";
+import { groupFilesByDocument, type GroupedFile } from "@/lib/document-files-logic";
 import type {
   ContractorStatus,
   DocumentStatus,
@@ -26,12 +27,6 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
-interface DocFileRow {
-  id: string;
-  file_path: string;
-  file_name: string | null;
-}
-
 interface DocRow {
   id: string;
   status: DocumentStatus;
@@ -40,7 +35,6 @@ interface DocRow {
   created_at: string;
   updated_at: string;
   document_types: { name: string; default_duration_months: number } | null;
-  contractor_document_files: DocFileRow[] | null;
 }
 
 interface AssignmentRow {
@@ -84,24 +78,57 @@ export default async function ContractorDetailPage(
 
   if (!contractor) notFound();
 
-  const [{ data: docsData }, { data: assignmentData }] = await Promise.all([
-    supabase
-      .from("contractor_documents")
-      .select(
-        "id, status, expiry_date, rejection_reason, created_at, updated_at, document_types(name, default_duration_months), contractor_document_files(id, file_path, file_name)",
-      )
-      .eq("contractor_id", contractor.id),
-    supabase
-      .from("project_contractors")
-      .select(
-        "id, role_on_project, assigned_at, removed_at, projects(id, name, status)",
-      )
-      .eq("contractor_id", contractor.id)
-      .order("assigned_at", { ascending: false }),
-  ]);
+  // Files are fetched as a separate query rather than embedded in the
+  // contractor_documents select below. An embed failure poisons the whole
+  // query's result — with this contractor's actual document requirements
+  // one of the two things riding on it, that previously meant a files-table
+  // hiccup could make a contractor with a full document history render as
+  // "no documents were requested from this contractor" with nothing logged
+  // to say why. Kept separate, its own failure only costs filenames on
+  // already-uploaded documents, logged rather than swallowed.
+  const [{ data: docsData, error: docsError }, { data: assignmentData }] =
+    await Promise.all([
+      supabase
+        .from("contractor_documents")
+        .select(
+          "id, status, expiry_date, rejection_reason, created_at, updated_at, document_types(name, default_duration_months)",
+        )
+        .eq("contractor_id", contractor.id),
+      supabase
+        .from("project_contractors")
+        .select(
+          "id, role_on_project, assigned_at, removed_at, projects(id, name, status)",
+        )
+        .eq("contractor_id", contractor.id)
+        .order("assigned_at", { ascending: false }),
+    ]);
+
+  if (docsError) {
+    console.error("ContractorDetailPage: documents query failed", docsError);
+  }
 
   const docRows = (docsData ?? []) as unknown as DocRow[];
   const assignmentRows = (assignmentData ?? []) as unknown as AssignmentRow[];
+
+  let filesByDoc = new Map<string, GroupedFile[]>();
+  if (docRows.length > 0) {
+    const { data: files, error: filesError } = await supabase
+      .from("contractor_document_files")
+      .select("id, file_name, contractor_document_id")
+      .in(
+        "contractor_document_id",
+        docRows.map((d) => d.id),
+      );
+
+    if (filesError) {
+      console.error(
+        "ContractorDetailPage: file list query failed, showing documents without filenames",
+        filesError,
+      );
+    } else {
+      filesByDoc = groupFilesByDocument(files ?? []);
+    }
+  }
 
   const documents = docRows
     .map((d) => ({
@@ -109,10 +136,7 @@ export default async function ContractorDetailPage(
       documentName: d.document_types?.name ?? "Document",
       defaultDurationMonths: d.document_types?.default_duration_months ?? 12,
       status: d.status,
-      files: (d.contractor_document_files ?? []).map((f) => ({
-        id: f.id,
-        fileName: f.file_name,
-      })),
+      files: filesByDoc.get(d.id) ?? [],
       expiryDate: d.expiry_date,
       rejectionReason: d.rejection_reason,
     }))

@@ -2,6 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ContractorDocument, DocumentStatus } from "@/lib/types";
+import { groupFilesByDocument } from "@/lib/document-files-logic";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -144,31 +145,60 @@ export async function getOnboardingContext(
 
   const { data: docs, error: docsError } = await admin
     .from("contractor_documents")
-    .select(
-      "id, status, rejection_reason, document_types(name), contractor_document_files(id, file_name)",
-    )
+    .select("id, status, rejection_reason, document_types(name)")
     // A revoked request is cancelled — the contractor has nothing to act on
     // and shouldn't see it at all, as if it had never been asked for.
     .eq("contractor_id", contractor.id)
     .neq("status", "revoked");
 
-  if (docsError) return null;
+  // This is the actual gate: does the token resolve to a real contractor
+  // with real document requirements. A failure here is genuinely fatal —
+  // there's nothing to show — so it's the one query in this function
+  // allowed to turn into "the link is invalid".
+  if (docsError) {
+    console.error("getOnboardingContext: documents query failed", docsError);
+    return null;
+  }
+
+  // The list of already-uploaded files per document is fetched separately,
+  // deliberately, and its failure is never allowed to fail the function
+  // above it. A join here that comes back empty or errors just means the
+  // checklist renders without filenames on already-submitted documents —
+  // annoying, not "this contractor's entire upload link is broken". Keeping
+  // it as a second query (rather than embedding contractor_document_files
+  // in the select above) is what makes that separation possible: an embed
+  // failure poisons the whole query's result, a separate query's failure
+  // only poisons its own.
+  const docIds = (docs ?? []).map((d) => d.id);
+  let filesByDoc = new Map<string, OnboardingChecklistFile[]>();
+  if (docIds.length > 0) {
+    const { data: files, error: filesError } = await admin
+      .from("contractor_document_files")
+      .select("id, file_name, contractor_document_id")
+      .in("contractor_document_id", docIds);
+
+    if (filesError) {
+      console.error(
+        "getOnboardingContext: file list query failed, showing the checklist without filenames",
+        filesError,
+      );
+    } else {
+      filesByDoc = groupFilesByDocument(files ?? []);
+    }
+  }
 
   const items: OnboardingChecklistItem[] = (docs ?? [])
     .map((d) => {
       const row = d as unknown as Pick<
         ContractorDocument,
         "id" | "status" | "rejection_reason"
-      > & {
-        document_types: { name: string } | null;
-        contractor_document_files: OnboardingChecklistFile[] | null;
-      };
+      > & { document_types: { name: string } | null };
       return {
         id: row.id,
         documentName: row.document_types?.name ?? "Document",
         status: row.status,
         rejectionReason: row.rejection_reason,
-        files: row.contractor_document_files ?? [],
+        files: filesByDoc.get(row.id) ?? [],
       };
     })
     .sort((a, b) => a.documentName.localeCompare(b.documentName));
