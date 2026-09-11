@@ -50,3 +50,31 @@ test("input with no @ at all is only lowercased and trimmed, not rejected", () =
   // normalizeEmail doesn't validate shape — callers already do that.
   assert.equal(normalizeEmail("  NotAnEmail  "), "notanemail");
 });
+
+test("TEMP testing exception: pvirk0@outlook.com's +tag variants stay distinct", () => {
+  assert.equal(normalizeEmail("pvirk0+1@outlook.com"), "pvirk0+1@outlook.com");
+  assert.equal(normalizeEmail("pvirk0+2@outlook.com"), "pvirk0+2@outlook.com");
+  assert.notEqual(
+    normalizeEmail("pvirk0+1@outlook.com"),
+    normalizeEmail("pvirk0+2@outlook.com"),
+  );
+  // Case-insensitive, same as the rest of normalizeEmail.
+  assert.equal(normalizeEmail("Pvirk0+Test@Outlook.com"), "pvirk0+test@outlook.com");
+});
+
+test("TEMP testing exception does not affect anyone else", () => {
+  assert.equal(normalizeEmail("someoneelse+1@gmail.com"), "someoneelse@gmail.com");
+});
+
+test("TEMP testing exception is an exact match, not a prefix or substring match", () => {
+  // A lookalike local part must NOT accidentally qualify for the exemption —
+  // this is the case that would turn a testing convenience into a loophole.
+  assert.equal(normalizeEmail("pvirk00+1@outlook.com"), "pvirk00@outlook.com");
+  assert.equal(normalizeEmail("xpvirk0+1@outlook.com"), "xpvirk0@outlook.com");
+  assert.equal(normalizeEmail("pvirk0.evil+1@outlook.com"), "pvirk0.evil@outlook.com");
+});
+
+test("TEMP testing exception does not extend to a different domain", () => {
+  // Same local part, wrong domain — must not match.
+  assert.equal(normalizeEmail("pvirk0+1@gmail.com"), "pvirk0@gmail.com");
+});

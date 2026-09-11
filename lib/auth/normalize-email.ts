@@ -32,6 +32,26 @@ const ALIAS_TAG_DOMAINS = new Set([
   "live.com",
 ]);
 
+/**
+ * TEMP: testing exception, remove before production launch.
+ *
+ * Base addresses (lowercased) exempt from +tag stripping, so their owner can
+ * create multiple real Supabase accounts for manual QA — pvirk0+1@outlook.com,
+ * pvirk0+2@outlook.com, etc. — each a genuinely distinct account.
+ *
+ * Matched by EXACT string equality against the tag-stripped address, never a
+ * prefix or substring check. That's the property that keeps this from being
+ * a spoofing hole: pvirk00@outlook.com and xpvirk0@outlook.com strip to
+ * "pvirk00@outlook.com" / "xpvirk0@outlook.com", neither of which equals
+ * "pvirk0@outlook.com", so neither matches — they get normalized like anyone
+ * else's address. This set also grants no access by itself; it only decides
+ * whether two literal strings collapse into one account before Supabase's
+ * own uniqueness constraint sees them.
+ */
+const NORMALIZATION_EXEMPT_BASE_EMAILS = new Set([
+  "pvirk0@outlook.com", // TEMP: testing exception, remove before production launch
+]);
+
 export function normalizeEmail(email: string): string {
   const lowered = email.trim().toLowerCase();
 
@@ -45,6 +65,14 @@ export function normalizeEmail(email: string): string {
 
   const plusIndex = local.indexOf("+");
   const strippedLocal = plusIndex === -1 ? local : local.slice(0, plusIndex);
+  const wouldNormalizeTo = `${strippedLocal}@${domain}`;
 
-  return `${strippedLocal}@${domain}`;
+  // TEMP: testing exception, remove before production launch — see
+  // NORMALIZATION_EXEMPT_BASE_EMAILS above. Return the lowercased/trimmed
+  // input as-is, tag intact, instead of the stripped form.
+  if (NORMALIZATION_EXEMPT_BASE_EMAILS.has(wouldNormalizeTo)) {
+    return lowered;
+  }
+
+  return wouldNormalizeTo;
 }
