@@ -56,7 +56,10 @@ export function NotificationsBell({
       <button
         type="button"
         onClick={handleOpen}
-        className="relative rounded-md p-2 text-ink-muted transition-colors hover:bg-surface-muted"
+        // Inherits its colour from whichever header it sits in — the light
+        // desktop bar or the navy mobile one — and tints its own hover from
+        // that colour, so one bell works on both surfaces.
+        className="relative rounded-md p-2 text-current transition-colors hover:bg-current/10"
         aria-label={
           unreadCount > 0
             ? `Notifications, ${unreadCount} unread`

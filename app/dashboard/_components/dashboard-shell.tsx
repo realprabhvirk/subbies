@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -25,11 +26,19 @@ interface NavItem {
   exact?: boolean;
 }
 
-const NAV: NavItem[] = [
+/**
+ * Only routes that actually exist. The dashboard mockup showed extra rails
+ * (Documents, Reminders, Reports) that have no pages behind them — shipping
+ * those as nav items would just be five links to a 404.
+ */
+const MAIN_NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/dashboard/contractors", label: "Contractors", icon: Users },
   { href: "/dashboard/projects", label: "Projects", icon: FolderKanban },
   { href: "/dashboard/document-types", label: "Document types", icon: FileText },
+];
+
+const ACCOUNT_NAV: NavItem[] = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
@@ -60,15 +69,23 @@ function NavLink({
       href={item.href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors ${
+      className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm transition-colors ${
         active
-          ? "bg-brand-tint font-semibold text-brand-active"
-          : "font-medium text-ink-muted hover:bg-surface-muted hover:text-ink"
+          ? "bg-sidebar-active-bg font-semibold text-sidebar-ink"
+          : "font-medium text-sidebar-ink-muted hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
       }`}
     >
       <NavIcon Icon={item.icon} />
       {item.label}
     </Link>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-sidebar-ink-subtle">
+      {children}
+    </p>
   );
 }
 
@@ -79,22 +96,23 @@ function trialDaysLeft(iso: string): number {
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink-subtle">
-      {children}
-    </p>
-  );
+/** Up to two initials from the company name, for the avatar tile. */
+function initialsOf(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "–";
+  return (words[0][0] + (words[1]?.[0] ?? "")).toUpperCase();
 }
 
 export function DashboardShell({
   companyName,
+  userEmail,
   notificationsSlot,
   trialEndsAt,
   planName,
   children,
 }: {
   companyName: string;
+  userEmail: string | null;
   /** Server-rendered bell, streamed in its own Suspense boundary. */
   notificationsSlot: React.ReactNode;
   /** Set only while the company is inside its plan's free trial. */
@@ -104,54 +122,112 @@ export function DashboardShell({
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const initials = initialsOf(companyName);
 
-  const nav = (onNavigate?: () => void) => (
-    <nav className="flex flex-1 flex-col gap-1 p-3">
-      <SectionLabel>Main menu</SectionLabel>
-      {NAV.map((item) => (
-        <NavLink
-          key={item.href}
-          item={item}
-          active={isActive(pathname, item)}
-          onNavigate={onNavigate}
+  /**
+   * One sidebar body, rendered twice — fixed rail on desktop, drawer on
+   * mobile. Same markup and same tokens both times, so the rail can't drift
+   * from the drawer as either one gets edited.
+   */
+  const sidebarBody = (onNavigate?: () => void) => (
+    <>
+      <nav className="flex-1 overflow-y-auto p-3">
+        <SectionLabel>Main menu</SectionLabel>
+        <div className="flex flex-col gap-1">
+          {MAIN_NAV.map((item) => (
+            <NavLink
+              key={item.href}
+              item={item}
+              active={isActive(pathname, item)}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </div>
+
+        <div className="my-3 border-t border-sidebar-border" />
+
+        <div className="flex flex-col gap-1">
+          {ACCOUNT_NAV.map((item) => (
+            <NavLink
+              key={item.href}
+              item={item}
+              active={isActive(pathname, item)}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </div>
+      </nav>
+
+      {/* Decorative brand panel. Desktop only — on a phone the drawer needs
+          its height for navigation, not atmosphere. */}
+      <div className="relative hidden h-28 shrink-0 overflow-hidden lg:block">
+        <Image
+          src="/brand/blueprint.jpg"
+          alt=""
+          fill
+          sizes="248px"
+          className="object-cover opacity-[0.14] grayscale"
         />
-      ))}
-    </nav>
-  );
+        <div className="absolute inset-0 flex flex-col justify-end p-5">
+          <p className="text-[11px] font-semibold uppercase leading-relaxed tracking-[0.08em] text-sidebar-ink-muted">
+            Safer sites
+            <br />
+            Stronger builds
+          </p>
+          <span className="mt-2 h-px w-8 bg-sidebar-ink-subtle" aria-hidden />
+        </div>
+      </div>
 
-  const account = (
-    <div className="border-t border-line p-3">
-      <p className="truncate px-3 pb-1.5 text-xs text-ink-subtle">
-        {companyName}
-      </p>
-      <SignOutButton />
-    </div>
+      <div className="shrink-0 border-t border-sidebar-border p-3">
+        <div className="flex items-center gap-2.5 px-1 pb-2">
+          <span
+            aria-hidden
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-active-bg text-[11px] font-semibold text-sidebar-ink"
+          >
+            {initials}
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-sidebar-ink">
+              {companyName}
+            </p>
+            {userEmail && (
+              <p className="truncate text-xs text-sidebar-ink-subtle">
+                {userEmail}
+              </p>
+            )}
+          </div>
+        </div>
+        <SignOutButton variant="sidebar" />
+      </div>
+    </>
   );
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[15.5rem_1fr]">
-      {/* Desktop sidebar */}
-      <aside className="hidden border-r border-line bg-surface lg:flex lg:flex-col">
-        <div className="flex h-16 items-center px-5">
-          <Link href="/dashboard">
-            <Logo />
+    <div className="min-h-screen lg:grid lg:grid-cols-[var(--sidebar-width)_1fr]">
+      {/* Desktop rail */}
+      <aside
+        data-surface="sidebar"
+        className="hidden border-r border-sidebar-border bg-sidebar-bg lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col"
+      >
+        <div className="flex h-(--header-height) shrink-0 items-center px-5">
+          <Link href="/dashboard" aria-label="Subbies home">
+            <Logo tone="inverse" height={30} showTagline priority />
           </Link>
         </div>
-        {nav()}
-        {account}
+        {sidebarBody()}
       </aside>
 
       {/* Mobile header */}
-      <header className="flex h-14 items-center justify-between border-b border-line bg-surface px-4 lg:hidden">
-        <Link href="/dashboard">
-          <Logo />
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-sidebar-border bg-sidebar-bg px-4 lg:hidden">
+        <Link href="/dashboard" aria-label="Subbies home">
+          <Logo tone="inverse" height={24} priority />
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 text-sidebar-ink-muted">
           {notificationsSlot}
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="rounded-md p-2 text-ink-muted hover:bg-surface-muted"
+            className="rounded-md p-2 text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
             aria-label="Open menu"
           >
             <Menu className="h-5 w-5" strokeWidth={2} />
@@ -159,40 +235,58 @@ export function DashboardShell({
         </div>
       </header>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — the same rail, same tokens */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden">
           <div
-            className="absolute inset-0 bg-warm-900/40 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-warm-900/50 backdrop-blur-[2px]"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[80%] flex-col bg-surface shadow-lg">
-            <div className="flex h-14 items-center justify-between border-b border-line px-4">
-              <Logo />
+          <div
+            data-surface="sidebar"
+            className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-sidebar-bg shadow-lg"
+          >
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-sidebar-border px-4">
+              <Logo tone="inverse" height={24} />
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="rounded-md p-2 text-ink-muted hover:bg-surface-muted"
+                className="rounded-md p-2 text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
                 aria-label="Close menu"
               >
                 <X className="h-5 w-5" strokeWidth={2} />
               </button>
             </div>
-            {nav(() => setMobileOpen(false))}
-            {account}
+            {sidebarBody(() => setMobileOpen(false))}
           </div>
         </div>
       )}
 
       <div className="flex min-w-0 flex-col">
-        <header className="hidden h-16 items-center justify-end border-b border-line bg-surface px-6 lg:flex">
+        {/* Desktop top bar. No search field: the app has no search to run, and
+            a box that does nothing is worse than no box. */}
+        <header className="sticky top-0 z-20 hidden h-(--header-height) items-center justify-end gap-3 border-b border-line bg-surface px-8 text-ink-muted lg:flex">
           {notificationsSlot}
+          <div className="flex items-center gap-2.5 border-l border-line pl-3">
+            <span
+              aria-hidden
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-[11px] font-semibold text-white"
+            >
+              {initials}
+            </span>
+            <div className="min-w-0 text-sm leading-tight">
+              <p className="truncate font-medium text-ink">{companyName}</p>
+              {userEmail && (
+                <p className="truncate text-xs text-ink-subtle">{userEmail}</p>
+              )}
+            </div>
+          </div>
         </header>
 
         {trialEndsAt && (
           <Link
             href="/dashboard/settings?tab=billing"
-            className="flex items-center justify-center gap-1.5 border-b border-line bg-surface-muted px-4 py-2 text-center text-sm text-ink-muted transition-colors hover:bg-surface"
+            className="flex flex-wrap items-center justify-center gap-x-1.5 border-b border-line bg-attention-bg px-4 py-2 text-center text-sm text-attention transition-colors hover:brightness-[0.98]"
           >
             <span>
               {trialDaysLeft(trialEndsAt) === 0
@@ -201,11 +295,13 @@ export function DashboardShell({
                     trialDaysLeft(trialEndsAt) === 1 ? "day" : "days"
                   } left of your free trial`}
             </span>
-            <span className="font-semibold text-brand">Manage billing</span>
+            <span className="font-semibold underline underline-offset-2">
+              Manage billing
+            </span>
           </Link>
         )}
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6 lg:px-10">
+        <main className="mx-auto w-full max-w-(--content-max-width) flex-1 px-4 py-8 sm:px-6 lg:px-8">
           {children}
         </main>
       </div>

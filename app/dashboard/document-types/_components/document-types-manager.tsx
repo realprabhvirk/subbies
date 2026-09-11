@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, X, CalendarClock, BellRing } from "lucide-react";
 
 import { Spinner } from "@/app/components/spinner";
+import { fieldClasses } from "@/app/components/input";
 import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
 import type { DocumentType } from "@/lib/types";
 import {
@@ -271,7 +272,7 @@ function DocumentTypeDialog({
               maxLength={80}
               defaultValue={existing?.name ?? ""}
               placeholder="e.g. Public Liability insurance"
-              className="w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
+              className={fieldClasses()}
             />
             {state?.fieldErrors?.name && (
               <p className="text-sm text-expired">{state.fieldErrors.name}</p>
@@ -294,7 +295,7 @@ function DocumentTypeDialog({
               max={120}
               required
               defaultValue={existing?.default_duration_months ?? 12}
-              className="w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
+              className={fieldClasses()}
             />
             <p className="text-xs text-ink-subtle">
               Used to pre-fill the expiry date when a document is approved. Still
@@ -317,7 +318,7 @@ function DocumentTypeDialog({
               type="text"
               defaultValue={(existing?.reminder_days ?? [30, 14, 7]).join(", ")}
               placeholder="30, 14, 7"
-              className="w-full rounded-md border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
+              className={fieldClasses()}
             />
             <p className="text-xs text-ink-subtle">
               Comma-separated. Leave blank for no reminders.

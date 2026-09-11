@@ -3,16 +3,26 @@
 /*
   Subbies Design System (v2)
   --------------------------------------------------------------------------
-  Off-white base, white card surfaces, warm neutral greys, and a single warm
-  orange accent used sparingly — on the primary action, active nav, key data,
-  and small status accents only, never as a large background fill.
+  Warm off-white canvas, white card surfaces, warm neutral greys, a steel-blue
+  brand accent, and a near-black navy navigation rail. The accent is used
+  sparingly — primary action, active nav, links, key data — never as a large
+  background fill. The one large dark surface is the sidebar, which is what
+  gives the app its structure: dark rail left, light content right.
 
   Type: Space Grotesk (display/headings/numbers), Hanken Grotesk (body/UI),
-  IBM Plex Mono (timestamps / tabular values).
+  IBM Plex Mono (timestamps / tabular values). Loaded via next/font in
+  app/layout.tsx — never an @import here, which would block render.
 
-  The existing semantic utility names (bg-surface, text-ink, border-line,
-  bg-brand, rounded-card, the status colours …) are kept and re-pointed at the
-  new palette, so the whole app reskins through these tokens.
+  The semantic utility names (bg-surface, text-ink, border-line, bg-brand,
+  rounded-card, the status colours …) are what the whole app is written
+  against, so the product reskins through these tokens rather than through
+  per-component edits.
+
+  Status colours are deliberately independent hues, NOT tints of the brand.
+  The previous system had one orange doing double duty as both brand accent
+  and "needs attention" status, so a brand change silently moved a status
+  colour. That coupling is gone: the accent can change again without touching
+  approved / review / attention / expired.
 */
 
 @theme {
@@ -47,6 +57,17 @@
   --color-accent-600: #2C4F7C;
   --color-accent-700: #16283F;
 
+  /* Sidebar — near-black navy with a cool blue cast. Its own token set, not
+     derived from the warm neutral ramp or the accent scale, because it's the
+     one surface that stays dark regardless of what the brand accent does. */
+  --color-sidebar-bg: oklch(17% 0.025 258);
+  --color-sidebar-bg-elevated: oklch(21% 0.028 258);
+  --color-sidebar-border: oklch(30% 0.025 258 / 0.6);
+  --color-sidebar-active-bg: oklch(28% 0.05 258);
+  --color-sidebar-ink: oklch(97% 0.003 90);
+  --color-sidebar-ink-muted: oklch(68% 0.02 258);
+  --color-sidebar-ink-subtle: oklch(50% 0.02 258);
+
   /* Neutrals — semantic */
   --color-canvas: var(--color-warm-25);
   --color-surface: var(--color-warm-0);
@@ -59,11 +80,11 @@
   --color-ink-subtle: var(--color-warm-400);
   --color-ink-inverse: var(--color-warm-0);
 
-  /* Brand = the orange accent (primary action, active nav, links, key data) */
+  /* Brand = the steel-blue accent (primary action, active nav, links, key data) */
   --color-brand: var(--color-accent-500);
   --color-brand-hover: var(--color-accent-600);
   --color-brand-active: var(--color-accent-700);
-  --color-brand-ink: var(--color-warm-900); /* headings read dark, not orange */
+  --color-brand-ink: var(--color-warm-900); /* headings read near-black, not brand blue */
   --color-brand-tint: var(--color-accent-50);
   --color-brand-tint-line: var(--color-accent-200);
 
@@ -98,6 +119,7 @@
   --radius-md: 10px;
   --radius-lg: 12px;
   --radius-card: 12px;
+  --radius-full: 999px;
 
   /* Shadows — soft, large-blur, low-opacity only */
   --shadow-sm: 0 1px 2px oklch(30% 0.01 40 / 0.04);
@@ -111,6 +133,20 @@
 
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+}
+
+/*
+  Layout constants. Outside @theme because these are raw values read by
+  arbitrary-value utilities (lg:grid-cols-[var(--sidebar-width)_1fr]) rather
+  than things Tailwind should generate a utility class family for.
+*/
+:root {
+  --sidebar-width: 15.5rem;
+  --header-height: 4rem;
+  --content-max-width: 64rem;
 }
 
 @layer base {
@@ -158,6 +194,14 @@
     border-radius: 4px;
   }
 
+  /* Inside the dark navigation rail that navy ring sits on near-black navy
+     and effectively disappears, so keyboard focus gets a light ring there
+     instead. Scoped by data attribute so it follows the surface, not the
+     breakpoint — the mobile drawer is the same dark surface. */
+  [data-surface="sidebar"] :focus-visible {
+    outline-color: var(--color-sidebar-ink);
+  }
+
   /* Form fields get an inset accent ring instead of the outline */
   input:focus,
   select:focus,
@@ -173,7 +217,7 @@
   }
 }
 
-/* Soft orange radial glow behind a small accent element (icon badge, active pill). */
+/* Soft accent radial glow behind a small element (icon badge, active pill). */
 .accent-glow {
   position: relative;
 }
