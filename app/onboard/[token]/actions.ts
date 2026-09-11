@@ -154,19 +154,51 @@ export async function submitStagedDocuments(
   const admin = createAdminClient();
 
   // Replace whatever was there before.
-  const { data: existingFiles } = await admin
+  //
+  // This select is the FIRST thing in this action to touch
+  // contractor_document_files, so whatever is wrong with that table surfaces
+  // here first. It used to discard its error and carry on with
+  // `existingFiles` as null, which meant a broken table (missing, not in the
+  // schema cache, unreachable) looked identical to "this document has no
+  // files yet" — and the failure only became visible two statements later at
+  // the insert, pointing the log at the wrong operation. Same class of bug as
+  // the embedded-query failure that made the onboarding link read as invalid.
+  const { data: existingFiles, error: existingError } = await admin
     .from("contractor_document_files")
     .select("id, file_path")
     .eq("contractor_document_id", doc.id);
+
+  if (existingError) {
+    const classified = classifySubmissionError(existingError);
+    console.error("submitStagedDocuments: existing file lookup failed", {
+      code: existingError.code,
+      message: existingError.message,
+      category: classified.category,
+    });
+    return { ok: false, error: classified.message };
+  }
 
   for (const old of existingFiles ?? []) {
     await deleteObject(old.file_path);
   }
   if (existingFiles && existingFiles.length > 0) {
-    await admin
+    // Bail if the old rows can't be cleared: inserting the new batch on top
+    // of rows that were supposed to be gone leaves the requirement showing
+    // both the replaced files and the replacements.
+    const { error: deleteError } = await admin
       .from("contractor_document_files")
       .delete()
       .eq("contractor_document_id", doc.id);
+
+    if (deleteError) {
+      const classified = classifySubmissionError(deleteError);
+      console.error("submitStagedDocuments: clearing previous files failed", {
+        code: deleteError.code,
+        message: deleteError.message,
+        category: classified.category,
+      });
+      return { ok: false, error: classified.message };
+    }
   }
 
   const { error: insertError } = await admin.from("contractor_document_files").insert(
