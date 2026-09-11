@@ -6,14 +6,19 @@ import { TriangleAlert } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
 import { Spinner } from "@/app/components/spinner";
-import { requestAccountDeletionCode, confirmAccountDeletion } from "../deletion-actions";
+import {
+  requestAccountDeletionCode,
+  verifyAccountDeletionCode,
+  confirmAccountDeletion,
+} from "../deletion-actions";
 
-type Step = "warning" | "code";
+type Step = "warning" | "code" | "consent";
 
 export function DeleteAccountSection() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("warning");
   const [code, setCode] = useState("");
+  const [consentChecked, setConsentChecked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   const [pending, startTransition] = useTransition();
@@ -43,7 +48,19 @@ export function DeleteAccountSection() {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
-      const result = await confirmAccountDeletion(code);
+      const result = await verifyAccountDeletionCode(code);
+      if (!result.ok) {
+        setError(result.error ?? "Something went wrong.");
+        return;
+      }
+      setStep("consent");
+    });
+  };
+
+  const finalizeDeletion = () => {
+    setError(null);
+    startTransition(async () => {
+      const result = await confirmAccountDeletion(code, consentChecked);
       if (!result.ok) {
         setError(result.error ?? "Something went wrong.");
         return;
@@ -54,6 +71,13 @@ export function DeleteAccountSection() {
       await createClient().auth.signOut();
       router.replace("/login?deleted=1");
     });
+  };
+
+  const resetAll = () => {
+    setStep("warning");
+    setCode("");
+    setConsentChecked(false);
+    setError(null);
   };
 
   return (
@@ -90,7 +114,7 @@ export function DeleteAccountSection() {
         <form onSubmit={submitCode} className="mt-4 space-y-3">
           <p className="text-sm text-ink-muted">
             We sent a 6-digit code to your account email. Enter it below to
-            confirm deletion. It expires in 10 minutes.
+            continue. It expires in 10 minutes.
           </p>
           <input
             type="text"
@@ -110,7 +134,7 @@ export function DeleteAccountSection() {
               className="inline-flex items-center gap-2 rounded-md bg-expired px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
             >
               {pending && <Spinner className="h-4 w-4" />}
-              Permanently delete
+              Verify code
             </button>
             <button
               type="button"
@@ -122,11 +146,7 @@ export function DeleteAccountSection() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                setStep("warning");
-                setCode("");
-                setError(null);
-              }}
+              onClick={resetAll}
               disabled={pending}
               className="text-sm text-ink-muted hover:text-ink"
             >
@@ -134,6 +154,52 @@ export function DeleteAccountSection() {
             </button>
           </div>
         </form>
+      )}
+
+      {step === "consent" && (
+        <div className="mt-4 space-y-4">
+          <div className="rounded-md border border-expired-line bg-expired-bg p-4">
+            <p className="text-sm font-medium text-expired">
+              This will permanently delete your account, all subcontractor
+              records, all uploaded documents, and cancel your billing
+              immediately. This cannot be undone.
+            </p>
+          </div>
+
+          <label className="flex items-start gap-2.5 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={consentChecked}
+              onChange={(e) => setConsentChecked(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-line-strong text-expired focus:ring-expired"
+            />
+            <span>
+              I understand my data and billing will be permanently deleted,
+              and that my email address will be retained solely to prevent
+              duplicate free trial signups.
+            </span>
+          </label>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={finalizeDeletion}
+              disabled={pending || !consentChecked}
+              className="inline-flex items-center gap-2 rounded-md bg-expired px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {pending && <Spinner className="h-4 w-4" />}
+              Delete My Account
+            </button>
+            <button
+              type="button"
+              onClick={resetAll}
+              disabled={pending}
+              className="text-sm text-ink-muted hover:text-ink"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
 
       {error && (

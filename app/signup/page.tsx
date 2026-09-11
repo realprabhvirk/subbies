@@ -138,6 +138,15 @@ export default function SignupPage() {
               </p>
             )}
 
+            <p className="text-xs text-ink-muted">
+              By creating an account, you agree to our{" "}
+              <Link href="/privacy" className="font-medium text-brand hover:underline">
+                Privacy Policy
+              </Link>
+              . If you delete your account, your email is retained to prevent
+              duplicate free trials.
+            </p>
+
             <button
               type="submit"
               disabled={pending}
