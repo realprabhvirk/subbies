@@ -17,6 +17,7 @@ import {
   deleteObject,
 } from "@/lib/storage";
 import { canSubmitDocument, MAX_FILES_PER_SUBMISSION } from "@/lib/document-actions-logic";
+import { classifySubmissionError } from "@/lib/save-error-logic";
 import type { DocumentStatus } from "@/lib/types";
 
 interface DocRow {
@@ -176,8 +177,12 @@ export async function submitStagedDocuments(
     })),
   );
   if (insertError) {
-    console.error("submitStagedDocuments: file insert failed", insertError);
-    return { ok: false, error: "Couldn't save the upload. Try again." };
+    const classified = classifySubmissionError(insertError);
+    console.error(
+      "submitStagedDocuments: file insert failed",
+      { code: insertError.code, message: insertError.message, category: classified.category },
+    );
+    return { ok: false, error: classified.message };
   }
 
   const { error: updateError } = await admin
@@ -193,8 +198,12 @@ export async function submitStagedDocuments(
     .eq("id", doc.id);
 
   if (updateError) {
-    console.error("submitStagedDocuments: status update failed", updateError);
-    return { ok: false, error: "Couldn't save the upload. Try again." };
+    const classified = classifySubmissionError(updateError);
+    console.error(
+      "submitStagedDocuments: status update failed",
+      { code: updateError.code, message: updateError.message, category: classified.category },
+    );
+    return { ok: false, error: classified.message };
   }
 
   await recomputeContractorStatus(admin, resolved.contractorId);
