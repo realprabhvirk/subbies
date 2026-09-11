@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, X, CalendarClock, BellRing } from "lucide-react";
 
 import { Spinner } from "@/app/components/spinner";
 import { fieldClasses } from "@/app/components/input";
+import { ReminderScheduleField } from "./reminder-schedule-field";
 import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
 import type { DocumentType } from "@/lib/types";
 import {
@@ -308,27 +309,11 @@ function DocumentTypeDialog({
             )}
           </div>
 
-          <div className="space-y-1.5">
-            <label htmlFor="reminder_days" className="block text-sm font-medium">
-              Reminder schedule (days before expiry)
-            </label>
-            <input
-              id="reminder_days"
-              name="reminder_days"
-              type="text"
-              defaultValue={(existing?.reminder_days ?? [30, 14, 7]).join(", ")}
-              placeholder="30, 14, 7"
-              className={fieldClasses()}
-            />
-            <p className="text-xs text-ink-subtle">
-              Comma-separated. Leave blank for no reminders.
-            </p>
-            {state?.fieldErrors?.reminder_days && (
-              <p className="text-sm text-expired">
-                {state.fieldErrors.reminder_days}
-              </p>
-            )}
-          </div>
+          <ReminderScheduleField
+            name="reminder_days"
+            defaultValue={existing?.reminder_days ?? [30, 14, 7]}
+            error={state?.fieldErrors?.reminder_days}
+          />
 
           {state?.error && (
             <p className="rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">
