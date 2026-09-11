@@ -26,6 +26,9 @@ export function MarketingFooter() {
           <Link href="/login" className="text-ink-muted hover:text-ink">
             Log in
           </Link>
+          <Link href="/privacy" className="text-ink-muted hover:text-ink">
+            Privacy
+          </Link>
         </nav>
       </div>
       <div className="border-t border-line">

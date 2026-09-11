@@ -2,6 +2,7 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CONTRACTOR_DOCS_BUCKET } from "@/lib/storage-constants";
+import { collectAllPaths, batchPaths, type StorageLister } from "@/lib/storage-cleanup-logic";
 
 export {
   CONTRACTOR_DOCS_BUCKET,
@@ -78,4 +79,66 @@ export async function getObjectInfo(path: string) {
 export async function deleteObject(path: string) {
   const admin = createAdminClient();
   return admin.storage.from(CONTRACTOR_DOCS_BUCKET).remove([path]);
+}
+
+const DELETE_BATCH_SIZE = 100;
+
+export interface DeleteCompanyDocumentsResult {
+  deletedCount: number;
+  /** Any batches Storage failed to remove — surfaced for manual cleanup, never silently dropped. */
+  failedPaths: string[];
+}
+
+/**
+ * Wipes every stored document under a company's tree on account deletion.
+ *
+ * Every document path starts with `${companyId}/` (see buildDocumentPath
+ * above), so this recursively lists everything under that prefix and
+ * removes it — rather than deleting only the paths contractor_documents
+ * rows happen to point at, which would miss an orphaned upload (e.g. a
+ * crashed confirm step that never wrote file_url). Postgres cascades handle
+ * every database row on account deletion; nothing cascades Storage objects,
+ * since storage.objects has no foreign key relationship to public.companies
+ * at all — this is the one part of deletion that has to be done in code.
+ *
+ * Best-effort: a batch that fails to remove is collected and logged rather
+ * than aborting the whole account deletion over it. Losing a stray file to
+ * a transient Storage error is a manual-cleanup problem; leaving someone's
+ * subscription cancelled with their account still dangling because of it
+ * would be worse.
+ */
+export async function deleteAllCompanyDocuments(
+  companyId: string,
+): Promise<DeleteCompanyDocumentsResult> {
+  const admin = createAdminClient();
+  const bucket = admin.storage.from(CONTRACTOR_DOCS_BUCKET);
+
+  const lister: StorageLister = {
+    list: async (prefix) => {
+      const { data, error } = await bucket.list(prefix, { limit: 1000 });
+      return { data, error };
+    },
+  };
+
+  const paths = await collectAllPaths(lister, companyId);
+  if (paths.length === 0) return { deletedCount: 0, failedPaths: [] };
+
+  let deletedCount = 0;
+  const failedPaths: string[] = [];
+
+  for (const batch of batchPaths(paths, DELETE_BATCH_SIZE)) {
+    const { error } = await bucket.remove(batch);
+    if (error) {
+      console.error("deleteAllCompanyDocuments: batch remove failed", {
+        companyId,
+        batchSize: batch.length,
+        error,
+      });
+      failedPaths.push(...batch);
+    } else {
+      deletedCount += batch.length;
+    }
+  }
+
+  return { deletedCount, failedPaths };
 }
