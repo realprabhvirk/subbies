@@ -82,11 +82,17 @@ export async function getCompanyOwnerEmail(
   return data.user.email;
 }
 
+export interface OnboardingChecklistFile {
+  id: string;
+  fileName: string | null;
+}
+
 export interface OnboardingChecklistItem {
   id: string;
   documentName: string;
   status: DocumentStatus;
   rejectionReason: string | null;
+  files: OnboardingChecklistFile[];
 }
 
 export interface OnboardingContext {
@@ -138,8 +144,13 @@ export async function getOnboardingContext(
 
   const { data: docs, error: docsError } = await admin
     .from("contractor_documents")
-    .select("id, status, rejection_reason, document_types(name)")
-    .eq("contractor_id", contractor.id);
+    .select(
+      "id, status, rejection_reason, document_types(name), contractor_document_files(id, file_name)",
+    )
+    // A revoked request is cancelled — the contractor has nothing to act on
+    // and shouldn't see it at all, as if it had never been asked for.
+    .eq("contractor_id", contractor.id)
+    .neq("status", "revoked");
 
   if (docsError) return null;
 
@@ -148,12 +159,16 @@ export async function getOnboardingContext(
       const row = d as unknown as Pick<
         ContractorDocument,
         "id" | "status" | "rejection_reason"
-      > & { document_types: { name: string } | null };
+      > & {
+        document_types: { name: string } | null;
+        contractor_document_files: OnboardingChecklistFile[] | null;
+      };
       return {
         id: row.id,
         documentName: row.document_types?.name ?? "Document",
         status: row.status,
         rejectionReason: row.rejection_reason,
+        files: row.contractor_document_files ?? [],
       };
     })
     .sort((a, b) => a.documentName.localeCompare(b.documentName));

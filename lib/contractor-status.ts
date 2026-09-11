@@ -24,6 +24,12 @@ function isPast(dateStr: string | null): boolean {
  *   pending            — a requested document has not been uploaded yet
  *   approved           — every document is approved and current
  *
+ * A revoked document is excluded before any of this runs — a cancelled
+ * request contributes nothing, as if the row didn't exist. A contractor
+ * whose only documents are revoked reads the same as one with none at all
+ * (`pending`), for the same reason a brand-new contractor does: nothing is
+ * outstanding, but nothing is approved either.
+ *
  * Note: time-based flips (a document expiring while nothing else changes)
  * are handled by the Phase 2 scheduled job. This runs on every document
  * mutation.
@@ -31,16 +37,17 @@ function isPast(dateStr: string | null): boolean {
 export function deriveContractorStatus(
   docs: StatusInputDoc[],
 ): ContractorStatus {
-  if (docs.length === 0) return "pending";
+  const active = docs.filter((d) => d.status !== "revoked");
+  if (active.length === 0) return "pending";
 
-  const hasExpired = docs.some(
+  const hasExpired = active.some(
     (d) => d.status === "approved" && isPast(d.expiry_date),
   );
   if (hasExpired) return "expired";
 
-  if (docs.some((d) => d.status === "rejected")) return "attention_required";
-  if (docs.some((d) => d.status === "uploaded")) return "awaiting_review";
-  if (docs.some((d) => d.status === "requested")) return "pending";
+  if (active.some((d) => d.status === "rejected")) return "attention_required";
+  if (active.some((d) => d.status === "uploaded")) return "awaiting_review";
+  if (active.some((d) => d.status === "requested")) return "pending";
 
   return "approved";
 }
