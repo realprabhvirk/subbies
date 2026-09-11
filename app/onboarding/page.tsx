@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import { requireUser, getCompany } from "@/lib/supabase/dal";
 import { getEntitlement } from "@/lib/billing/entitlements";
+import { hasUsedTrial } from "@/lib/billing/trial-eligibility";
 import { PLANS, PLAN_IDS, TRIAL_DAYS } from "@/lib/billing/plans";
 import { Logo } from "@/app/components/logo";
 import { SignOutButton } from "@/app/dashboard/_components/sign-out-button";
@@ -13,13 +14,18 @@ export const metadata: Metadata = { title: "Get started" };
 export default async function OnboardingPage(
   props: PageProps<"/onboarding">,
 ) {
-  await requireUser();
+  const user = await requireUser();
   const company = await getCompany();
 
   if (!company) redirect("/dashboard"); // layout shows the recovery state
 
   const entitlement = await getEntitlement(company.id);
   if (!entitlement.needsOnboarding) redirect("/dashboard");
+
+  // Told upfront, before checkout, rather than a surprise on the Stripe page —
+  // see lib/billing/trial-eligibility.ts. The same check runs again (and is
+  // the one that's actually enforced) inside startCheckout.
+  const noTrial = user.email ? await hasUsedTrial(user.email) : false;
 
   const sp = await props.searchParams;
   const cancelled = sp.checkout === "cancelled";
@@ -45,9 +51,9 @@ export default async function OnboardingPage(
           Welcome to Subbies, {company.name}
         </h1>
         <p className="mt-3 text-lg text-ink-muted">
-          Pick the plan that fits your operation. Every plan starts with{" "}
-          {TRIAL_DAYS} days free. You&apos;ll enter a card, nothing is charged
-          today, and you can cancel any time before day {TRIAL_DAYS}.
+          {noTrial
+            ? "Pick the plan that fits your operation. This account isn't eligible for a free trial, so you'll be charged as soon as you subscribe."
+            : `Pick the plan that fits your operation. Every plan starts with ${TRIAL_DAYS} days free. You'll enter a card, nothing is charged today, and you can cancel any time before day ${TRIAL_DAYS}.`}
         </p>
       </div>
 
@@ -62,7 +68,11 @@ export default async function OnboardingPage(
         <PlanSelection
           plans={plans}
           heading="Choose your plan"
-          intro={`Billed monthly in AUD after your ${TRIAL_DAYS}-day free trial. Change or cancel any time. Have a code? Enter it at checkout.`}
+          intro={
+            noTrial
+              ? "Billed monthly in AUD, charged immediately — no free trial on this account. Change or cancel any time."
+              : `Billed monthly in AUD after your ${TRIAL_DAYS}-day free trial. Change or cancel any time. Have a code? Enter it at checkout.`
+          }
         />
       </div>
     </main>
