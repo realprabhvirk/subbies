@@ -10,7 +10,12 @@ import { Spinner } from "./spinner";
  * you end up with a double-submitted form.
  */
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "danger"
+  | "danger-outline";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const VARIANT: Record<ButtonVariant, string> = {
@@ -20,6 +25,12 @@ const VARIANT: Record<ButtonVariant, string> = {
   ghost:
     "bg-transparent text-ink-muted border border-transparent hover:bg-surface-muted hover:text-ink",
   danger: "bg-expired text-white border border-transparent hover:opacity-90",
+  // A destructive action that isn't the final, committed step yet (opening a
+  // confirmation, starting a cancellation flow) — real button weight via a
+  // border, coloured to read as intentional-but-not-yet-final, distinct from
+  // both a neutral secondary action and the solid `danger` confirm button.
+  "danger-outline":
+    "bg-surface text-expired border border-expired-line hover:bg-expired-bg",
 };
 
 const SIZE: Record<ButtonSize, string> = {

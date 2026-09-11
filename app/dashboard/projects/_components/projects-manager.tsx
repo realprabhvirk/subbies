@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Plus, Pencil, MapPin, Users, TriangleAlert } from "lucide-react";
 
 import { StatusBadge } from "@/app/components/status-badge";
+import { ButtonLink, Button } from "@/app/components/button";
+import { EmptyState } from "@/app/components/empty-state";
 import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
 import type { ProjectStatus } from "@/lib/types";
 import { ProjectDialog, type ProjectDialogData } from "./project-dialog";
@@ -51,41 +53,34 @@ export function ProjectsManager({
           </p>
         </div>
         {atLimit ? (
-          <Link
+          <ButtonLink
             href="/dashboard/settings?tab=billing"
-            className="inline-flex shrink-0 items-center gap-2 rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-muted"
+            variant="secondary"
+            className="shrink-0"
           >
             Upgrade to add more
-          </Link>
+          </ButtonLink>
         ) : (
-          <button
-            type="button"
-            onClick={openCreate}
-            className="inline-flex shrink-0 items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-          >
+          <Button type="button" onClick={openCreate} className="shrink-0">
             <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
             New project
-          </button>
+          </Button>
         )}
       </header>
 
       {atLimit && <LimitBanner resource="projects" limit={limit} />}
 
       {projects.length === 0 ? (
-        <div className="flex flex-col items-center rounded-card border border-dashed border-line-strong bg-surface px-6 py-16 text-center">
-          <p className="text-sm font-medium">No projects yet</p>
-          <p className="mt-1 max-w-sm text-sm text-ink-muted">
-            Create a project, then assign the contractors working on it.
-          </p>
-          <button
-            type="button"
-            onClick={openCreate}
-            className="mt-5 inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-          >
-            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-            New project
-          </button>
-        </div>
+        <EmptyState
+          title="No projects yet"
+          description="Create a project, then assign the contractors working on it."
+          action={
+            <Button type="button" onClick={openCreate}>
+              <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+              New project
+            </Button>
+          }
+        />
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {projects.map((p) => (

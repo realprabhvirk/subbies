@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { CircleCheck } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
-import { Spinner } from "@/app/components/spinner";
+import { Button } from "@/app/components/button";
 import { PasswordField } from "@/app/components/password-field";
 
 export function ChangePasswordForm() {
@@ -89,14 +89,9 @@ export function ChangePasswordForm() {
       )}
 
       <div className="flex items-center gap-3 pt-1">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
-        >
-          {pending && <Spinner className="h-4 w-4" />}
+        <Button type="submit" pending={pending}>
           {pending ? "Updating…" : "Update password"}
-        </button>
+        </Button>
         {done && (
           <span className="inline-flex items-center gap-1.5 text-sm text-approved">
             <CircleCheck className="h-4 w-4" strokeWidth={2} aria-hidden />

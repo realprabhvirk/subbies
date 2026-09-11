@@ -1,8 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useTransition } from "react";
+import { X } from "lucide-react";
 
-import { Spinner } from "@/app/components/spinner";
+import { Button } from "@/app/components/button";
 import { fieldClasses } from "@/app/components/input";
 import type { ProjectStatus } from "@/lib/types";
 import { createProject, updateProject, type ProjectFormState } from "../actions";
@@ -75,9 +76,7 @@ export function ProjectDialog({
             className="rounded-md p-1.5 text-ink-muted hover:bg-surface-muted"
             aria-label="Close"
           >
-            <span aria-hidden className="text-lg leading-none">
-              ×
-            </span>
+            <X className="h-5 w-5" strokeWidth={2} />
           </button>
         </div>
 
@@ -176,22 +175,12 @@ export function ProjectDialog({
           )}
 
           <div className="flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={busy}
-              className="rounded-md border border-line-strong px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted disabled:opacity-60"
-            >
+            <Button type="button" variant="secondary" onClick={onClose} disabled={busy}>
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={busy}
-              className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
-            >
-              {busy && <Spinner className="h-4 w-4" />}
+            </Button>
+            <Button type="submit" pending={busy}>
               {busy ? "Saving…" : isEdit ? "Save changes" : "Create project"}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

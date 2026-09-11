@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
 import { canAddContractor } from "@/lib/billing/entitlements";
 import type { DocumentType } from "@/lib/types";
+import { ButtonLink } from "@/app/components/button";
+import { EmptyState } from "@/app/components/empty-state";
 import { NewContractorForm } from "./_components/new-contractor-form";
 
 export const metadata: Metadata = { title: "Add contractor" };
@@ -46,45 +48,31 @@ export default async function NewContractorPage() {
       </div>
 
       {!limitCheck.allowed ? (
-        <div className="flex flex-col items-center rounded-card border border-dashed border-line-strong bg-surface px-6 py-14 text-center">
-          <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted text-ink-subtle">
-            <Lock className="h-5 w-5" strokeWidth={2} aria-hidden />
-          </span>
-          <p className="text-sm font-medium">
-            You&apos;re at your plan&apos;s limit of {limitCheck.limit} contractors
-          </p>
-          <p className="mt-1 max-w-sm text-sm text-ink-muted">
-            Upgrade your plan to add more. Your existing contractors and their
-            documents aren&apos;t affected.
-          </p>
-          <Link
-            href="/dashboard/settings?tab=billing"
-            className="mt-5 inline-flex items-center rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-          >
-            Go to billing
-          </Link>
-        </div>
+        <EmptyState
+          icon={Lock}
+          title={`You're at your plan's limit of ${limitCheck.limit} contractors`}
+          description="Upgrade your plan to add more. Your existing contractors and their documents aren't affected."
+          action={
+            <ButtonLink href="/dashboard/settings?tab=billing">
+              Go to billing
+            </ButtonLink>
+          }
+        />
       ) : error ? (
         <p className="rounded-md bg-expired-bg px-4 py-3 text-sm text-expired">
           We couldn&apos;t load your document types. Refresh to try again.
         </p>
       ) : documentTypes.length === 0 ? (
-        <div className="flex flex-col items-center rounded-card border border-dashed border-line-strong bg-surface px-6 py-14 text-center">
-          <span className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted text-ink-subtle">
-            <FileText className="h-5 w-5" strokeWidth={2} aria-hidden />
-          </span>
-          <p className="text-sm font-medium">Add document types first</p>
-          <p className="mt-1 max-w-sm text-sm text-ink-muted">
-            You need at least one document type before you can request documents
-            from a contractor.
-          </p>
-          <Link
-            href="/dashboard/document-types"
-            className="mt-5 inline-flex items-center rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
-          >
-            Go to document types
-          </Link>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title="Add document types first"
+          description="You need at least one document type before you can request documents from a contractor."
+          action={
+            <ButtonLink href="/dashboard/document-types">
+              Go to document types
+            </ButtonLink>
+          }
+        />
       ) : (
         <NewContractorForm documentTypes={documentTypes} />
       )}

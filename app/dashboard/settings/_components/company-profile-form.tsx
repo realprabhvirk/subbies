@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { CircleCheck } from "lucide-react";
 
-import { Spinner } from "@/app/components/spinner";
+import { Button } from "@/app/components/button";
 import { fieldClasses } from "@/app/components/input";
 import type { Company } from "@/lib/types";
 import { updateCompanyProfile, type CompanyProfileState } from "../actions";
@@ -89,14 +89,9 @@ export function CompanyProfileForm({ company }: { company: Company }) {
       )}
 
       <div className="flex items-center gap-3 pt-1">
-        <button
-          type="submit"
-          disabled={pending}
-          className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
-        >
-          {pending && <Spinner className="h-4 w-4" />}
+        <Button type="submit" pending={pending}>
           {pending ? "Saving…" : "Save changes"}
-        </button>
+        </Button>
         {saved && (
           <span className="inline-flex items-center gap-1.5 text-sm text-approved">
             <CircleCheck className="h-4 w-4" strokeWidth={2} aria-hidden />
