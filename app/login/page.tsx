@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { normalizeEmail } from "@/lib/auth/normalize-email";
+import { safeRedirectPath } from "@/lib/auth/redirect-path";
 import { Logo } from "@/app/components/logo";
 import { Button } from "@/app/components/button";
 import { Field, fieldClasses } from "@/app/components/input";
@@ -56,9 +57,13 @@ export default function LoginPage() {
         return;
       }
 
-      const redirectTo =
-        new URLSearchParams(window.location.search).get("redirectTo") ||
-        "/dashboard";
+      // Only the middleware ever writes ?redirectTo=, and it writes a
+      // pathname — but the value arrives via the URL, so anyone can put
+      // anything in it. Restricted to a same-origin path so a crafted login
+      // link can't hand the freshly signed-in user to another site.
+      const redirectTo = safeRedirectPath(
+        new URLSearchParams(window.location.search).get("redirectTo"),
+      );
       router.replace(redirectTo);
       router.refresh();
     });
