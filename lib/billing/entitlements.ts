@@ -97,6 +97,20 @@ export const getEntitlement = cache(
     const limits: PlanLimits =
       paidAccess && plan ? PLANS[plan].limits : NO_PLAN_LIMITS;
 
+    // A live, paying subscription whose Stripe price doesn't map to any
+    // STRIPE_PRICE_* in this deployment (price changed in Stripe, env var
+    // from the other mode, or missing). The company is charged but every
+    // creation limit above is 0 — they can't add a single contractor — and
+    // until this line nothing said why. The limits are deliberately NOT
+    // widened here (that's a billing decision); this makes it loud instead.
+    // /api/health/billing is the check that catches the misconfiguration.
+    if (paidAccess && !plan) {
+      console.error(
+        "getEntitlement: paying subscription with no recognised plan — every creation limit is 0 for this company. Check STRIPE_PRICE_* against the subscription's price (see /api/health/billing).",
+        { companyId, status },
+      );
+    }
+
     return {
       status,
       plan,

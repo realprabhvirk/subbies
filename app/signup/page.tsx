@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { normalizeEmail } from "@/lib/auth/normalize-email";
+import { classifySignupResult } from "@/lib/auth/signup-logic";
 import { Logo } from "@/app/components/logo";
 import { Button } from "@/app/components/button";
 import { fieldClasses } from "@/app/components/input";
@@ -17,6 +18,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const handleSignup = (e: React.FormEvent) => {
@@ -34,10 +36,16 @@ export default function SignupPage() {
       // unique constraint on auth.users.email is what blocks the second one —
       // a real database-level guarantee, not just an app-layer check.
       const normalizedEmail = normalizeEmail(email);
+      const trimmedCompanyName = companyName.trim();
 
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
+        // Carried in the user's own metadata so it survives to the first
+        // authenticated visit. That's what lets the dashboard finish setup
+        // if the company row can't be created right here — see
+        // lib/auth/signup-logic.ts for why that can happen.
+        options: { data: { company_name: trimmedCompanyName } },
       });
 
       if (authError) {
@@ -49,33 +57,66 @@ export default function SignupPage() {
         return;
       }
 
-      // Supabase's anti-enumeration behavior for an already-registered email:
-      // rather than an explicit error, it can return a 200 with a user object
-      // whose identities array is empty and no session. Treat that the same
-      // as the explicit error above instead of silently proceeding to create
-      // a company row against a session that doesn't exist.
-      if (authData.user && authData.user.identities?.length === 0) {
+      const outcome = classifySignupResult({
+        user: authData.user,
+        session: authData.session,
+      });
+
+      if (outcome === "already_registered") {
         setError("An account with this email already exists. Try logging in instead.");
         return;
       }
+      if (outcome === "no_user") {
+        setError("Something went wrong creating your account. Try again.");
+        return;
+      }
+      if (outcome === "confirmation_pending") {
+        // Email confirmation is on: there's no session yet, so nothing more
+        // can be created from here. The company row gets created on their
+        // first signed-in visit instead (dashboard-gate → AccountSetupForm).
+        setConfirmationSentTo(normalizedEmail);
+        return;
+      }
 
-      if (authData.user) {
-        const { error: companyError } = await supabase
-          .from("companies")
-          .insert({ user_id: authData.user.id, name: companyName.trim() });
-
-        if (companyError) {
-          setError(
-            "Your login was created but we couldn't set up your company. Please contact support.",
-          );
-          return;
-        }
+      // session_ready: confirmation is off, create the company now so the
+      // account is complete before they land on onboarding. If this insert
+      // fails it's logged and NOT treated as fatal — the dashboard's setup
+      // screen finishes it, instead of the old "contact support" dead end.
+      const { error: companyError } = await supabase
+        .from("companies")
+        .insert({ user_id: authData.user!.id, name: trimmedCompanyName });
+      if (companyError) {
+        console.error("signup: company insert failed, deferring to account setup", companyError);
       }
 
       router.replace("/onboarding");
       router.refresh();
     });
   };
+
+  if (confirmationSentTo) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-sm">
+          <Logo className="mb-8" height={32} showTagline priority />
+          <div className="rounded-card border border-line bg-surface p-6 shadow-sm sm:p-8">
+            <h1 className="text-xl font-semibold">Check your email</h1>
+            <p className="mt-2 text-sm text-ink-muted">
+              We sent a confirmation link to{" "}
+              <span className="font-medium text-ink">{confirmationSentTo}</span>.
+              Click it, then log in to finish setting up{" "}
+              <span className="font-medium text-ink">{companyName.trim()}</span>.
+            </p>
+          </div>
+          <p className="mt-6 text-center text-sm text-ink-muted">
+            <Link href="/login" className="font-medium text-brand hover:underline">
+              Go to log in
+            </Link>
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
