@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Mail, Phone, Briefcase } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Briefcase, Hash } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
 import { StatusBadge } from "@/app/components/status-badge";
 import { buildContractorActivity } from "@/lib/contractor-activity";
 import { groupFilesByDocument, type GroupedFile } from "@/lib/document-files-logic";
+import { formatAbn, isMissingColumnError } from "@/lib/contractor-details-logic";
+import { canResendRequest } from "@/lib/document-actions-logic";
+import { describeExpiry } from "@/lib/reminders/expiry-logic";
 import type {
   ContractorStatus,
   DocumentStatus,
@@ -16,6 +19,8 @@ import type {
 import { DocumentReviewList } from "./_components/document-review-list";
 import { ContractorActivity } from "./_components/contractor-activity";
 import { ContractorProjects } from "./_components/contractor-projects";
+import { ContractorDetailsPanel } from "./_components/contractor-details-panel";
+import { ResendRequestsPanel } from "./_components/resend-requests-panel";
 
 export const metadata: Metadata = { title: "Contractor" };
 
@@ -23,6 +28,7 @@ const TABS = [
   { id: "documents", label: "Documents" },
   { id: "projects", label: "Projects" },
   { id: "activity", label: "Activity" },
+  { id: "details", label: "Details" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -60,22 +66,41 @@ export default async function ContractorDetailPage(
 
   const supabase = await createClient();
 
-  const { data: contractor } = await supabase
+  interface ContractorRow {
+    id: string;
+    business_name: string;
+    contact_name: string | null;
+    email: string;
+    phone: string | null;
+    abn?: string | null;
+    trade: string | null;
+    status: ContractorStatus;
+    created_at: string;
+  }
+
+  let { data: contractor, error: contractorError } = await supabase
     .from("contractors")
-    .select("id, business_name, contact_name, email, phone, trade, status, created_at")
+    .select("id, business_name, contact_name, email, phone, abn, trade, status, created_at")
     .eq("id", id)
     .eq("company_id", company.id)
-    .maybeSingle<{
-      id: string;
-      business_name: string;
-      contact_name: string | null;
-      email: string;
-      phone: string | null;
-      trade: string | null;
-      status: ContractorStatus;
-      created_at: string;
-    }>();
+    .maybeSingle<ContractorRow>();
 
+  // `abn` arrived in a later migration. On a deploy that lands before that
+  // migration has run, selecting it is an error, which would otherwise read as
+  // "this contractor doesn't exist" for every contractor. Fall back to the
+  // columns that were always there so the page keeps working either way.
+  if (contractorError && isMissingColumnError(contractorError)) {
+    ({ data: contractor, error: contractorError } = await supabase
+      .from("contractors")
+      .select("id, business_name, contact_name, email, phone, trade, status, created_at")
+      .eq("id", id)
+      .eq("company_id", company.id)
+      .maybeSingle<ContractorRow>());
+  }
+
+  if (contractorError) {
+    console.error("ContractorDetailPage: contractor query failed", contractorError);
+  }
   if (!contractor) notFound();
 
   // Files are fetched as a separate query rather than embedded in the
@@ -130,6 +155,7 @@ export default async function ContractorDetailPage(
     }
   }
 
+  const now = new Date();
   const documents = docRows
     .map((d) => ({
       id: d.id,
@@ -138,6 +164,10 @@ export default async function ContractorDetailPage(
       status: d.status,
       files: filesByDoc.get(d.id) ?? [],
       expiryDate: d.expiry_date,
+      // Same date maths as the reminder job, so this badge and the emails
+      // can't disagree about whether something is expiring.
+      expiryStatus:
+        d.status === "approved" ? describeExpiry(d.expiry_date, now) : null,
       rejectionReason: d.rejection_reason,
     }))
     .sort((a, b) => a.documentName.localeCompare(b.documentName));
@@ -179,6 +209,7 @@ export default async function ContractorDetailPage(
     contractor.trade ? { icon: Briefcase, text: contractor.trade } : null,
     { icon: Mail, text: contractor.email },
     contractor.phone ? { icon: Phone, text: contractor.phone } : null,
+    contractor.abn ? { icon: Hash, text: `ABN ${formatAbn(contractor.abn)}` } : null,
   ].filter(Boolean) as { icon: typeof Mail; text: string }[];
 
   const activeProjectCount = projects.filter((p) => !p.removedAt).length;
@@ -257,11 +288,42 @@ export default async function ContractorDetailPage(
           <div className="mt-4">
             <DocumentReviewList documents={documents} />
           </div>
+          <div className="mt-8">
+            <ResendRequestsPanel
+              contractorId={contractor.id}
+              contractorEmail={contractor.email}
+              documents={documents
+                .filter((d) => canResendRequest(d.status))
+                .map((d) => ({
+                  id: d.id,
+                  name: d.documentName,
+                  status: d.status as "requested" | "rejected",
+                }))}
+            />
+          </div>
         </section>
       )}
 
       {tab === "projects" && (
         <ContractorProjects projects={projects} />
+      )}
+
+      {tab === "details" && (
+        <ContractorDetailsPanel
+          contractorId={contractor.id}
+          initial={{
+            businessName: contractor.business_name,
+            contactName: contractor.contact_name ?? "",
+            email: contractor.email,
+            phone: contractor.phone ?? "",
+            abn: formatAbn(contractor.abn),
+          }}
+          counts={{
+            documents: docRows.length,
+            files: documents.reduce((n, d) => n + d.files.length, 0),
+            projects: projects.length,
+          }}
+        />
       )}
 
       {tab === "activity" && (

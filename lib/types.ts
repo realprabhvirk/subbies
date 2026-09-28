@@ -49,6 +49,8 @@ export interface Contractor {
   contact_name: string | null;
   email: string;
   phone: string | null;
+  /** Bare 11 digits (spaces are stripped on save); null when not provided. */
+  abn: string | null;
   trade: string | null;
   status: ContractorStatus;
   created_at: string;

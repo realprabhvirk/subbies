@@ -37,6 +37,8 @@ export default async function ContractorsPage(
     typeof searchParams.created === "string" ? searchParams.created : null;
   const emailIssue =
     typeof searchParams.email === "string" ? searchParams.email : null;
+  const deleted =
+    typeof searchParams.deleted === "string" ? searchParams.deleted : null;
 
   const supabase = await createClient();
   // Independent of each other: the limit check never reads the list.
@@ -139,6 +141,13 @@ export default async function ContractorsPage(
         </Alert>
       )}
 
+      {deleted && (
+        <Alert tone="success">
+          <strong>{deleted}</strong> was deleted, along with their documents and
+          files.
+        </Alert>
+      )}
+
       {error && (
         <Alert tone="error">
           We couldn&apos;t load your contractors. Refresh to try again.
@@ -164,7 +173,7 @@ export default async function ContractorsPage(
             return (
               <li
                 key={c.id}
-                className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted"
+                className="relative flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted"
               >
                 <div className="flex min-w-0 grow items-center gap-3">
                   <span
@@ -174,9 +183,13 @@ export default async function ContractorsPage(
                     {initialsOf(c.business_name)}
                   </span>
                   <div className="min-w-0">
+                    {/* The name is the link, stretched over the whole row by
+                        the ::after, so the entire row is clickable while the
+                        markup stays a single real anchor (keyboard, screen
+                        readers and middle-click all behave normally). */}
                     <Link
                       href={`/dashboard/contractors/${c.id}`}
-                      className="font-medium hover:text-brand hover:underline"
+                      className="font-medium after:absolute after:inset-0 hover:text-brand hover:underline"
                     >
                       {c.business_name}
                     </Link>
@@ -199,7 +212,9 @@ export default async function ContractorsPage(
                   {(c.status === "pending" ||
                     c.status === "awaiting_review" ||
                     c.status === "attention_required") && (
-                    <ResendButton contractorId={c.id} />
+                    <div className="relative z-10">
+                      <ResendButton contractorId={c.id} />
+                    </div>
                   )}
                 </div>
               </li>

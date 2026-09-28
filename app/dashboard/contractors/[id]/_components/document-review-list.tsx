@@ -44,6 +44,8 @@ export interface ReviewDocument {
   status: DocumentStatus;
   files: ReviewDocumentFile[];
   expiryDate: string | null;
+  /** Computed on the server from expiryDate; null when there's nothing to flag. */
+  expiryStatus?: { tone: "expired" | "soon" | "ok"; detail: string | null } | null;
   rejectionReason: string | null;
 }
 
@@ -220,7 +222,7 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
     setError(null);
     setNotice(null);
     startTransition(async () => {
-      applyOptimistic({ status: "approved", expiryDate: expiry });
+      applyOptimistic({ status: "approved", expiryDate: expiry, expiryStatus: null });
       const result = await approveDocument(doc.id, expiry);
       if (!result.ok) {
         setError(result.error ?? "Couldn't approve.");
@@ -277,7 +279,7 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
     setError(null);
     setNotice(null);
     startTransition(async () => {
-      applyOptimistic({ expiryDate: editExpiryValue });
+      applyOptimistic({ expiryDate: editExpiryValue, expiryStatus: null });
       const result = await updateApprovedDocumentExpiry(doc.id, editExpiryValue);
       if (!result.ok) {
         setError(result.error ?? "Couldn't update the expiry date.");
@@ -296,8 +298,18 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
         <div className="min-w-0">
           <p className="font-medium">{view.documentName}</p>
           {view.status === "approved" && view.expiryDate && !editingExpiry && (
-            <p className="mt-0.5 text-sm text-ink-muted">
-              Expires {formatDate(view.expiryDate)}
+            <p
+              className={`mt-0.5 text-sm ${
+                view.expiryStatus?.tone === "expired"
+                  ? "font-medium text-expired"
+                  : view.expiryStatus?.tone === "soon"
+                    ? "font-medium text-attention"
+                    : "text-ink-muted"
+              }`}
+            >
+              {view.expiryStatus?.tone === "expired" ? "Expired" : "Expires"}{" "}
+              {formatDate(view.expiryDate)}
+              {view.expiryStatus?.detail ? ` · ${view.expiryStatus.detail}` : ""}
             </p>
           )}
           {view.status === "requested" && (
