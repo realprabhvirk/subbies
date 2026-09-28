@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { TriangleAlert, X } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 
 import { Alert } from "@/app/components/alert";
 import { Button } from "@/app/components/button";
-import { IconButton } from "@/app/components/icon-button";
+import { ConfirmDialog } from "@/app/components/confirm-dialog";
 import { Field, fieldClasses } from "@/app/components/input";
 import {
   detailsChanged,
@@ -17,9 +17,11 @@ import {
 import { deleteContractor, updateContractorDetails } from "../manage-actions";
 
 export interface DeletionCounts {
+  /** Every document row, archived and pending replacements included. */
   documents: number;
   files: number;
   projects: number;
+  notes: number;
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -261,14 +263,6 @@ function DeleteDialog({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !pending) onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [onClose, pending]);
-
   const confirm = () => {
     setError(null);
     startTransition(async () => {
@@ -286,70 +280,35 @@ function DeleteDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div
-        className="dialog-backdrop absolute inset-0 bg-warm-900/40 backdrop-blur-[2px]"
-        onClick={pending ? undefined : onClose}
-      />
-      <div
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="delete-contractor-title"
-        aria-describedby="delete-contractor-desc"
-        className="dialog-panel relative w-full max-w-md rounded-t-card border border-line bg-surface p-6 shadow-xl sm:rounded-card"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <h2 id="delete-contractor-title" className="text-lg font-semibold">
-            Delete {name}?
-          </h2>
-          <IconButton onClick={onClose} disabled={pending} aria-label="Close">
-            <X className="h-5 w-5" strokeWidth={2} />
-          </IconButton>
-        </div>
-
-        <div id="delete-contractor-desc" className="mt-3 text-sm text-ink-muted">
-          <p>This permanently deletes:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            <li>Their contact and business details</li>
-            {counts.documents > 0 && (
-              <li>
-                {plural(counts.documents, "document request")}
-                {counts.files > 0 &&
-                  `, and ${plural(counts.files, "uploaded file")} removed from storage`}
-              </li>
-            )}
-            <li>Their upload link, which stops working immediately</li>
-            {counts.projects > 0 && (
-              <li>
-                Their assignments to {plural(counts.projects, "project")}. The projects
-                themselves stay.
-              </li>
-            )}
-          </ul>
-          <p className="mt-3 font-medium text-ink">This can&apos;t be undone.</p>
-        </div>
-
-        {error && (
-          <p className="mt-4 rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">
-            {error}
-          </p>
+    <ConfirmDialog
+      title={`Delete ${name}?`}
+      confirmLabel="Delete contractor"
+      pendingLabel="Deleting…"
+      pending={pending}
+      error={error}
+      onConfirm={confirm}
+      onClose={onClose}
+    >
+      <p>This permanently deletes:</p>
+      <ul className="mt-2 list-disc space-y-1 pl-5">
+        <li>Their contact and business details</li>
+        {counts.documents > 0 && (
+          <li>
+            {plural(counts.documents, "document")} (including any archived)
+            {counts.files > 0 &&
+              `, and ${plural(counts.files, "uploaded file")} removed from storage`}
+          </li>
         )}
-
-        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onClose}
-            disabled={pending}
-            autoFocus
-          >
-            Cancel
-          </Button>
-          <Button type="button" variant="danger" onClick={confirm} pending={pending}>
-            {pending ? "Deleting…" : "Delete contractor"}
-          </Button>
-        </div>
-      </div>
-    </div>
+        {counts.notes > 0 && <li>{plural(counts.notes, "private note")}</li>}
+        <li>Their upload link, which stops working immediately</li>
+        {counts.projects > 0 && (
+          <li>
+            Their assignments to {plural(counts.projects, "project")}. The projects
+            themselves stay.
+          </li>
+        )}
+      </ul>
+      <p className="mt-3 font-medium text-ink">This can&apos;t be undone.</p>
+    </ConfirmDialog>
   );
 }

@@ -10,14 +10,16 @@ import { resendDocumentRequests } from "../manage-actions";
 export interface ResendableDocument {
   id: string;
   name: string;
-  status: "requested" | "rejected";
+  /** Where this document stands, worded on the server (so dates can't differ from the browser's). */
+  note: string;
 }
 
 /**
- * Pick the documents to chase and send the contractor ONE email covering them.
- * Only documents actually waiting on the contractor are listed — an approved
- * or already-uploaded one has nothing for them to do, so requesting it again
- * would send them to a page with no action to take.
+ * Pick any documents and send the contractor ONE email covering them. There is
+ * no status filtering: the company may want a fresh copy of something already
+ * approved as much as a chase for something missing. Ticking an approved
+ * document doesn't touch it — it asks for an updated copy, and the current one
+ * stays valid until the new one is uploaded and approved.
  */
 export function ResendRequestsPanel({
   contractorId,
@@ -73,7 +75,7 @@ export function ResendRequestsPanel({
       setSelected(new Set());
       setMessage({
         ok: true,
-        text: `Sent to ${result.sentTo} for ${result.count} ${
+        text: `One email sent to ${result.sentTo} for ${result.count} ${
           result.count === 1 ? "document" : "documents"
         }.`,
       });
@@ -84,14 +86,14 @@ export function ResendRequestsPanel({
     <section className="rounded-card border border-line bg-surface p-5 shadow-sm sm:p-6">
       <h2 className="text-base font-semibold">Resend requests</h2>
       <p className="mt-0.5 text-sm text-ink-muted">
-        Email {contractorEmail} a link for the documents you tick. It opens their
-        checklist, which lists everything still outstanding.
+        Email {contractorEmail} a link for the documents you tick. An approved
+        document stays valid: ticking it asks for an updated copy, and the current
+        one is only replaced once the new one is approved.
       </p>
 
       {documents.length === 0 ? (
         <p className="mt-4 rounded-md bg-surface-muted px-4 py-3 text-sm text-ink-muted">
-          Nothing is waiting on this contractor. Every document has been submitted or
-          approved.
+          No documents have been requested from this contractor yet.
         </p>
       ) : (
         <>
@@ -139,11 +141,7 @@ export function ResendRequestsPanel({
                     <Box state={on ? "on" : "off"} />
                     <span className="min-w-0">
                       <span className="font-medium">{doc.name}</span>
-                      <span className="block text-xs text-ink-muted">
-                        {doc.status === "rejected"
-                          ? "Rejected, waiting on a replacement"
-                          : "Not uploaded yet"}
-                      </span>
+                      <span className="block text-xs text-ink-muted">{doc.note}</span>
                     </span>
                   </label>
                 );

@@ -10,12 +10,15 @@ import {
   Ban,
   Send,
   Pencil,
+  Archive,
+  Trash2,
 } from "lucide-react";
 
 import { StatusBadge } from "@/app/components/status-badge";
 import { Button } from "@/app/components/button";
 import { IconButton } from "@/app/components/icon-button";
 import { Spinner } from "@/app/components/spinner";
+import { ConfirmDialog } from "@/app/components/confirm-dialog";
 import { fieldClasses } from "@/app/components/input";
 import type { DocumentStatus } from "@/lib/types";
 import {
@@ -23,6 +26,7 @@ import {
   canResendRequest,
   canEditApprovedExpiry,
 } from "@/lib/document-actions-logic";
+import { canArchiveOrDelete } from "@/lib/document-lifecycle-logic";
 import {
   approveDocument,
   rejectDocument,
@@ -31,6 +35,7 @@ import {
   updateApprovedDocumentExpiry,
   getDocumentFileUrl,
 } from "../actions";
+import { archiveDocument, deleteDocument } from "../document-lifecycle-actions";
 
 export interface ReviewDocumentFile {
   id: string;
@@ -47,6 +52,15 @@ export interface ReviewDocument {
   /** Computed on the server from expiryDate; null when there's nothing to flag. */
   expiryStatus?: { tone: "expired" | "soon" | "ok"; detail: string | null } | null;
   rejectionReason: string | null;
+  /**
+   * A pending copy that will replace an approved one once approved. The
+   * approved original stays valid, and counted, until then.
+   */
+  isReplacement?: boolean;
+  /** A live document with an updated copy already requested. */
+  hasPendingReplacement?: boolean;
+  /** Archiving or deleting this leaves the requirement Missing (drives the warning). */
+  isOnlyCurrent?: boolean;
 }
 
 function toISODate(d: Date): string {
@@ -101,12 +115,16 @@ function ActionsMenu({
   onRevoke,
   onResend,
   onEditExpiry,
+  onArchive,
+  onDelete,
   disabled,
 }: {
   doc: ReviewDocument;
   onRevoke: () => void;
   onResend: () => void;
   onEditExpiry: () => void;
+  onArchive: () => void;
+  onDelete: () => void;
   disabled: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -124,8 +142,9 @@ function ActionsMenu({
   const revocable = canRevoke(doc.status);
   const resendable = canResendRequest(doc.status);
   const editableExpiry = canEditApprovedExpiry(doc.status);
+  const removable = canArchiveOrDelete(doc.status);
 
-  if (!revocable && !resendable && !editableExpiry) return null;
+  if (!revocable && !resendable && !editableExpiry && !removable) return null;
 
   const item = (label: string, icon: React.ReactNode, onClick: () => void, danger = false) => (
     <button
@@ -160,7 +179,8 @@ function ActionsMenu({
         <div className="absolute right-0 z-20 mt-1.5 w-52 overflow-hidden rounded-card border border-line bg-surface py-1 shadow-lg">
           {resendable &&
             item(
-              "Send new request",
+              // An approved copy stays valid; what's being asked for is a fresh one.
+              doc.status === "approved" ? "Request updated copy" : "Send new request",
               <Send className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />,
               onResend,
             )}
@@ -175,6 +195,22 @@ function ActionsMenu({
               "Revoke request",
               <Ban className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />,
               onRevoke,
+              true,
+            )}
+          {removable && (
+            <div className="my-1 border-t border-line" role="separator" />
+          )}
+          {removable &&
+            item(
+              "Archive",
+              <Archive className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />,
+              onArchive,
+            )}
+          {removable &&
+            item(
+              "Delete permanently",
+              <Trash2 className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />,
+              onDelete,
               true,
             )}
         </div>
@@ -196,6 +232,8 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
   );
   const [editExpiryValue, setEditExpiryValue] = useState(doc.expiryDate ?? "");
   const [openingFileId, setOpeningFileId] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<"archive" | "delete" | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
 
   // Optimistic view of this document. Reverts automatically to `doc` when the
   // transition ends, so a failed action rolls back on its own.
@@ -222,7 +260,12 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
     setError(null);
     setNotice(null);
     startTransition(async () => {
-      applyOptimistic({ status: "approved", expiryDate: expiry, expiryStatus: null });
+      applyOptimistic({
+        status: "approved",
+        expiryDate: expiry,
+        expiryStatus: null,
+        isReplacement: false,
+      });
       const result = await approveDocument(doc.id, expiry);
       if (!result.ok) {
         setError(result.error ?? "Couldn't approve.");
@@ -275,6 +318,20 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
     });
   };
 
+  const runLifecycle = (kind: "archive" | "delete") => {
+    setConfirmError(null);
+    startTransition(async () => {
+      const result =
+        kind === "archive" ? await archiveDocument(doc.id) : await deleteDocument(doc.id);
+      if (!result.ok) {
+        setConfirmError(result.error ?? "Something went wrong. Try again.");
+        return;
+      }
+      setConfirming(null);
+      router.refresh();
+    });
+  };
+
   const saveExpiry = () => {
     setError(null);
     setNotice(null);
@@ -296,7 +353,25 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
     <li className="px-5 py-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-medium">{view.documentName}</p>
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
+            {view.documentName}
+            {view.isReplacement && (
+              <span className="rounded-full bg-review-bg px-2 py-0.5 text-[11px] font-medium text-review">
+                Updated copy
+              </span>
+            )}
+          </p>
+          {view.isReplacement && (
+            <p className="mt-0.5 text-sm text-ink-muted">
+              The approved copy stays valid until this one is approved, then it moves
+              to Document history.
+            </p>
+          )}
+          {view.hasPendingReplacement && (
+            <p className="mt-0.5 text-sm text-ink-muted">
+              Updated copy requested. This one stays valid until it&apos;s replaced.
+            </p>
+          )}
           {view.status === "approved" && view.expiryDate && !editingExpiry && (
             <p
               className={`mt-0.5 text-sm ${
@@ -339,6 +414,14 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
             onEditExpiry={() => {
               setEditExpiryValue(view.expiryDate ?? "");
               setEditingExpiry(true);
+            }}
+            onArchive={() => {
+              setConfirmError(null);
+              setConfirming("archive");
+            }}
+            onDelete={() => {
+              setConfirmError(null);
+              setConfirming("delete");
             }}
           />
         </div>
@@ -485,6 +568,58 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
 
       {error && <p className="mt-2 text-sm text-expired">{error}</p>}
       {notice && <p className="mt-2 text-sm text-attention">{notice}</p>}
+
+      {confirming === "archive" && (
+        <ConfirmDialog
+          title={`Archive ${view.documentName}?`}
+          tone="primary"
+          confirmLabel="Archive"
+          pendingLabel="Archiving…"
+          pending={pending}
+          error={confirmError}
+          onConfirm={() => runLifecycle("archive")}
+          onClose={() => setConfirming(null)}
+        >
+          <p>
+            It moves to Document history and stays in private storage as a record. It
+            no longer counts toward compliance or the dashboard, and the contractor
+            can&apos;t see it.
+          </p>
+          {view.isOnlyCurrent && <MissingWarning name={view.documentName} />}
+        </ConfirmDialog>
+      )}
+
+      {confirming === "delete" && (
+        <ConfirmDialog
+          title={`Delete ${view.documentName}?`}
+          confirmLabel="Delete permanently"
+          pendingLabel="Deleting…"
+          pending={pending}
+          error={confirmError}
+          onConfirm={() => runLifecycle("delete")}
+          onClose={() => setConfirming(null)}
+        >
+          <p>
+            The file is removed from storage and the record is deleted. This
+            can&apos;t be recovered.
+          </p>
+          {view.isOnlyCurrent && <MissingWarning name={view.documentName} />}
+        </ConfirmDialog>
+      )}
     </li>
+  );
+}
+
+/**
+ * Shown when archiving or deleting would leave the requirement with no live
+ * document, so the consequence is stated before it happens rather than
+ * discovered on the dashboard afterwards.
+ */
+function MissingWarning({ name }: { name: string }) {
+  return (
+    <p className="mt-3 rounded-md bg-attention-bg px-3 py-2 text-attention">
+      This is the only current copy of {name}. The requirement goes back to{" "}
+      <strong>Missing</strong> and the contractor&apos;s compliance status will update.
+    </p>
   );
 }
