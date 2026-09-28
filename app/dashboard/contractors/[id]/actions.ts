@@ -11,8 +11,11 @@ import { createSignedDownload } from "@/lib/storage";
 import {
   sendDocumentRejectedEmail,
   sendContractorApprovedEmail,
-  sendOnboardingEmail,
 } from "@/lib/email/onboarding";
+import {
+  sendRequestToContractor,
+  refreshTokenExpiry,
+} from "@/lib/contractors/request-email";
 import {
   canRevoke,
   canResendRequest,
@@ -181,6 +184,8 @@ export async function rejectDocument(
 
   let emailWarning: string | undefined;
   if (loaded.token) {
+    // The email carries the upload link, so it has to leave it valid.
+    await refreshTokenExpiry(supabase, loaded.contractor.id);
     const appUrl = await getAppUrl();
     const result = await sendDocumentRejectedEmail({
       to: loaded.contractor.email,
@@ -251,10 +256,11 @@ export async function revokeDocumentRequest(
 }
 
 /**
- * Re-sends the request email for one document, reusing the exact same
- * request-email flow as the contractor's original invite and the
- * contractor-list "Resend request" action (sendOnboardingEmail) — just
- * scoped to this one document's name instead of everything outstanding.
+ * Re-sends the request email for one document, through the same shared
+ * sender as the contractor-list "Resend request" button and the checkbox
+ * resend (lib/contractors/request-email.ts) — so the cooldown and link
+ * expiry apply identically to all three — just scoped to this one document's
+ * name instead of everything outstanding.
  *
  * Deliberately reuses the contractor's existing token rather than minting a
  * new one. Tokens in this app are per-contractor, not per-document (one link
@@ -279,30 +285,15 @@ export async function resendDocumentRequest(
   if (!canResendRequest(loaded.doc.status)) {
     return { ok: false, error: "This document isn't waiting on the contractor." };
   }
-  if (!loaded.token) {
-    return { ok: false, error: "This contractor has no active upload link. Contact support." };
-  }
 
-  const appUrl = await getAppUrl();
-  const result = await sendOnboardingEmail({
-    to: loaded.contractor.email,
-    contactName: loaded.contractor.contact_name,
+  const result = await sendRequestToContractor(supabase, {
+    contractor: loaded.contractor,
     companyName: company.name,
     replyTo: user?.email ?? null,
     documentNames: [loaded.doc.documentName],
-    onboardUrl: `${appUrl}/onboard/${loaded.token}`,
   });
 
-  if (!result.ok) {
-    return {
-      ok: false,
-      error:
-        result.reason === "not_configured"
-          ? "Email isn't configured yet, so the request couldn't be sent."
-          : "The email service rejected the request. Try again shortly.",
-    };
-  }
-
+  if (!result.ok) return { ok: false, error: result.message };
   return { ok: true };
 }
 

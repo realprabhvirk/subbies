@@ -3,6 +3,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { ContractorDocument, DocumentStatus } from "@/lib/types";
 import { groupFilesByDocument } from "@/lib/document-files-logic";
+import { isMissingColumnError, isTokenExpired } from "@/lib/contractor-details-logic";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -21,6 +22,50 @@ export interface ResolvedToken {
 }
 
 /**
+ * Finds the contractor a token belongs to, or null if the token is unknown or
+ * past its expiry. Shared by both entry points below so "is this link still
+ * valid" is decided in exactly one place.
+ *
+ * `expires_at` was added after links already existed, so this must keep
+ * working on a deploy that lands before that migration has run. Reading a
+ * column that isn't there is an error, and an error here would make EVERY
+ * contractor's link read as invalid — the wrong way for a public page to fail
+ * — so a missing-column error falls back to the old, expiry-less lookup.
+ */
+async function lookupToken(
+  admin: ReturnType<typeof createAdminClient>,
+  token: string,
+): Promise<{ contractorId: string } | null> {
+  interface Row {
+    contractor_id: string;
+    expires_at?: string | null;
+  }
+
+  let { data, error } = await admin
+    .from("contractor_tokens")
+    .select("contractor_id, expires_at")
+    .eq("token", token)
+    .maybeSingle<Row>();
+
+  if (error && isMissingColumnError(error)) {
+    ({ data, error } = await admin
+      .from("contractor_tokens")
+      .select("contractor_id")
+      .eq("token", token)
+      .maybeSingle<Row>());
+  }
+
+  if (error) {
+    console.error("lookupToken failed", { code: error.code, message: error.message });
+    return null;
+  }
+  if (!data) return null;
+  if (isTokenExpired(data.expires_at)) return null;
+
+  return { contractorId: data.contractor_id };
+}
+
+/**
  * Trusted server-side resolution of a contractor token to the ids and contact
  * details the upload actions need. Returns null for a missing/malformed token.
  */
@@ -31,18 +76,13 @@ export async function resolveOnboardingToken(
 
   const admin = createAdminClient();
 
-  const { data: tokenRow } = await admin
-    .from("contractor_tokens")
-    .select("contractor_id")
-    .eq("token", token)
-    .maybeSingle<{ contractor_id: string }>();
-
+  const tokenRow = await lookupToken(admin, token);
   if (!tokenRow) return null;
 
   const { data: contractor } = await admin
     .from("contractors")
     .select("id, company_id, business_name, contact_name, email, companies(name)")
-    .eq("id", tokenRow.contractor_id)
+    .eq("id", tokenRow.contractorId)
     .maybeSingle<{
       id: string;
       company_id: string;
@@ -121,18 +161,13 @@ export async function getOnboardingContext(
 
   const admin = createAdminClient();
 
-  const { data: tokenRow, error: tokenError } = await admin
-    .from("contractor_tokens")
-    .select("contractor_id")
-    .eq("token", token)
-    .maybeSingle<{ contractor_id: string }>();
-
-  if (tokenError || !tokenRow) return null;
+  const tokenRow = await lookupToken(admin, token);
+  if (!tokenRow) return null;
 
   const { data: contractor, error: contractorError } = await admin
     .from("contractors")
     .select("id, business_name, contact_name, company_id, companies(name)")
-    .eq("id", tokenRow.contractor_id)
+    .eq("id", tokenRow.contractorId)
     .maybeSingle<{
       id: string;
       business_name: string;

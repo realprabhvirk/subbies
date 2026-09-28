@@ -8,6 +8,7 @@ import { getCompany, getUser } from "@/lib/supabase/dal";
 import { getAppUrl } from "@/lib/app-url";
 import { canAddContractor, limitMessage } from "@/lib/billing/entitlements";
 import { sendOnboardingEmail, type SendResult } from "@/lib/email/onboarding";
+import { sendRequestToContractor } from "@/lib/contractors/request-email";
 
 export interface NewContractorState {
   ok: boolean;
@@ -173,16 +174,6 @@ export async function resendOnboardingRequest(
     return { ok: false, message: "Couldn't find that contractor." };
   }
 
-  const { data: tokenRow } = await supabase
-    .from("contractor_tokens")
-    .select("token")
-    .eq("contractor_id", contractor.id)
-    .single();
-
-  if (!tokenRow) {
-    return { ok: false, message: "This contractor has no active link. Contact support." };
-  }
-
   const { data: docs } = await supabase
     .from("contractor_documents")
     .select("status, document_types(name)")
@@ -203,25 +194,14 @@ export async function resendOnboardingRequest(
           return dt?.name ?? "Document";
         });
 
-  const appUrl = await getAppUrl();
-  const result = await sendOnboardingEmail({
-    to: contractor.email,
-    contactName: contractor.contact_name,
+  const result = await sendRequestToContractor(supabase, {
+    contractor,
     companyName: company.name,
     replyTo: user?.email ?? null,
     documentNames,
-    onboardUrl: `${appUrl}/onboard/${tokenRow.token}`,
   });
 
-  if (!result.ok) {
-    return {
-      ok: false,
-      message:
-        result.reason === "not_configured"
-          ? "Email isn't configured yet, so the request couldn't be sent."
-          : "The email service rejected the request. Try again shortly.",
-    };
-  }
+  if (!result.ok) return { ok: false, message: result.message };
 
   return { ok: true, message: `Onboarding request re-sent to ${contractor.email}.` };
 }
