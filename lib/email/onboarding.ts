@@ -2,6 +2,7 @@ import "server-only";
 
 import { getResend, FROM_ADDRESS } from "./resend";
 import { emailShell, emailButton, calloutBox, paragraph, escapeHtml } from "./template";
+import { REFRESH_NOTE, requestSubject, requestText } from "./request-copy";
 
 export interface OnboardingEmailInput {
   to: string;
@@ -9,7 +10,15 @@ export interface OnboardingEmailInput {
   companyName: string;
   /** The company's own email, so the contractor can reply to a real person. */
   replyTo?: string | null;
+  /** Documents that are genuinely outstanding: not yet supplied, rejected, or expired. */
   documentNames: string[];
+  /**
+   * Documents where a valid copy is already on file and the company is simply
+   * asking for a fresh one. Worded as an "updated copy" request, and says the
+   * existing copy stays valid until the new one is approved. Never described
+   * as missing or expired, because it isn't.
+   */
+  refreshDocumentNames?: string[];
   onboardUrl: string;
 }
 
@@ -17,43 +26,42 @@ export type SendResult =
   | { ok: true; id: string | null }
   | { ok: false; reason: "not_configured" | "send_failed"; error?: string };
 
-function buildSubject(companyName: string): string {
-  return `${companyName}: documents needed before you start work`;
-}
-
-function buildText(input: OnboardingEmailInput): string {
-  const greeting = input.contactName ? `Hi ${input.contactName},` : "Hi,";
-  const list = input.documentNames.map((name) => `  - ${name}`).join("\n");
-  return [
-    greeting,
-    "",
-    `${input.companyName} uses Subbies to collect and review contractor compliance documents before work begins. They've asked you to provide the following:`,
-    "",
-    list,
-    "",
-    "Upload your documents here (no login needed, the link is unique to you):",
-    input.onboardUrl,
-    "",
-    `If you have any questions, reply to this email and it will reach ${input.companyName}.`,
-    "",
-    "Sent via Subbies on behalf of " + input.companyName,
-  ].join("\n");
-}
-
 function buildHtml(input: OnboardingEmailInput): string {
   const greeting = input.contactName
     ? `Hi ${escapeHtml(input.contactName)},`
     : "Hi,";
-  const items = input.documentNames
-    .map((name) => `<li style="margin:4px 0;">${escapeHtml(name)}</li>`)
-    .join("");
+  const list = (names: string[]) =>
+    `<ul style="margin:0 0 24px;padding-left:20px;font-size:15px;line-height:1.6;">${names
+      .map((name) => `<li style="margin:4px 0;">${escapeHtml(name)}</li>`)
+      .join("")}</ul>`;
+
+  const needed = input.documentNames;
+  const refresh = input.refreshDocumentNames ?? [];
+  const company = `<strong>${escapeHtml(input.companyName)}</strong>`;
+
+  const sections: string[] = [];
+  if (needed.length > 0) {
+    sections.push(
+      paragraph(
+        `${company} uses Subbies to collect and review contractor compliance documents before work begins. They've asked you to provide the following:`,
+      ),
+      list(needed),
+    );
+  }
+  if (refresh.length > 0) {
+    sections.push(
+      paragraph(
+        needed.length > 0
+          ? `They've also asked for an updated copy of the following. ${REFRESH_NOTE}`
+          : `${company} uses Subbies to collect and review contractor compliance documents. They've asked for an updated copy of the following. ${REFRESH_NOTE}`,
+      ),
+      list(refresh),
+    );
+  }
 
   const body = [
     paragraph(greeting),
-    paragraph(
-      `<strong>${escapeHtml(input.companyName)}</strong> uses Subbies to collect and review contractor compliance documents before work begins. They've asked you to provide the following:`,
-    ),
-    `<ul style="margin:0 0 24px;padding-left:20px;font-size:15px;line-height:1.6;">${items}</ul>`,
+    ...sections,
     emailButton(input.onboardUrl, "Upload your documents"),
     paragraph(
       `The link is unique to you and doesn't need a password. If you have any questions, reply to this email and it will reach ${escapeHtml(input.companyName)}.`,
@@ -61,8 +69,12 @@ function buildHtml(input: OnboardingEmailInput): string {
     ),
   ].join("\n");
 
+  const total = needed.length + refresh.length;
   return emailShell({
-    preheader: `${input.companyName} needs ${input.documentNames.length === 1 ? "a document" : "some documents"} from you before work starts.`,
+    preheader:
+      needed.length === 0
+        ? `${input.companyName} has asked for an updated copy of ${total === 1 ? "a document" : "some documents"}.`
+        : `${input.companyName} needs ${total === 1 ? "a document" : "some documents"} from you before work starts.`,
     bodyHtml: body,
     footerHtml: `Sent via Subbies on behalf of ${escapeHtml(input.companyName)}.`,
   });
@@ -78,8 +90,8 @@ export async function sendOnboardingEmail(
     from: FROM_ADDRESS,
     to: input.to,
     replyTo: input.replyTo ?? undefined,
-    subject: buildSubject(input.companyName),
-    text: buildText(input),
+    subject: requestSubject(input),
+    text: requestText(input),
     html: buildHtml(input),
   });
 

@@ -64,10 +64,16 @@ export async function recomputeContractorStatus(
   supabase: SupabaseClient,
   contractorId: string,
 ): Promise<ContractorStatus | null> {
+  // Only LIVE documents decide compliance. An archived one is a record, and a
+  // pending replacement (replaces_document_id set) must not count while the
+  // approved copy it will replace is still standing — that is what lets a
+  // company request a fresh copy without the contractor's status moving.
   const { data, error } = await supabase
     .from("contractor_documents")
     .select("status, expiry_date")
-    .eq("contractor_id", contractorId);
+    .eq("contractor_id", contractorId)
+    .is("archived_at", null)
+    .is("replaces_document_id", null);
 
   if (error || !data) {
     console.error("recomputeContractorStatus: read failed", error);

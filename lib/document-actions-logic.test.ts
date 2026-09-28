@@ -31,13 +31,9 @@ test("canRevoke: only true for 'requested'", () => {
 
 // --- canResendRequest ----------------------------------------------------
 
-test("canResendRequest: true for 'requested' and 'rejected' only", () => {
+test("canResendRequest: true for every status — a fresh copy can be requested of anything", () => {
   for (const status of ALL_STATUSES) {
-    assert.equal(
-      canResendRequest(status),
-      status === "requested" || status === "rejected",
-      status,
-    );
+    assert.equal(canResendRequest(status), true, status);
   }
 });
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Plus, Users } from "lucide-react";
+import { ChevronRight, Plus, Users } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
@@ -37,6 +37,8 @@ export default async function ContractorsPage(
     typeof searchParams.created === "string" ? searchParams.created : null;
   const emailIssue =
     typeof searchParams.email === "string" ? searchParams.email : null;
+  const deleted =
+    typeof searchParams.deleted === "string" ? searchParams.deleted : null;
 
   const supabase = await createClient();
   // Independent of each other: the limit check never reads the list.
@@ -57,6 +59,10 @@ export default async function ContractorsPage(
     const { data: docs } = await supabase
       .from("contractor_documents")
       .select("contractor_id, status")
+      // Live documents only, so "2/3 approved" isn't inflated by archived
+      // records or a replacement still waiting on the contractor.
+      .is("archived_at", null)
+      .is("replaces_document_id", null)
       .in(
         "contractor_id",
         contractors.map((c) => c.id),
@@ -139,6 +145,13 @@ export default async function ContractorsPage(
         </Alert>
       )}
 
+      {deleted && (
+        <Alert tone="success">
+          <strong>{deleted}</strong> was deleted, along with their documents and
+          files.
+        </Alert>
+      )}
+
       {error && (
         <Alert tone="error">
           We couldn&apos;t load your contractors. Refresh to try again.
@@ -164,7 +177,9 @@ export default async function ContractorsPage(
             return (
               <li
                 key={c.id}
-                className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted"
+                // pr-* reserves room for the chevron (and, on desktop, its label)
+                // so the badge and Resend button never slide underneath it.
+                className="group relative flex flex-wrap items-center justify-between gap-x-6 gap-y-3 py-4 pl-5 pr-10 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted sm:pr-32"
               >
                 <div className="flex min-w-0 grow items-center gap-3">
                   <span
@@ -174,9 +189,13 @@ export default async function ContractorsPage(
                     {initialsOf(c.business_name)}
                   </span>
                   <div className="min-w-0">
+                    {/* The name is the link, stretched over the whole row by
+                        the ::after, so the entire row is clickable while the
+                        markup stays a single real anchor (keyboard, screen
+                        readers and middle-click all behave normally). */}
                     <Link
                       href={`/dashboard/contractors/${c.id}`}
-                      className="font-medium hover:text-brand hover:underline"
+                      className="font-medium after:absolute after:inset-0 hover:text-brand hover:underline focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-brand"
                     >
                       {c.business_name}
                     </Link>
@@ -186,7 +205,9 @@ export default async function ContractorsPage(
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                {/* Nowrap so the badge and button never break onto two lines in a
+                    squeezed row; the group itself wraps instead. */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 [&_button]:whitespace-nowrap [&_span]:whitespace-nowrap">
                   <div className="hidden text-right text-xs text-ink-subtle sm:block">
                     {p && p.total > 0 && (
                       <p className="tabular-nums">
@@ -199,9 +220,24 @@ export default async function ContractorsPage(
                   {(c.status === "pending" ||
                     c.status === "awaiting_review" ||
                     c.status === "attention_required") && (
-                    <ResendButton contractorId={c.id} />
+                    <div className="relative z-10">
+                      <ResendButton contractorId={c.id} />
+                    </div>
                   )}
                 </div>
+
+                {/* The "this opens" cue. Always visible (a phone has no hover),
+                    and purely decorative: the row's real link is the name. */}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-y-0 right-3 flex items-center gap-1.5 text-ink-muted transition-colors duration-[var(--duration-fast)] group-hover:text-brand group-focus-within:text-brand"
+                >
+                  <span className="hidden text-xs font-medium sm:inline">View details</span>
+                  <ChevronRight
+                    className="h-5 w-5 transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)] group-hover:translate-x-0.5"
+                    strokeWidth={2}
+                  />
+                </span>
               </li>
             );
           })}

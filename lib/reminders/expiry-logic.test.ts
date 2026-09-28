@@ -5,6 +5,8 @@ import {
   daysUntilExpiry,
   planReminders,
   groupByContractor,
+  describeExpiry,
+  EXPIRING_SOON_DAYS,
   sentKey,
   OVERDUE,
   type ReminderCandidate,
@@ -213,4 +215,33 @@ test("documents for different contractors stay in separate emails", () => {
 test("sentKey separates document, expiry and threshold", () => {
   assert.notEqual(sentKey("d", "2026-07-15", "30"), sentKey("d", "2027-07-15", "30"));
   assert.notEqual(sentKey("d", "2026-07-15", "30"), sentKey("d", "2026-07-15", "14"));
+});
+
+// --- describeExpiry (the badge on the contractor page) ----------------------
+
+test("an expired document reads as expired, with how long ago", () => {
+  assert.deepEqual(describeExpiry("2026-06-14", NOW), { tone: "expired", detail: "1 day ago" });
+  assert.deepEqual(describeExpiry("2026-06-10", NOW), { tone: "expired", detail: "5 days ago" });
+});
+
+test("expiring today is 'soon', not expired — it's still valid today", () => {
+  assert.deepEqual(describeExpiry("2026-06-15", NOW), { tone: "soon", detail: "today" });
+});
+
+test("within the 30-day window is 'soon' with days left; singular at one day", () => {
+  assert.deepEqual(describeExpiry("2026-06-16", NOW), { tone: "soon", detail: "1 day left" });
+  assert.deepEqual(describeExpiry("2026-06-25", NOW), { tone: "soon", detail: "10 days left" });
+});
+
+test("the 30-day boundary matches the dashboard tile exactly", () => {
+  assert.equal(EXPIRING_SOON_DAYS, 30);
+  // Exactly 30 days out is still 'soon'; 31 is fine.
+  assert.equal(describeExpiry("2026-07-15", NOW)?.tone, "soon");
+  assert.equal(describeExpiry("2026-07-16", NOW)?.tone, "ok");
+});
+
+test("far-off, missing or malformed dates have nothing to flag", () => {
+  assert.deepEqual(describeExpiry("2027-06-15", NOW), { tone: "ok", detail: null });
+  assert.equal(describeExpiry(null, NOW), null);
+  assert.equal(describeExpiry("garbage", NOW), null);
 });

@@ -89,6 +89,36 @@ export interface DeleteCompanyDocumentsResult {
   failedPaths: string[];
 }
 
+type DocumentsBucket = ReturnType<
+  ReturnType<typeof createAdminClient>["storage"]["from"]
+>;
+
+/** Removes `paths` in fixed-size batches, collecting whatever Storage refuses. */
+async function removeInBatches(
+  bucket: DocumentsBucket,
+  paths: string[],
+  context: Record<string, unknown>,
+): Promise<DeleteCompanyDocumentsResult> {
+  let deletedCount = 0;
+  const failedPaths: string[] = [];
+
+  for (const batch of batchPaths(paths, DELETE_BATCH_SIZE)) {
+    const { error } = await bucket.remove(batch);
+    if (error) {
+      console.error("storage batch remove failed", {
+        ...context,
+        batchSize: batch.length,
+        error,
+      });
+      failedPaths.push(...batch);
+    } else {
+      deletedCount += batch.length;
+    }
+  }
+
+  return { deletedCount, failedPaths };
+}
+
 /**
  * Wipes every stored document under a company's tree on account deletion.
  *
@@ -123,22 +153,71 @@ export async function deleteAllCompanyDocuments(
   const paths = await collectAllPaths(lister, companyId);
   if (paths.length === 0) return { deletedCount: 0, failedPaths: [] };
 
-  let deletedCount = 0;
-  const failedPaths: string[] = [];
+  return removeInBatches(bucket, paths, { companyId });
+}
 
-  for (const batch of batchPaths(paths, DELETE_BATCH_SIZE)) {
-    const { error } = await bucket.remove(batch);
-    if (error) {
-      console.error("deleteAllCompanyDocuments: batch remove failed", {
-        companyId,
-        batchSize: batch.length,
-        error,
-      });
-      failedPaths.push(...batch);
-    } else {
-      deletedCount += batch.length;
-    }
+export interface DeleteContractorFilesResult extends DeleteCompanyDocumentsResult {
+  /** The listing itself failed, so nothing can be said about what is or isn't stored. */
+  listFailed: boolean;
+}
+
+/**
+ * Removes every stored file under `prefix`, plus any `extraPaths` — strictly.
+ *
+ * Unlike the account-deletion wipe above, this one is strict, because its
+ * callers delete database rows right after and must not do so unless the files
+ * are really gone — the rows are the only record of which files belong to
+ * whom, so deleting them first and failing on the files leaves dangling
+ * objects nothing points at. Two differences follow:
+ *
+ *  - A failed *listing* is reported (`listFailed`), not swallowed.
+ *    collectAllPaths treats a list error as "nothing here", which is a fine
+ *    answer for a best-effort wipe and a dangerous one here: "couldn't look"
+ *    would read as "nothing to delete", and the caller would carry on and
+ *    orphan every file. The lister below throws instead, so the error
+ *    surfaces rather than being quietly folded into an empty result.
+ *  - The caller treats any `failedPaths` as a reason to stop.
+ *
+ * Walks the real tree rather than trusting the database's list of paths, so it
+ * also catches uploads that never made it into a contractor_document_files
+ * row. `extraPaths` covers the opposite gap: a path the database knows about
+ * that doesn't sit under the prefix (it shouldn't happen, but "no orphaned
+ * files" is not something to leave to "shouldn't").
+ */
+export async function deleteFilesUnderPrefix(
+  prefix: string,
+  extraPaths: string[] = [],
+): Promise<DeleteContractorFilesResult> {
+  const admin = createAdminClient();
+  const bucket = admin.storage.from(CONTRACTOR_DOCS_BUCKET);
+
+  const lister: StorageLister = {
+    list: async (p) => {
+      const { data, error } = await bucket.list(p, { limit: 1000 });
+      if (error) throw error;
+      return { data, error: null };
+    },
+  };
+
+  let found: string[];
+  try {
+    found = await collectAllPaths(lister, prefix);
+  } catch (error) {
+    console.error("deleteFilesUnderPrefix: listing failed", { prefix, error });
+    return { deletedCount: 0, failedPaths: [], listFailed: true };
   }
 
-  return { deletedCount, failedPaths };
+  const paths = [...new Set([...found, ...extraPaths.filter(Boolean)])];
+  if (paths.length === 0) return { deletedCount: 0, failedPaths: [], listFailed: false };
+
+  const result = await removeInBatches(bucket, paths, { prefix });
+  return { ...result, listFailed: false };
+}
+
+/** Everything stored for ONE contractor: `${companyId}/${contractorId}/`. */
+export async function deleteContractorFiles(
+  companyId: string,
+  contractorId: string,
+): Promise<DeleteContractorFilesResult> {
+  return deleteFilesUnderPrefix(`${companyId}/${contractorId}`);
 }

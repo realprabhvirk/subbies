@@ -15,6 +15,7 @@ import {
   sendExpiryReminderEmail,
   sendExpiryEscalationEmail,
 } from "@/lib/email/expiry";
+import { refreshTokenExpiry } from "@/lib/contractors/request-email";
 import type { SubscriptionStatus } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -129,6 +130,10 @@ export async function GET(req: NextRequest) {
     .select("id, contractor_id, expiry_date, document_types(name, reminder_days)")
     .in("contractor_id", [...contractorById.keys()])
     .eq("status", "approved")
+    // An archived document is a record. Without this the job would keep
+    // emailing a contractor about a certificate the company already archived.
+    .is("archived_at", null)
+    .is("replaces_document_id", null)
     .not("expiry_date", "is", null);
 
   if (docError) {
@@ -245,6 +250,10 @@ export async function GET(req: NextRequest) {
       remindersSent += 1;
       continue;
     }
+
+    // The reminder carries the contractor's upload link, and a contractor who
+    // has been quiet for months may be holding one that has since expired.
+    await refreshTokenExpiry(admin, contractorId);
 
     const result = await sendExpiryReminderEmail({
       to: contractor.email,

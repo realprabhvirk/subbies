@@ -18,9 +18,17 @@ export function canRevoke(status: DocumentStatus): boolean {
   return status === "requested";
 }
 
-/** Re-send the request email — only meaningful while something is actually outstanding. */
+/**
+ * Re-send the request email. Valid for EVERY status: a company may want a
+ * fresh copy of something already approved, or to chase something missing.
+ * What a resend actually does to each status (nothing, reopen a cancelled
+ * request, or add a pending replacement beside an approved document) is
+ * decided in lib/document-lifecycle-logic.ts. Kept as a function rather than
+ * removed so the UI and the server actions still ask one place.
+ */
 export function canResendRequest(status: DocumentStatus): boolean {
-  return status === "requested" || status === "rejected";
+  void status;
+  return true;
 }
 
 /** Correct the recorded expiry date on a document that's already been approved. */

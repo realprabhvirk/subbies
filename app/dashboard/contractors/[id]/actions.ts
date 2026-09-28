@@ -11,15 +11,16 @@ import { createSignedDownload } from "@/lib/storage";
 import {
   sendDocumentRejectedEmail,
   sendContractorApprovedEmail,
-  sendOnboardingEmail,
 } from "@/lib/email/onboarding";
+import { refreshTokenExpiry } from "@/lib/contractors/request-email";
+import { resendDocumentRequests } from "./manage-actions";
 import {
   canRevoke,
-  canResendRequest,
   canEditApprovedExpiry,
   isValidApprovalExpiry,
   isValidCorrectedExpiry,
 } from "@/lib/document-actions-logic";
+import { originalToArchiveOnApprove } from "@/lib/document-lifecycle-logic";
 import type { DocumentStatus } from "@/lib/types";
 
 interface LoadedDoc {
@@ -28,6 +29,8 @@ interface LoadedDoc {
     status: DocumentStatus;
     contractor_id: string;
     documentName: string;
+    /** Set when this row is a pending replacement for an approved document. */
+    replacesDocumentId: string | null;
   };
   contractor: {
     id: string;
@@ -46,16 +49,21 @@ async function loadDocForCompany(
 ): Promise<LoadedDoc | null> {
   const { data: doc } = await supabase
     .from("contractor_documents")
-    .select("id, status, contractor_id, document_types(name)")
+    .select("id, status, contractor_id, archived_at, replaces_document_id, document_types(name)")
     .eq("id", contractorDocumentId)
     .maybeSingle<{
       id: string;
       status: DocumentStatus;
       contractor_id: string;
+      archived_at: string | null;
+      replaces_document_id: string | null;
       document_types: { name: string } | null;
     }>();
 
-  if (!doc) return null;
+  // An archived document is a record. Approve, reject, revoke and the rest
+  // all act on live documents, so a stale page pointing at one gets "not
+  // found" rather than quietly editing history.
+  if (!doc || doc.archived_at !== null) return null;
 
   const { data: contractor } = await supabase
     .from("contractors")
@@ -84,6 +92,7 @@ async function loadDocForCompany(
       status: doc.status,
       contractor_id: doc.contractor_id,
       documentName: doc.document_types?.name ?? "Document",
+      replacesDocumentId: doc.replaces_document_id,
     },
     contractor,
     token: tokenRow?.token ?? null,
@@ -110,18 +119,58 @@ export async function approveDocument(
     return { ok: false, error: "This document isn't awaiting review." };
   }
 
+  // Approving a REPLACEMENT is what retires the copy it replaces. The original
+  // is archived first, and put back if the approval itself then fails, so the
+  // two never end up both live (double-counted) or both hidden (the
+  // requirement missing from compliance) after a failure part-way through.
+  const nowIso = new Date().toISOString();
+  const originalId = originalToArchiveOnApprove({
+    replaces_document_id: loaded.doc.replacesDocumentId,
+  });
+  let archivedOriginal = false;
+
+  if (originalId) {
+    const { data: archived, error: archiveError } = await supabase
+      .from("contractor_documents")
+      .update({ archived_at: nowIso, updated_at: nowIso })
+      .eq("id", originalId)
+      .eq("contractor_id", loaded.contractor.id)
+      .is("archived_at", null)
+      .select("id");
+
+    if (archiveError) {
+      console.error("approveDocument: couldn't archive the replaced copy", archiveError);
+      return {
+        ok: false,
+        error: "Couldn't replace the previous copy, so nothing was changed. Try again.",
+      };
+    }
+    archivedOriginal = (archived?.length ?? 0) > 0;
+  }
+
   const { error } = await supabase
     .from("contractor_documents")
     .update({
       status: "approved",
       expiry_date: expiryDate,
       rejection_reason: null,
-      updated_at: new Date().toISOString(),
+      // Now the live document: the link to what it replaced is spent.
+      replaces_document_id: null,
+      updated_at: nowIso,
     })
     .eq("id", loaded.doc.id);
 
   if (error) {
     console.error("approveDocument failed", error);
+    if (archivedOriginal && originalId) {
+      const { error: restoreError } = await supabase
+        .from("contractor_documents")
+        .update({ archived_at: null })
+        .eq("id", originalId);
+      if (restoreError) {
+        console.error("approveDocument: couldn't restore the replaced copy", restoreError);
+      }
+    }
     return { ok: false, error: "Couldn't approve this document. Try again." };
   }
 
@@ -181,6 +230,8 @@ export async function rejectDocument(
 
   let emailWarning: string | undefined;
   if (loaded.token) {
+    // The email carries the upload link, so it has to leave it valid.
+    await refreshTokenExpiry(supabase, loaded.contractor.id);
     const appUrl = await getAppUrl();
     const result = await sendDocumentRejectedEmail({
       to: loaded.contractor.email,
@@ -251,10 +302,11 @@ export async function revokeDocumentRequest(
 }
 
 /**
- * Re-sends the request email for one document, reusing the exact same
- * request-email flow as the contractor's original invite and the
- * contractor-list "Resend request" action (sendOnboardingEmail) — just
- * scoped to this one document's name instead of everything outstanding.
+ * Re-sends the request email for one document, through the same shared
+ * sender as the contractor-list "Resend request" button and the checkbox
+ * resend (lib/contractors/request-email.ts) — so the cooldown and link
+ * expiry apply identically to all three — just scoped to this one document's
+ * name instead of everything outstanding.
  *
  * Deliberately reuses the contractor's existing token rather than minting a
  * new one. Tokens in this app are per-contractor, not per-document (one link
@@ -271,39 +323,15 @@ export async function resendDocumentRequest(
 ): Promise<{ ok: boolean; error?: string }> {
   const company = await getCompany();
   if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
-  const user = await getUser();
 
   const supabase = await createClient();
   const loaded = await loadDocForCompany(supabase, company.id, contractorDocumentId);
   if (!loaded) return { ok: false, error: "Couldn't find that document." };
-  if (!canResendRequest(loaded.doc.status)) {
-    return { ok: false, error: "This document isn't waiting on the contractor." };
-  }
-  if (!loaded.token) {
-    return { ok: false, error: "This contractor has no active upload link. Contact support." };
-  }
 
-  const appUrl = await getAppUrl();
-  const result = await sendOnboardingEmail({
-    to: loaded.contractor.email,
-    contactName: loaded.contractor.contact_name,
-    companyName: company.name,
-    replyTo: user?.email ?? null,
-    documentNames: [loaded.doc.documentName],
-    onboardUrl: `${appUrl}/onboard/${loaded.token}`,
-  });
-
-  if (!result.ok) {
-    return {
-      ok: false,
-      error:
-        result.reason === "not_configured"
-          ? "Email isn't configured yet, so the request couldn't be sent."
-          : "The email service rejected the request. Try again shortly.",
-    };
-  }
-
-  return { ok: true };
+  // Same path as the checkbox panel, so a single-row resend behaves
+  // identically to ticking that one box: any status, one email, cooldown.
+  const result = await resendDocumentRequests(loaded.contractor.id, [contractorDocumentId]);
+  return result.ok ? { ok: true } : { ok: false, error: result.error };
 }
 
 /**

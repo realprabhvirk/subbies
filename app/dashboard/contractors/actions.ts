@@ -8,6 +8,7 @@ import { getCompany, getUser } from "@/lib/supabase/dal";
 import { getAppUrl } from "@/lib/app-url";
 import { canAddContractor, limitMessage } from "@/lib/billing/entitlements";
 import { sendOnboardingEmail, type SendResult } from "@/lib/email/onboarding";
+import { sendRequestToContractor } from "@/lib/contractors/request-email";
 
 export interface NewContractorState {
   ok: boolean;
@@ -173,55 +174,38 @@ export async function resendOnboardingRequest(
     return { ok: false, message: "Couldn't find that contractor." };
   }
 
-  const { data: tokenRow } = await supabase
-    .from("contractor_tokens")
-    .select("token")
-    .eq("contractor_id", contractor.id)
-    .single();
-
-  if (!tokenRow) {
-    return { ok: false, message: "This contractor has no active link. Contact support." };
-  }
-
+  // Archived documents are the company's private record and never go in an
+  // email. A pending replacement IS outstanding (the contractor has been asked
+  // for it), so those rows count; but the fallback list of "everything" names
+  // each requirement once, so it only takes the live rows.
   const { data: docs } = await supabase
     .from("contractor_documents")
-    .select("status, document_types(name)")
-    .eq("contractor_id", contractor.id);
+    .select("status, replaces_document_id, document_types(name)")
+    .eq("contractor_id", contractor.id)
+    .is("archived_at", null);
+
+  const nameOf = (d: { document_types: unknown }) => {
+    const dt = d.document_types as unknown as { name: string } | null;
+    return dt?.name ?? "Document";
+  };
 
   const outstanding = (docs ?? [])
     .filter((d) => d.status === "requested" || d.status === "rejected")
-    .map((d) => {
-      const dt = d.document_types as unknown as { name: string } | null;
-      return dt?.name ?? "Document";
-    });
+    .map(nameOf);
 
   const documentNames =
     outstanding.length > 0
       ? outstanding
-      : (docs ?? []).map((d) => {
-          const dt = d.document_types as unknown as { name: string } | null;
-          return dt?.name ?? "Document";
-        });
+      : (docs ?? []).filter((d) => d.replaces_document_id === null).map(nameOf);
 
-  const appUrl = await getAppUrl();
-  const result = await sendOnboardingEmail({
-    to: contractor.email,
-    contactName: contractor.contact_name,
+  const result = await sendRequestToContractor(supabase, {
+    contractor,
     companyName: company.name,
     replyTo: user?.email ?? null,
     documentNames,
-    onboardUrl: `${appUrl}/onboard/${tokenRow.token}`,
   });
 
-  if (!result.ok) {
-    return {
-      ok: false,
-      message:
-        result.reason === "not_configured"
-          ? "Email isn't configured yet, so the request couldn't be sent."
-          : "The email service rejected the request. Try again shortly.",
-    };
-  }
+  if (!result.ok) return { ok: false, message: result.message };
 
   return { ok: true, message: `Onboarding request re-sent to ${contractor.email}.` };
 }

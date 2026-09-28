@@ -75,6 +75,10 @@ export default async function DashboardPage() {
     const { data: docData } = await supabase
       .from("contractor_documents")
       .select("contractor_id, status, expiry_date")
+      // Live documents only: an archived (or not-yet-approved replacement)
+      // row must not add to the expired / expiring counts.
+      .is("archived_at", null)
+      .is("replaces_document_id", null)
       .in(
         "contractor_id",
         contractors.map((c) => c.id),
