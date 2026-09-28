@@ -130,6 +130,10 @@ export async function GET(req: NextRequest) {
     .select("id, contractor_id, expiry_date, document_types(name, reminder_days)")
     .in("contractor_id", [...contractorById.keys()])
     .eq("status", "approved")
+    // An archived document is a record. Without this the job would keep
+    // emailing a contractor about a certificate the company already archived.
+    .is("archived_at", null)
+    .is("replaces_document_id", null)
     .not("expiry_date", "is", null);
 
   if (docError) {

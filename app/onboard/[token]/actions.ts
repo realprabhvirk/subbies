@@ -24,6 +24,7 @@ interface DocRow {
   id: string;
   contractor_id: string;
   status: DocumentStatus;
+  archived_at: string | null;
   document_types: { name: string } | null;
 }
 
@@ -34,11 +35,14 @@ async function loadOwnedDocument(
   const admin = createAdminClient();
   const { data } = await admin
     .from("contractor_documents")
-    .select("id, contractor_id, status, document_types(name)")
+    .select("id, contractor_id, status, archived_at, document_types(name)")
     .eq("id", contractorDocumentId)
     .maybeSingle<DocRow>();
 
   if (!data || data.contractor_id !== contractorId) return null;
+  // An archived document is the company's record, not something the
+  // contractor can upload against, however they came by its id.
+  if (data.archived_at !== null) return null;
   return data;
 }
 
@@ -276,14 +280,25 @@ export async function getSubmittedFileUrl(
   const admin = createAdminClient();
   const { data: file } = await admin
     .from("contractor_document_files")
-    .select("file_path, contractor_documents(contractor_id)")
+    .select("file_path, contractor_documents(contractor_id, archived_at)")
     .eq("id", fileId)
     .maybeSingle<{
       file_path: string;
-      contractor_documents: { contractor_id: string } | null;
+      contractor_documents: {
+        contractor_id: string;
+        archived_at: string | null;
+      } | null;
     }>();
 
-  if (!file || file.contractor_documents?.contractor_id !== resolved.contractorId) {
+  // A file id the contractor saw while its document was live must stop
+  // working the moment the company archives that document: archived files are
+  // the company's private record, and this is the only door a contractor has
+  // to a file.
+  if (
+    !file ||
+    file.contractor_documents?.contractor_id !== resolved.contractorId ||
+    file.contractor_documents?.archived_at
+  ) {
     return { ok: false, error: "No file to view." };
   }
 

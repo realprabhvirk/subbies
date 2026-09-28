@@ -151,6 +151,13 @@ export function OnboardChecklist({
               <StatusBadge kind="document" status={item.status} />
             </div>
 
+            {item.isReplacement && (
+              <p className="mt-2 text-sm text-ink-muted">
+                Updated copy requested. What you sent before stays valid until this one
+                is approved.
+              </p>
+            )}
+
             {item.status === "rejected" && item.rejectionReason && (
               <p className="mt-2 text-sm text-expired">
                 Not accepted: {item.rejectionReason}

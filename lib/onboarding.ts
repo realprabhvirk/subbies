@@ -134,6 +134,12 @@ export interface OnboardingChecklistItem {
   status: DocumentStatus;
   rejectionReason: string | null;
   files: OnboardingChecklistFile[];
+  /**
+   * The company asked for an updated copy of something already on file. Shown
+   * so the contractor isn't left wondering why a document they've already
+   * supplied is back on their list.
+   */
+  isReplacement: boolean;
 }
 
 export interface OnboardingContext {
@@ -178,13 +184,16 @@ export async function getOnboardingContext(
 
   if (contractorError || !contractor) return null;
 
-  const { data: docs, error: docsError } = await admin
+  const { data: allDocs, error: docsError } = await admin
     .from("contractor_documents")
-    .select("id, status, rejection_reason, document_types(name)")
+    .select("id, status, rejection_reason, replaces_document_id, document_types(name)")
     // A revoked request is cancelled — the contractor has nothing to act on
     // and shouldn't see it at all, as if it had never been asked for.
     .eq("contractor_id", contractor.id)
-    .neq("status", "revoked");
+    .neq("status", "revoked")
+    // An archived document is the company's private record. It must never
+    // reach this page, however it got archived.
+    .is("archived_at", null);
 
   // This is the actual gate: does the token resolve to a real contractor
   // with real document requirements. A failure here is genuinely fatal —
@@ -204,7 +213,18 @@ export async function getOnboardingContext(
   // in the select above) is what makes that separation possible: an embed
   // failure poisons the whole query's result, a separate query's failure
   // only poisons its own.
-  const docIds = (docs ?? []).map((d) => d.id);
+  // When the company has asked for an updated copy of an approved document,
+  // the contractor's requirement IS that new request. The approved original
+  // stays valid on the company's side, but listing it here too would show the
+  // same document twice, one of them already "done".
+  const replacedIds = new Set(
+    (allDocs ?? [])
+      .map((d) => (d as unknown as { replaces_document_id: string | null }).replaces_document_id)
+      .filter((id): id is string => id !== null),
+  );
+  const docs = (allDocs ?? []).filter((d) => !replacedIds.has(d.id));
+
+  const docIds = docs.map((d) => d.id);
   let filesByDoc = new Map<string, OnboardingChecklistFile[]>();
   if (docIds.length > 0) {
     const { data: files, error: filesError } = await admin
@@ -222,18 +242,22 @@ export async function getOnboardingContext(
     }
   }
 
-  const items: OnboardingChecklistItem[] = (docs ?? [])
+  const items: OnboardingChecklistItem[] = docs
     .map((d) => {
       const row = d as unknown as Pick<
         ContractorDocument,
         "id" | "status" | "rejection_reason"
-      > & { document_types: { name: string } | null };
+      > & {
+        document_types: { name: string } | null;
+        replaces_document_id: string | null;
+      };
       return {
         id: row.id,
         documentName: row.document_types?.name ?? "Document",
         status: row.status,
         rejectionReason: row.rejection_reason,
         files: filesByDoc.get(row.id) ?? [],
+        isReplacement: row.replaces_document_id !== null,
       };
     })
     .sort((a, b) => a.documentName.localeCompare(b.documentName));
