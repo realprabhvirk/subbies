@@ -45,6 +45,43 @@ export function daysUntilExpiry(expiryDate: string, today: Date): number | null 
   return Math.round((expiryUtc - todayUtc) / 86_400_000);
 }
 
+export type ExpiryTone = "expired" | "soon" | "ok";
+
+export interface ExpiryStatus {
+  tone: ExpiryTone;
+  /** "12 days left", "Expires today", "3 days ago" — null when there's nothing worth saying. */
+  detail: string | null;
+}
+
+/**
+ * Matches the dashboard's "Expiring soon" tile, which counts anything within
+ * 30 days (EXPIRING_WINDOW_DAYS in app/dashboard/page.tsx). Kept as its own
+ * constant here so a badge on a contractor's page and that tile are read off
+ * the same number.
+ */
+export const EXPIRING_SOON_DAYS = 30;
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/**
+ * How an approved document's expiry should read on the contractor page.
+ * Built on daysUntilExpiry, so it agrees exactly with what the reminder job
+ * will do about the same document on the same day.
+ */
+export function describeExpiry(
+  expiryDate: string | null,
+  today: Date,
+): ExpiryStatus | null {
+  if (!expiryDate) return null;
+  const days = daysUntilExpiry(expiryDate, today);
+  if (days === null) return null;
+
+  if (days < 0) return { tone: "expired", detail: `${plural(-days, "day")} ago` };
+  if (days === 0) return { tone: "soon", detail: "today" };
+  if (days <= EXPIRING_SOON_DAYS) return { tone: "soon", detail: `${plural(days, "day")} left` };
+  return { tone: "ok", detail: null };
+}
+
 export interface ReminderCandidate {
   documentId: string;
   contractorId: string;
