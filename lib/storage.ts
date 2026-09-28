@@ -162,14 +162,13 @@ export interface DeleteContractorFilesResult extends DeleteCompanyDocumentsResul
 }
 
 /**
- * Removes every stored file for ONE contractor: everything under
- * `${companyId}/${contractorId}/`.
+ * Removes every stored file under `prefix`, plus any `extraPaths` — strictly.
  *
  * Unlike the account-deletion wipe above, this one is strict, because its
- * caller deletes the contractor's database rows right after and must not do
- * so unless the files are really gone — the rows are the only record of
- * which files belong to whom, so deleting them first and failing on the files
- * leaves dangling objects nothing points at any more. Two differences follow:
+ * callers delete database rows right after and must not do so unless the files
+ * are really gone — the rows are the only record of which files belong to
+ * whom, so deleting them first and failing on the files leaves dangling
+ * objects nothing points at. Two differences follow:
  *
  *  - A failed *listing* is reported (`listFailed`), not swallowed.
  *    collectAllPaths treats a list error as "nothing here", which is a fine
@@ -179,34 +178,46 @@ export interface DeleteContractorFilesResult extends DeleteCompanyDocumentsResul
  *    surfaces rather than being quietly folded into an empty result.
  *  - The caller treats any `failedPaths` as a reason to stop.
  *
- * Walks the real tree rather than the database's list of paths, so it also
- * catches uploads that never made it into a contractor_document_files row.
+ * Walks the real tree rather than trusting the database's list of paths, so it
+ * also catches uploads that never made it into a contractor_document_files
+ * row. `extraPaths` covers the opposite gap: a path the database knows about
+ * that doesn't sit under the prefix (it shouldn't happen, but "no orphaned
+ * files" is not something to leave to "shouldn't").
  */
-export async function deleteContractorFiles(
-  companyId: string,
-  contractorId: string,
+export async function deleteFilesUnderPrefix(
+  prefix: string,
+  extraPaths: string[] = [],
 ): Promise<DeleteContractorFilesResult> {
   const admin = createAdminClient();
   const bucket = admin.storage.from(CONTRACTOR_DOCS_BUCKET);
 
   const lister: StorageLister = {
-    list: async (prefix) => {
-      const { data, error } = await bucket.list(prefix, { limit: 1000 });
+    list: async (p) => {
+      const { data, error } = await bucket.list(p, { limit: 1000 });
       if (error) throw error;
       return { data, error: null };
     },
   };
 
-  let paths: string[];
+  let found: string[];
   try {
-    paths = await collectAllPaths(lister, `${companyId}/${contractorId}`);
+    found = await collectAllPaths(lister, prefix);
   } catch (error) {
-    console.error("deleteContractorFiles: listing failed", { companyId, contractorId, error });
+    console.error("deleteFilesUnderPrefix: listing failed", { prefix, error });
     return { deletedCount: 0, failedPaths: [], listFailed: true };
   }
 
+  const paths = [...new Set([...found, ...extraPaths.filter(Boolean)])];
   if (paths.length === 0) return { deletedCount: 0, failedPaths: [], listFailed: false };
 
-  const result = await removeInBatches(bucket, paths, { companyId, contractorId });
+  const result = await removeInBatches(bucket, paths, { prefix });
   return { ...result, listFailed: false };
+}
+
+/** Everything stored for ONE contractor: `${companyId}/${contractorId}/`. */
+export async function deleteContractorFiles(
+  companyId: string,
+  contractorId: string,
+): Promise<DeleteContractorFilesResult> {
+  return deleteFilesUnderPrefix(`${companyId}/${contractorId}`);
 }
