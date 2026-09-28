@@ -31,7 +31,11 @@ import {
 export type RequestSendResult =
   | { ok: true }
   | { ok: false; reason: "cooldown"; retryAfterSeconds: number; message: string }
-  | { ok: false; reason: "no_link" | "not_configured" | "send_failed"; message: string };
+  | {
+      ok: false;
+      reason: "no_link" | "not_configured" | "send_failed" | "prepare_failed";
+      message: string;
+    };
 
 interface TokenRow {
   token: string;
@@ -44,7 +48,18 @@ export async function sendRequestToContractor(
     contractor: { id: string; email: string; contact_name: string | null };
     companyName: string;
     replyTo: string | null;
+    /** Genuinely outstanding documents. */
     documentNames: string[];
+    /** Documents with a valid copy on file, being re-requested as an updated copy. */
+    refreshDocumentNames?: string[];
+    /**
+     * Runs once the cooldown slot is held and immediately before the email
+     * goes out — the place to make any database changes the email describes
+     * (e.g. adding a replacement row). Running it AFTER the cooldown check means
+     * a blocked resend changes nothing, and a `{ ok: false }` here releases the
+     * slot and stops the send.
+     */
+    prepare?: () => Promise<{ ok: true } | { ok: false; message: string }>;
   },
 ): Promise<RequestSendResult> {
   const { contractor } = input;
@@ -141,6 +156,25 @@ export async function sendRequestToContractor(
     }
   }
 
+  // Hands the cooldown slot back: nothing was delivered, so a failure
+  // shouldn't cost the company a wait.
+  const release = async () => {
+    if (!claimedAt) return;
+    await supabase
+      .from("contractor_tokens")
+      .update({ last_request_sent_at: previousSentAt })
+      .eq("contractor_id", contractor.id)
+      .eq("last_request_sent_at", claimedAt);
+  };
+
+  if (input.prepare) {
+    const prepared = await input.prepare();
+    if (!prepared.ok) {
+      await release();
+      return { ok: false, reason: "prepare_failed", message: prepared.message };
+    }
+  }
+
   const appUrl = await getAppUrl();
   const result = await sendOnboardingEmail({
     to: contractor.email,
@@ -148,18 +182,12 @@ export async function sendRequestToContractor(
     companyName: input.companyName,
     replyTo: input.replyTo,
     documentNames: input.documentNames,
+    refreshDocumentNames: input.refreshDocumentNames,
     onboardUrl: `${appUrl}/onboard/${tokenRow.token}`,
   });
 
   if (!result.ok) {
-    // Nothing was delivered, so it shouldn't cost the company a cooldown.
-    if (claimedAt) {
-      await supabase
-        .from("contractor_tokens")
-        .update({ last_request_sent_at: previousSentAt })
-        .eq("contractor_id", contractor.id)
-        .eq("last_request_sent_at", claimedAt);
-    }
+    await release();
     return result.reason === "not_configured"
       ? {
           ok: false,

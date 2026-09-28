@@ -17,7 +17,13 @@ import {
   type ContractorDetailsFieldErrors,
   type ContractorDetailsInput,
 } from "@/lib/contractor-details-logic";
-import { canResendRequest } from "@/lib/document-actions-logic";
+import { recomputeContractorStatus } from "@/lib/contractor-status";
+import {
+  findReplacementRow,
+  planResend,
+  type LifecycleRow,
+} from "@/lib/document-lifecycle-logic";
+import { daysUntilExpiry } from "@/lib/reminders/expiry-logic";
 import type { DocumentStatus } from "@/lib/types";
 
 const SESSION_EXPIRED = "Your session has expired. Reload and try again.";
@@ -197,20 +203,41 @@ export type ResendRequestsResult =
   | { ok: true; sentTo: string; count: number }
   | { ok: false; error: string };
 
+interface ResendRow {
+  id: string;
+  status: DocumentStatus;
+  expiry_date: string | null;
+  archived_at: string | null;
+  replaces_document_id: string | null;
+  document_type_id: string;
+  document_types: { name: string } | null;
+}
+
 /**
- * Sends ONE email to the contractor covering the selected documents.
+ * Sends ONE email to the contractor covering the selected documents. Works on
+ * ANY status: the company may want a fresh copy of something already approved.
  *
- * The selection is checked against this contractor's own documents that are
- * actually waiting on them (requested or rejected) — built server-side, so an
- * id that belongs to a different contractor or company, or to a document that
- * has since been approved, is simply not in the set and the request is
- * refused. Nothing the client sends decides who gets emailed or what the
- * email says.
+ * What it does to the data depends on the document (see planResend):
+ *  - requested / rejected / already-submitted: nothing changes, the email goes.
+ *  - approved (valid OR expired): a separate replacement row is added beside
+ *    it. The approved document itself is never touched, so its status, expiry
+ *    and file — and therefore the contractor's compliance — stay exactly as
+ *    they were until the replacement is uploaded AND approved.
+ *  - cancelled (revoked): reopened as a request.
+ *
+ * Those database changes run only once the cooldown is cleared and just before
+ * the email goes, and are undone if the send then fails, so a blocked or
+ * failed resend leaves nothing behind.
+ *
+ * The selection is checked against this contractor's own documents, built
+ * server-side: an id belonging to another contractor or company, or to an
+ * archived document, isn't in the set and the request is refused. Nothing the
+ * client sends decides who is emailed or what the email says.
  *
  * The link in the email is the contractor's existing one, with its expiry
- * extended, and opens the page listing everything currently outstanding for
- * them — not just the documents named in this email. Rotating the link
- * instead would kill it in every earlier email they're still holding.
+ * extended, and opens the checklist of everything currently outstanding — not
+ * just the documents named. Rotating it would kill the link in every earlier
+ * email they're still holding.
  */
 export async function resendDocumentRequests(
   contractorId: string,
@@ -242,42 +269,152 @@ export async function resendDocumentRequests(
 
   const { data: docs, error: docsError } = await supabase
     .from("contractor_documents")
-    .select("id, status, document_types(name)")
-    .eq("contractor_id", contractor.id);
+    .select(
+      "id, status, expiry_date, archived_at, replaces_document_id, document_type_id, document_types(name)",
+    )
+    .eq("contractor_id", contractor.id)
+    .is("archived_at", null);
 
   if (docsError) {
     console.error("resendDocumentRequests: document lookup failed", docsError);
     return { ok: false, error: "Couldn't load this contractor's documents. Try again." };
   }
 
-  const rows = (docs ?? []) as unknown as {
-    id: string;
-    status: DocumentStatus;
-    document_types: { name: string } | null;
-  }[];
-  const eligible = rows.filter((d) => canResendRequest(d.status));
+  const rows = (docs ?? []) as unknown as ResendRow[];
+  const byId = new Map(rows.map((r) => [r.id, r]));
+
+  // A replacement row stands for the document it replaces: chasing the
+  // replacement is chasing that requirement.
+  const requested = Array.isArray(documentIds)
+    ? documentIds.map((id) => {
+        const r = typeof id === "string" ? byId.get(id) : undefined;
+        return r?.replaces_document_id && byId.has(r.replaces_document_id)
+          ? r.replaces_document_id
+          : id;
+      })
+    : documentIds;
+
+  const live = rows.filter(
+    (r) => r.replaces_document_id === null || !byId.has(r.replaces_document_id),
+  );
 
   const selection = selectResendable(
-    documentIds,
-    eligible.map((d) => d.id),
+    requested,
+    live.map((d) => d.id),
   );
   if (!selection.ok) return { ok: false, error: selection.error };
 
-  const chosen = new Set(selection.ids);
-  const documentNames = eligible
-    .filter((d) => chosen.has(d.id))
-    .map((d) => d.document_types?.name ?? "Document")
-    .sort((a, b) => a.localeCompare(b));
+  const lifecycle: LifecycleRow[] = rows.map((r) => ({
+    id: r.id,
+    status: r.status,
+    archived_at: r.archived_at,
+    replaces_document_id: r.replaces_document_id,
+  }));
+
+  const now = new Date();
+  const chosen = live.filter((d) => selection.ids.includes(d.id));
+  const steps = planResend(
+    chosen.map((d) => {
+      const replacement = findReplacementRow(lifecycle, d.id);
+      const days = d.expiry_date ? daysUntilExpiry(d.expiry_date, now) : null;
+      return {
+        id: d.id,
+        status: d.status,
+        expired: d.status === "approved" && days !== null && days < 0,
+        replacement: replacement
+          ? { id: replacement.id, status: replacement.status }
+          : null,
+      };
+    }),
+  );
+
+  const nameOf = (id: string) => byId.get(id)?.document_types?.name ?? "Document";
+  const namesFor = (bucket: "needed" | "refresh") =>
+    steps
+      .filter((s) => s.bucket === bucket)
+      .map((s) => nameOf(s.docId))
+      .sort((a, b) => a.localeCompare(b));
+
+  // Applied only once the cooldown is cleared; undone if the send fails.
+  const created: string[] = [];
+  const reopened: { id: string; was: DocumentStatus }[] = [];
+
+  const prepare = async (): Promise<{ ok: true } | { ok: false; message: string }> => {
+    const fail = (what: string, error: unknown) => {
+      console.error(`resendDocumentRequests: ${what}`, error);
+      return { ok: false as const, message: "Couldn't prepare the request. Nothing was sent. Try again." };
+    };
+
+    for (const step of steps) {
+      if (step.kind === "email_only") continue;
+
+      if (step.kind === "reopen") {
+        const was = byId.get(step.targetId)?.status ?? "revoked";
+        const { error } = await supabase
+          .from("contractor_documents")
+          .update({ status: "requested", updated_at: now.toISOString() })
+          .eq("id", step.targetId)
+          .eq("contractor_id", contractor.id);
+        if (error) return fail("reopen failed", error);
+        reopened.push({ id: step.targetId, was });
+        continue;
+      }
+
+      // create_replacement: a separate row beside the approved one.
+      const original = byId.get(step.docId);
+      if (!original) continue;
+      const { data: inserted, error } = await supabase
+        .from("contractor_documents")
+        .insert({
+          contractor_id: contractor.id,
+          document_type_id: original.document_type_id,
+          status: "requested",
+          replaces_document_id: original.id,
+        })
+        .select("id")
+        .single<{ id: string }>();
+      if (error || !inserted) return fail("replacement insert failed", error);
+      created.push(inserted.id);
+    }
+    return { ok: true };
+  };
+
+  const rollback = async () => {
+    if (created.length > 0) {
+      const { error } = await supabase
+        .from("contractor_documents")
+        .delete()
+        .in("id", created)
+        .eq("contractor_id", contractor.id);
+      if (error) console.error("resendDocumentRequests: rollback delete failed", error);
+    }
+    for (const r of reopened) {
+      const { error } = await supabase
+        .from("contractor_documents")
+        .update({ status: r.was })
+        .eq("id", r.id)
+        .eq("contractor_id", contractor.id);
+      if (error) console.error("resendDocumentRequests: rollback reopen failed", error);
+    }
+  };
 
   const result = await sendRequestToContractor(supabase, {
     contractor,
     companyName: company.name,
     replyTo: user?.email ?? null,
-    documentNames,
+    documentNames: namesFor("needed"),
+    refreshDocumentNames: namesFor("refresh"),
+    prepare,
   });
 
-  if (!result.ok) return { ok: false, error: result.message };
+  if (!result.ok) {
+    await rollback();
+    return { ok: false, error: result.message };
+  }
+
+  // Reopening a cancelled request changes what's outstanding.
+  if (reopened.length > 0) await recomputeContractorStatus(supabase, contractor.id);
 
   revalidateContractor(contractor.id);
-  return { ok: true, sentTo: contractor.email, count: documentNames.length };
+  return { ok: true, sentTo: contractor.email, count: chosen.length };
 }

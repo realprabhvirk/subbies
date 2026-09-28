@@ -174,25 +174,29 @@ export async function resendOnboardingRequest(
     return { ok: false, message: "Couldn't find that contractor." };
   }
 
+  // Archived documents are the company's private record and never go in an
+  // email. A pending replacement IS outstanding (the contractor has been asked
+  // for it), so those rows count; but the fallback list of "everything" names
+  // each requirement once, so it only takes the live rows.
   const { data: docs } = await supabase
     .from("contractor_documents")
-    .select("status, document_types(name)")
-    .eq("contractor_id", contractor.id);
+    .select("status, replaces_document_id, document_types(name)")
+    .eq("contractor_id", contractor.id)
+    .is("archived_at", null);
+
+  const nameOf = (d: { document_types: unknown }) => {
+    const dt = d.document_types as unknown as { name: string } | null;
+    return dt?.name ?? "Document";
+  };
 
   const outstanding = (docs ?? [])
     .filter((d) => d.status === "requested" || d.status === "rejected")
-    .map((d) => {
-      const dt = d.document_types as unknown as { name: string } | null;
-      return dt?.name ?? "Document";
-    });
+    .map(nameOf);
 
   const documentNames =
     outstanding.length > 0
       ? outstanding
-      : (docs ?? []).map((d) => {
-          const dt = d.document_types as unknown as { name: string } | null;
-          return dt?.name ?? "Document";
-        });
+      : (docs ?? []).filter((d) => d.replaces_document_id === null).map(nameOf);
 
   const result = await sendRequestToContractor(supabase, {
     contractor,
