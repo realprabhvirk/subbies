@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeEmail } from "@/lib/auth/normalize-email";
 import { classifySignupResult } from "@/lib/auth/signup-logic";
+import { TERMS_VERSION } from "@/lib/legal/terms";
 import { Logo } from "@/app/components/logo";
 import { Button } from "@/app/components/button";
 import { fieldClasses } from "@/app/components/input";
@@ -17,6 +18,7 @@ export default function SignupPage() {
   const [companyName, setCompanyName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -24,6 +26,13 @@ export default function SignupPage() {
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    // The `required` attribute on the checkbox covers normal use; this covers
+    // anything that skips native form validation.
+    if (!agreed) {
+      setError("Please confirm you're 18 or over and agree to the Terms and Privacy Policy.");
+      return;
+    }
 
     startTransition(async () => {
       const supabase = createClient();
@@ -45,7 +54,19 @@ export default function SignupPage() {
         // authenticated visit. That's what lets the dashboard finish setup
         // if the company row can't be created right here — see
         // lib/auth/signup-logic.ts for why that can happen.
-        options: { data: { company_name: trimmedCompanyName } },
+        //
+        // The terms fields record what was agreed at signup. terms_accepted_at
+        // is set by the browser, so treat auth.users.created_at (set by the
+        // server) as the trustworthy signup time and terms_version as the
+        // record of which wording they were shown.
+        options: {
+          data: {
+            company_name: trimmedCompanyName,
+            age_confirmed: true,
+            terms_version: TERMS_VERSION,
+            terms_accepted_at: new Date().toISOString(),
+          },
+        },
       });
 
       if (authError) {
@@ -180,12 +201,42 @@ export default function SignupPage() {
               </p>
             )}
 
+            <label
+              htmlFor="terms"
+              className="flex items-start gap-2.5 text-sm text-ink"
+            >
+              <input
+                id="terms"
+                type="checkbox"
+                required
+                checked={agreed}
+                onChange={(e) => setAgreed(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border-line-strong text-brand focus:ring-brand"
+              />
+              <span>
+                I&rsquo;m 18 or over, I&rsquo;m signing up on behalf of a
+                business, and I agree to the{" "}
+                <Link
+                  href="/terms"
+                  target="_blank"
+                  className="font-medium text-brand hover:underline"
+                >
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  className="font-medium text-brand hover:underline"
+                >
+                  Privacy Policy
+                </Link>
+                .
+              </span>
+            </label>
+
             <p className="text-xs text-ink-muted">
-              By creating an account, you agree to our{" "}
-              <Link href="/privacy" className="font-medium text-brand hover:underline">
-                Privacy Policy
-              </Link>
-              . If you delete your account, your email is retained to prevent
+              If you delete your account, your email is retained to prevent
               duplicate free trials.
             </p>
 

@@ -29,6 +29,9 @@ export function MarketingFooter() {
           <Link href="/privacy" className="text-ink-muted hover:text-ink">
             Privacy
           </Link>
+          <Link href="/terms" className="text-ink-muted hover:text-ink">
+            Terms
+          </Link>
         </nav>
       </div>
       <div className="border-t border-line">
