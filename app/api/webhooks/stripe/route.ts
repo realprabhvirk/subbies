@@ -6,6 +6,7 @@ import {
   syncSubscription,
   markSubscriptionCanceled,
   getCompanyIdByCustomer,
+  cancelOrphanedCustomerSubscriptions,
   type SyncResult,
 } from "@/lib/billing/sync";
 import { getCompanyOwnerEmail } from "@/lib/onboarding";
@@ -179,6 +180,12 @@ export async function POST(req: NextRequest) {
             : (invoice.customer?.id ?? null);
         if (customerId) {
           const companyId = await getCompanyIdByCustomer(customerId);
+          if (!companyId) {
+            // Failed payment for a customer we have no company for: the
+            // account was deleted without going through the in-app flow.
+            // Stop the billing instead of letting Stripe retry forever.
+            await cancelOrphanedCustomerSubscriptions(customerId);
+          }
           if (companyId) {
             const email = await getCompanyOwnerEmail(companyId);
             if (email) {

@@ -162,6 +162,61 @@ export async function getCompanyIdByCustomer(
 }
 
 /**
+ * Safety net for orphaned billing: a Stripe customer that no longer maps to any
+ * company (e.g. the account was removed directly in the Supabase dashboard,
+ * bypassing the in-app delete flow that cancels Stripe first). Cancels every
+ * live subscription on that customer so they stop being charged. Returns the
+ * ids it cancelled. Never throws — the caller is a webhook and must still 200.
+ */
+export async function cancelOrphanedCustomerSubscriptions(
+  customerId: string,
+): Promise<string[]> {
+  const stripe = getStripe();
+  if (!stripe) return [];
+
+  const cancelled: string[] = [];
+  try {
+    const subs = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "all",
+      limit: 20,
+    });
+    for (const sub of subs.data) {
+      if (sub.status === "canceled" || sub.status === "incomplete_expired") {
+        continue;
+      }
+      try {
+        await stripe.subscriptions.cancel(sub.id);
+        cancelled.push(sub.id);
+      } catch (err) {
+        const stripeErr = err as { code?: string };
+        if (stripeErr.code !== "resource_missing") {
+          console.error(
+            "cancelOrphanedCustomerSubscriptions: cancel failed",
+            sub.id,
+            err,
+          );
+        }
+      }
+    }
+  } catch (err) {
+    console.error(
+      "cancelOrphanedCustomerSubscriptions: could not list subscriptions",
+      customerId,
+      err,
+    );
+  }
+
+  if (cancelled.length > 0) {
+    console.error(
+      "ORPHANED BILLING: cancelled subscriptions for a customer with no matching company",
+      { customerId, cancelled },
+    );
+  }
+  return cancelled;
+}
+
+/**
  * Pulls the latest subscription state straight from Stripe for one company and
  * syncs it. Used on the checkout success redirect so billing works even before
  * the webhook is registered (and as a safety net if a webhook is delayed).
