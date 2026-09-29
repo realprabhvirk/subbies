@@ -32,7 +32,7 @@ export default function PrivacyPage() {
         <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
           Privacy Policy
         </h1>
-        <p className="mt-3 text-sm text-ink-subtle">Last updated: [DATE]</p>
+        <p className="mt-3 text-sm text-ink-subtle">Last updated: 30 September 2026</p>
 
         <div className="mt-10 space-y-10 border-t border-line pt-10">
           <P>
@@ -68,8 +68,11 @@ export default function PrivacyPage() {
               <li>Name, email address, phone number, business name and ABN (where provided)</li>
               <li>Login credentials (managed securely via our authentication provider)</li>
               <li>
-                Payment and billing information (processed by Stripe — we do
-                not store your card details)
+                Payment and billing information. Billing details (such as your
+                name, email and card details) are collected and held by
+                Stripe. Our servers never see or store your card number. We
+                keep only your Stripe customer and subscription IDs, your
+                plan, subscription status and billing dates
               </li>
               <li>
                 Subcontractor records you add: names, contact details, trade
@@ -152,8 +155,19 @@ export default function PrivacyPage() {
               </table>
             </div>
             <P>
-              These providers do not have independent rights to use your data
-              beyond what&rsquo;s needed to provide their service to us.
+              Most of these providers process data only to provide their
+              service to us. Stripe is the exception: it also uses payment
+              data for its own legal, fraud-prevention and financial-reporting
+              purposes, as described in{" "}
+              <a
+                href="https://stripe.com/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-brand hover:underline"
+              >
+                Stripe&rsquo;s privacy policy
+              </a>
+              .
             </P>
           </section>
 
@@ -174,16 +188,25 @@ export default function PrivacyPage() {
               <li>Your account data is retained for as long as your account is active.</li>
               <li>
                 <strong className="text-ink">If you delete your account</strong>, we
-                permanently delete your company data, subcontractor records,
-                and all uploaded documents.
+                cancel your subscription and permanently delete your company
+                data, subcontractor records, and all uploaded documents from
+                Subbies.
               </li>
               <li>
-                <strong className="text-ink">Exception:</strong> we retain your
-                email address indefinitely, separate from all other account
-                data, solely to prevent the same account from claiming more
-                than one free trial. This retained record contains nothing
-                beyond the email address itself — no documents, no business
-                data, no subcontractor information.
+                <strong className="text-ink">Exception 1, trial records:</strong> we
+                retain your email address indefinitely, separate from all
+                other account data, solely to prevent the same account from
+                claiming more than one free trial. This retained record
+                contains nothing beyond the email address itself — no
+                documents, no business data, no subcontractor information.
+              </li>
+              <li>
+                <strong className="text-ink">Exception 2, payment records:</strong>{" "}
+                Stripe keeps its own records of your payments and invoices
+                (such as your name, email and payment history) after your
+                Subbies account is deleted, as required by tax, financial and
+                anti-fraud laws. These records are held and governed by Stripe,
+                not Subbies, and we can&rsquo;t delete them on request.
               </li>
             </UL>
           </section>
@@ -196,7 +219,7 @@ export default function PrivacyPage() {
               <li>Correct inaccurate information</li>
               <li>
                 Request deletion of your account and associated data (noting
-                the retention exception in Section 6)
+                the retention exceptions in Section 6)
               </li>
             </UL>
             <P>
