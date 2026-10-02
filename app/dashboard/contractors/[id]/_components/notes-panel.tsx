@@ -81,7 +81,7 @@ export function NotesPanel({
       <form
         onSubmit={add}
         noValidate
-        className="rounded-card border border-line bg-surface p-5 shadow-sm sm:p-6"
+        className="rounded-card border border-line bg-surface p-card shadow-sm"
       >
         <label htmlFor="note-body" className="text-base font-semibold">
           Add a note
@@ -139,7 +139,7 @@ export function NotesPanel({
         ) : (
           <ul className="mt-3 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
             {notes.map((note) => (
-              <li key={note.id} className="flex items-start justify-between gap-3 px-5 py-4">
+              <li key={note.id} className="flex items-start justify-between gap-3 px-card py-4">
                 <div className="min-w-0">
                   <p className="whitespace-pre-wrap break-words text-sm">{note.body}</p>
                   <p className="mt-1.5 text-xs text-ink-subtle">{note.createdLabel}</p>

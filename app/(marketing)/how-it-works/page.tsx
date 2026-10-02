@@ -120,7 +120,7 @@ export default function HowItWorksPage() {
       </Section>
 
       <div className="border-y border-line bg-surface">
-        <Section className="py-16">
+        <Section className="py-section">
           <h2 className="max-w-2xl text-2xl font-semibold sm:text-3xl">
             Why compliance paperwork drags
           </h2>
@@ -142,7 +142,7 @@ export default function HowItWorksPage() {
         </Section>
       </div>
 
-      <Section className="py-16">
+      <Section className="py-section">
         <Eyebrow>The workflow</Eyebrow>
         <h2 className="mt-3 max-w-2xl text-2xl font-semibold sm:text-3xl">
           Four steps, most of which you only touch once
@@ -181,7 +181,7 @@ export default function HowItWorksPage() {
       </Section>
 
       <div className="border-y border-line bg-surface">
-        <Section className="py-16">
+        <Section className="py-section">
           <Eyebrow>What makes it different</Eyebrow>
           <div className="mt-8 grid gap-6 lg:grid-cols-3">
             {DIFFERENT.map((d) => (
@@ -194,7 +194,7 @@ export default function HowItWorksPage() {
         </Section>
       </div>
 
-      <Section className="py-16">
+      <Section className="py-section">
         <Eyebrow>Questions</Eyebrow>
         <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">
           Frequently asked

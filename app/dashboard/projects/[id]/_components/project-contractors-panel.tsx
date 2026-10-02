@@ -68,7 +68,7 @@ export function ProjectContractorsPanel({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-card border border-line bg-surface shadow-sm p-5">
+      <div className="rounded-card border border-line bg-surface shadow-sm p-card">
         <h3 className="text-sm font-semibold">Assign a contractor</h3>
         {available.length === 0 ? (
           <p className="mt-2 text-sm text-ink-muted">
@@ -132,7 +132,7 @@ export function ProjectContractorsPanel({
       </div>
 
       {assigned.length === 0 ? (
-        <p className="rounded-card border border-line bg-surface shadow-sm px-5 py-8 text-center text-sm text-ink-muted">
+        <p className="rounded-card border border-line bg-surface shadow-sm px-card py-8 text-center text-sm text-ink-muted">
           No contractors assigned to this project yet.
         </p>
       ) : (
@@ -140,7 +140,7 @@ export function ProjectContractorsPanel({
           {assigned.map((a) => (
             <li
               key={a.projectContractorId}
-              className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
+              className="flex flex-wrap items-center justify-between gap-3 px-card py-4"
             >
               <div className="min-w-0">
                 <Link

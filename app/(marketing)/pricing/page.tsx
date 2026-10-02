@@ -113,7 +113,7 @@ export default function PricingPage() {
 
       {/* Comparison */}
       <Section className="py-10">
-        <div className="overflow-x-auto rounded-card border border-line bg-surface">
+        <div className="relative overflow-x-auto rounded-card border border-line bg-surface">
           <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="border-b border-line">

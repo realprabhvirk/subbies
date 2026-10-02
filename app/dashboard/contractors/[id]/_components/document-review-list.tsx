@@ -89,7 +89,7 @@ export function DocumentReviewList({
 }) {
   if (documents.length === 0) {
     return (
-      <p className="rounded-card border border-line bg-surface shadow-sm px-5 py-8 text-center text-sm text-ink-muted">
+      <p className="rounded-card border border-line bg-surface shadow-sm px-card py-8 text-center text-sm text-ink-muted">
         No documents were requested from this contractor.
       </p>
     );
@@ -350,13 +350,13 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
   const view = optimisticDoc;
 
   return (
-    <li className="px-5 py-4">
+    <li className="px-card py-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
             {view.documentName}
             {view.isReplacement && (
-              <span className="rounded-full bg-review-bg px-2 py-0.5 text-[11px] font-medium text-review">
+              <span className="rounded-full bg-review-bg px-2 py-0.5 text-2xs font-medium text-review">
                 Updated copy
               </span>
             )}

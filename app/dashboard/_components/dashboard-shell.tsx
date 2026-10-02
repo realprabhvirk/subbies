@@ -83,7 +83,7 @@ function NavLink({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-sidebar-ink-subtle">
+    <p className="px-3 pb-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-sidebar-ink-subtle">
       {children}
     </p>
   );
@@ -169,7 +169,7 @@ export function DashboardShell({
           className="object-cover opacity-[0.14] grayscale"
         />
         <div className="absolute inset-0 flex flex-col justify-end p-5">
-          <p className="text-[11px] font-semibold uppercase leading-relaxed tracking-[0.08em] text-sidebar-ink-muted">
+          <p className="text-2xs font-semibold uppercase leading-relaxed tracking-[0.08em] text-sidebar-ink-muted">
             Safer sites
             <br />
             Stronger builds
@@ -182,7 +182,7 @@ export function DashboardShell({
         <div className="flex items-center gap-2.5 px-1 pb-2">
           <span
             aria-hidden
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-active-bg text-[11px] font-semibold text-sidebar-ink"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-active-bg text-2xs font-semibold text-sidebar-ink"
           >
             {initials}
           </span>
@@ -265,12 +265,12 @@ export function DashboardShell({
       <div className="flex min-w-0 flex-col">
         {/* Desktop top bar. No search field: the app has no search to run, and
             a box that does nothing is worse than no box. */}
-        <header className="sticky top-0 z-20 hidden h-(--header-height) items-center justify-end gap-3 border-b border-line bg-surface px-8 text-ink-muted lg:flex">
+        <header className="sticky top-0 z-20 hidden h-(--header-height) items-center justify-end gap-3 border-b border-line bg-surface px-10 text-ink-muted lg:flex">
           {notificationsSlot}
           <div className="flex items-center gap-2.5 border-l border-line pl-3">
             <span
               aria-hidden
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-[11px] font-semibold text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-2xs font-semibold text-white"
             >
               {initials}
             </span>
@@ -301,7 +301,7 @@ export function DashboardShell({
           </Link>
         )}
 
-        <main className="mx-auto w-full max-w-(--content-max-width) flex-1 px-4 py-8 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-(--content-max-width) flex-1 px-4 py-10 sm:px-6 lg:px-10">
           {children}
         </main>
       </div>

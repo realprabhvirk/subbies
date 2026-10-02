@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <Section className="py-16 sm:py-20">
+    <Section className="py-section">
       <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
         <div>
           <Eyebrow>Contact</Eyebrow>

@@ -78,7 +78,7 @@ export function CtaBand({
   sub?: string;
 }) {
   return (
-    <Section className="py-16">
+    <Section className="py-section">
       <div className="overflow-hidden rounded-card border border-line bg-surface px-6 py-14 text-center shadow-md sm:px-12">
         <h2 className="text-2xl font-semibold sm:text-3xl">{heading}</h2>
         <p className="mx-auto mt-3 max-w-xl text-sm text-ink-muted sm:text-base">

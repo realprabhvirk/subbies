@@ -64,7 +64,7 @@ export function ProductPreview() {
                 <p className="truncate text-xs text-ink-muted">{r.trade}</p>
               </div>
               <span
-                className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${r.cls}`}
+                className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-2xs font-medium ${r.cls}`}
               >
                 <Icon className="h-3 w-3" strokeWidth={2} aria-hidden />
                 {r.label}

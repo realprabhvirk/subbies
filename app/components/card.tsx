@@ -26,7 +26,7 @@ export function Card({
     <div
       className={`rounded-card border border-line bg-surface shadow-sm transition-[box-shadow,transform] duration-[var(--duration-base)] ease-[var(--ease-standard)] ${
         interactive ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-md" : ""
-      } ${padded ? "p-5" : ""} ${className}`}
+      } ${padded ? "p-card" : ""} ${className}`}
     >
       {children}
     </div>
@@ -44,7 +44,7 @@ export function CardHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-5 py-4">
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-card py-5">
       <div className="min-w-0">
         <h2 className="text-base font-semibold">{title}</h2>
         {description && (

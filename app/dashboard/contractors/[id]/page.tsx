@@ -365,7 +365,11 @@ export default async function ContractorDetailPage(
         </div>
       </div>
 
-      <div className="flex gap-1 border-b border-line">
+      {/* Scrolls sideways on a narrow phone rather than pushing the whole page
+          wider. The bottom rule is an inset shadow, not a border, so the
+          active tab's underline can sit on it without the -mb-px overhang
+          that a scroll container would clip. */}
+      <div className="flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--color-line)]">
         {TABS.map((t) => {
           const active = t.id === tab;
           const count =
@@ -379,7 +383,7 @@ export default async function ContractorDetailPage(
               key={t.id}
               href={`/dashboard/contractors/${contractor.id}?tab=${t.id}`}
               aria-current={active ? "page" : undefined}
-              className={`-mb-px flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
                 active
                   ? "border-brand text-brand-ink"
                   : "border-transparent text-ink-muted hover:text-ink"

@@ -114,6 +114,49 @@
   --color-neutral-status-bg: var(--color-warm-100);
   --color-neutral-status-line: var(--color-warm-200);
 
+  /* Type scale — one full step up from Tailwind's defaults.
+     The whole app is written against text-sm for body copy and text-xs for
+     hints, badges and timestamps, which left everyday reading text at 14px
+     and secondary text at 12px. Rather than re-classing hundreds of
+     elements, the scale itself moves: text-sm is now 16px, text-xs 14px, and
+     every heading size grows in step so headings keep a clear jump over the
+     body text beneath them. Display sizes get tighter line-heights so big
+     headlines don't sprawl vertically. */
+  --text-2xs: 0.75rem; /* 12px — uppercase eyebrows, avatar initials */
+  --text-2xs--line-height: 1rem;
+  --text-xs: 0.875rem; /* 14px (was 12px) */
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 1rem; /* 16px (was 14px) — body copy across the app */
+  --text-sm--line-height: 1.5rem;
+  --text-base: 1.125rem; /* 18px (was 16px) — lead paragraphs */
+  --text-base--line-height: 1.75rem;
+  --text-lg: 1.25rem; /* 20px (was 18px) */
+  --text-lg--line-height: 1.875rem;
+  --text-xl: 1.5rem; /* 24px (was 20px) */
+  --text-xl--line-height: 2rem;
+  --text-2xl: 1.875rem; /* 30px (was 24px) — page titles */
+  --text-2xl--line-height: 2.25rem;
+  --text-3xl: 2.25rem; /* 36px (was 30px) — section headings, key stats */
+  --text-3xl--line-height: 2.625rem;
+  --text-4xl: 2.75rem; /* 44px (was 36px) */
+  --text-4xl--line-height: 1.1;
+  --text-5xl: 3.5rem; /* 56px (was 48px) */
+  --text-5xl--line-height: 1.05;
+  --text-6xl: 4.25rem; /* 68px (was 60px) — marketing hero */
+  --text-6xl--line-height: 1.02;
+
+  /* Spacing — named, layout-level steps on top of Tailwind's 4px grid.
+     `section` is the vertical rhythm between marketing page bands (it grows
+     at the sm breakpoint, see the :root block below); `card` is the inner
+     padding of every Card surface and header band. */
+  --spacing-section: 4.5rem;
+  --spacing-card: 1.5rem;
+
+  /* max-w-sm (was 24rem) — the auth cards and empty-state blurbs. Grown in
+     step with the type so they hold the same number of words per line
+     instead of wrapping the bigger text into a narrow column. */
+  --container-sm: 28rem;
+
   /* Radius — restrained */
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -150,9 +193,20 @@
   than things Tailwind should generate a utility class family for.
 */
 :root {
-  --sidebar-width: 15.5rem;
-  --header-height: 4rem;
-  --content-max-width: 64rem;
+  /* Grown with the type scale so the bigger nav labels and page content
+     still have room to breathe. */
+  --sidebar-width: 17rem;
+  --header-height: 4.5rem;
+  --content-max-width: 72rem;
+}
+
+/* Marketing sections get more air from the sm breakpoint up. Redefining the
+   theme variable (rather than adding sm:py-* at each call site) keeps the one
+   `py-section` class responsive everywhere it's used. */
+@media (min-width: 40rem) {
+  :root {
+    --spacing-section: 6.5rem;
+  }
 }
 
 @layer base {

@@ -19,7 +19,7 @@ export function UploadPreview() {
           subbies.com/onboard/…
         </span>
       </div>
-      <div className="p-5">
+      <div className="p-card">
         <p className="text-sm font-semibold text-brand-ink">
           Northside Builders needs your documents
         </p>

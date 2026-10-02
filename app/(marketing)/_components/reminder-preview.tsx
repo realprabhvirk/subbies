@@ -25,7 +25,7 @@ export function ReminderPreview() {
               <p className="truncate text-sm font-medium">{r.name}</p>
               <p className="truncate text-xs text-ink-muted">{r.doc}</p>
             </div>
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-attention-bg px-2 py-0.5 text-[11px] font-medium text-attention">
+            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-attention-bg px-2 py-0.5 text-2xs font-medium text-attention">
               <CalendarClock className="h-3 w-3" strokeWidth={2} aria-hidden />
               {r.days}d left
             </span>
