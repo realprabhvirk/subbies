@@ -96,7 +96,7 @@ export function ContractorDetailsPanel({
       <form
         onSubmit={submit}
         noValidate
-        className="rounded-card border border-line bg-surface p-5 shadow-sm sm:p-6"
+        className="rounded-card border border-line bg-surface p-card shadow-sm"
       >
         <h2 className="text-base font-semibold">Contact and business details</h2>
         <p className="mt-0.5 text-sm text-ink-muted">
@@ -211,7 +211,7 @@ export function ContractorDetailsPanel({
         </div>
       </form>
 
-      <div className="rounded-card border border-expired-line bg-surface p-5 shadow-sm sm:p-6">
+      <div className="rounded-card border border-expired-line bg-surface p-card shadow-sm">
         <div className="flex items-start gap-3">
           <TriangleAlert
             className="mt-0.5 h-5 w-5 shrink-0 text-expired"

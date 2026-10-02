@@ -85,7 +85,7 @@ export default function LandingPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/70">
               Contractor onboarding &amp; compliance
             </p>
-            <h1 className="mt-4 text-[2.6rem] font-semibold leading-[1.08] tracking-tight text-white sm:text-6xl">
+            <h1 className="mt-4 text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-6xl">
               Stop chasing contractors for paperwork
             </h1>
             <p className="mt-5 max-w-xl text-lg text-white/85">
@@ -118,10 +118,10 @@ export default function LandingPage() {
       {/* The problem — text-led, deliberately light on imagery. The photo
           did the confidence-building in the hero; this section's job is to
           name the pain plainly and move on. */}
-      <Section className="py-16 sm:py-20">
+      <Section className="py-section">
         <Reveal className="mx-auto max-w-2xl text-center">
           <Eyebrow>The problem</Eyebrow>
-          <h2 className="mt-3 text-2xl font-semibold sm:text-[2rem]">
+          <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">
             You&apos;re not short on subcontractors. You&apos;re short on
             certainty about them.
           </h2>
@@ -139,10 +139,10 @@ export default function LandingPage() {
       {/* How it works — each step paired with either the real product UI or
           a supporting photo, never an icon standing in on its own. */}
       <div className="border-y border-line bg-surface">
-        <Section className="py-16 sm:py-20">
+        <Section className="py-section">
           <Reveal>
             <Eyebrow>How it works</Eyebrow>
-            <h2 className="mt-3 max-w-2xl text-2xl font-semibold sm:text-[2rem]">
+            <h2 className="mt-3 max-w-2xl text-2xl font-semibold sm:text-3xl">
               From &ldquo;we need someone Monday&rdquo; to approved, without
               the back-and-forth
             </h2>
@@ -188,7 +188,7 @@ export default function LandingPage() {
                       </div>
                     )}
                   </div>
-                  <div className="p-5">
+                  <div className="p-card">
                     <div className="flex items-baseline gap-2">
                       <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-subtle">
                         Step {i + 1}
@@ -206,7 +206,7 @@ export default function LandingPage() {
 
       {/* Trust — the weakest part of most pre-launch SaaS marketing. No logo
           wall we don't have yet; a concrete, honest angle instead. */}
-      <Section className="py-16 sm:py-20">
+      <Section className="py-section">
         <Reveal>
           <div className="grid items-center gap-10 rounded-card border border-line bg-surface p-6 shadow-sm sm:p-10 lg:grid-cols-[0.85fr_1.15fr]">
             {/* The placeholder here was framed as a circular founder headshot
@@ -245,10 +245,10 @@ export default function LandingPage() {
 
       {/* Feature highlights — real screenshots, not stock icons. */}
       <div className="border-y border-line bg-surface">
-        <Section className="py-16 sm:py-20">
+        <Section className="py-section">
           <Reveal>
             <Eyebrow>What you get</Eyebrow>
-            <h2 className="mt-3 max-w-2xl text-2xl font-semibold sm:text-[2rem]">
+            <h2 className="mt-3 max-w-2xl text-2xl font-semibold sm:text-3xl">
               The parts that actually take time, handled
             </h2>
           </Reveal>
@@ -259,7 +259,7 @@ export default function LandingPage() {
                   <div aria-hidden className="p-4 pb-0">
                     {f.preview}
                   </div>
-                  <div className="p-5">
+                  <div className="p-card">
                     <h3 className="text-base font-semibold">{f.title}</h3>
                     <p className="mt-1.5 text-sm text-ink-muted">{f.body}</p>
                   </div>

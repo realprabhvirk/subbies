@@ -42,13 +42,13 @@ export function DashboardShellSkeleton() {
 
       <div className="flex min-w-0 flex-col">
         <header
-          className="sticky top-0 z-20 hidden h-(--header-height) items-center justify-end border-b border-line bg-surface px-8 lg:flex"
+          className="sticky top-0 z-20 hidden h-(--header-height) items-center justify-end border-b border-line bg-surface px-10 lg:flex"
           aria-hidden
         >
           <Skeleton className="h-8 w-8 rounded-full" />
         </header>
 
-        <main className="mx-auto w-full max-w-(--content-max-width) flex-1 space-y-4 px-4 py-8 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-(--content-max-width) flex-1 space-y-4 px-4 py-10 sm:px-6 lg:px-10">
           <Skeleton className="h-7 w-48" />
           <Skeleton className="h-40 rounded-card" />
         </main>

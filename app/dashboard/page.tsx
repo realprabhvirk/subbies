@@ -219,19 +219,25 @@ export default async function DashboardPage() {
         </Link>
       )}
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <StatCard
-            key={stat.label}
-            label={stat.label}
-            value={stat.value}
-            icon={stat.icon}
-            tone={stat.tone}
-            note={stat.note}
-            share={stat.share}
-          />
-        ))}
-      </section>
+      {/* Four across only when the content column (not the viewport — the
+          sidebar takes a share of that) is wide enough for each tile's label
+          to sit on one line; otherwise a label like "Pending onboarding"
+          wraps and pushes its number out of line with the others. */}
+      <div className="@container">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 @5xl:grid-cols-4">
+          {stats.map((stat) => (
+            <StatCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              icon={stat.icon}
+              tone={stat.tone}
+              note={stat.note}
+              share={stat.share}
+            />
+          ))}
+        </section>
+      </div>
 
       <Card padded={false}>
         <CardHeader
@@ -251,7 +257,7 @@ export default async function DashboardPage() {
         />
 
         {contractors.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-ink-muted">
+          <p className="px-card py-10 text-center text-sm text-ink-muted">
             No contractors yet.{" "}
             <Link
               href="/dashboard/contractors/new"
@@ -262,7 +268,7 @@ export default async function DashboardPage() {
             .
           </p>
         ) : actionRequired.length === 0 ? (
-          <p className="px-5 py-10 text-center text-sm text-ink-muted">
+          <p className="px-card py-10 text-center text-sm text-ink-muted">
             Nothing needs attention right now.
           </p>
         ) : (
@@ -271,12 +277,12 @@ export default async function DashboardPage() {
               <li key={c.id}>
                 <Link
                   href={`/dashboard/contractors/${c.id}`}
-                  className="group flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted"
+                  className="group flex flex-wrap items-center justify-between gap-3 px-card py-4 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <span
                       aria-hidden
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-muted text-[11px] font-semibold text-ink-muted"
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-muted text-2xs font-semibold text-ink-muted"
                     >
                       {initialsOf(c.business_name)}
                     </span>

@@ -91,7 +91,7 @@ function HistoryRow({ item }: { item: HistoryItem }) {
   };
 
   return (
-    <li className="px-5 py-4">
+    <li className="px-card py-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-medium">{item.documentName}</p>

@@ -11,7 +11,7 @@ import { type InputHTMLAttributes } from "react";
  */
 
 export function fieldClasses(invalid = false, className = ""): string {
-  return `w-full rounded-md border bg-surface px-3 py-2 text-sm text-ink outline-none transition-shadow placeholder:text-ink-subtle ${
+  return `w-full rounded-md border bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition-shadow placeholder:text-ink-subtle ${
     invalid ? "border-expired" : "border-line-strong"
   } ${className}`;
 }

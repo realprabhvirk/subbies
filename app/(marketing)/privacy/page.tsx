@@ -26,7 +26,7 @@ function UL({ children }: { children: React.ReactNode }) {
 
 export default function PrivacyPage() {
   return (
-    <Section className="py-16 sm:py-20">
+    <Section className="py-section">
       <div className="mx-auto max-w-3xl">
         <Eyebrow>Legal</Eyebrow>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">

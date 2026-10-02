@@ -72,7 +72,7 @@ function Group({
         {items.map((p) => (
           <li
             key={p.assignmentId}
-            className={`flex flex-wrap items-center justify-between gap-3 px-5 py-4 ${
+            className={`flex flex-wrap items-center justify-between gap-3 px-card py-4 ${
               muted ? "opacity-70" : ""
             }`}
           >

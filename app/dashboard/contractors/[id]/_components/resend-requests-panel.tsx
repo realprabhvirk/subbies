@@ -83,7 +83,7 @@ export function ResendRequestsPanel({
   };
 
   return (
-    <section className="rounded-card border border-line bg-surface p-5 shadow-sm sm:p-6">
+    <section className="rounded-card border border-line bg-surface p-card shadow-sm">
       <h2 className="text-base font-semibold">Resend requests</h2>
       <p className="mt-0.5 text-sm text-ink-muted">
         Email {contractorEmail} a link for the documents you tick. An approved
