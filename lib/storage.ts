@@ -3,6 +3,11 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CONTRACTOR_DOCS_BUCKET } from "@/lib/storage-constants";
 import { collectAllPaths, batchPaths, type StorageLister } from "@/lib/storage-cleanup-logic";
+import {
+  isPathOwnedByCompany,
+  isValidCompanyId,
+  partitionOwnedPaths,
+} from "@/lib/storage-path-ownership";
 
 export {
   CONTRACTOR_DOCS_BUCKET,
@@ -140,6 +145,14 @@ async function removeInBatches(
 export async function deleteAllCompanyDocuments(
   companyId: string,
 ): Promise<DeleteCompanyDocumentsResult> {
+  // The listing below is rooted at companyId. An empty or malformed id would
+  // root it at the top of the bucket — every company's files — so refuse
+  // anything that isn't a real company id before touching storage.
+  if (!isValidCompanyId(companyId)) {
+    console.error("deleteAllCompanyDocuments: refused an invalid company id");
+    return { deletedCount: 0, failedPaths: [] };
+  }
+
   const admin = createAdminClient();
   const bucket = admin.storage.from(CONTRACTOR_DOCS_BUCKET);
 
@@ -185,9 +198,29 @@ export interface DeleteContractorFilesResult extends DeleteCompanyDocumentsResul
  * files" is not something to leave to "shouldn't").
  */
 export async function deleteFilesUnderPrefix(
+  companyId: string,
   prefix: string,
   extraPaths: string[] = [],
 ): Promise<DeleteContractorFilesResult> {
+  // The service role deletes whatever it's pointed at. The prefix is built by
+  // the caller from trusted ids, but extraPaths come straight from database
+  // rows the company can write — so both are held to "inside this company's
+  // folder". A refused prefix deletes nothing; a refused extra path is
+  // skipped (the caller still clears the row, which only drops the reference).
+  if (!isPathOwnedByCompany(prefix, companyId)) {
+    console.error("deleteFilesUnderPrefix: refused a prefix outside the company's folder", {
+      companyId,
+    });
+    return { deletedCount: 0, failedPaths: [], listFailed: true };
+  }
+  const { owned: ownedExtraPaths, refused } = partitionOwnedPaths(extraPaths, companyId);
+  if (refused.length > 0) {
+    console.error("deleteFilesUnderPrefix: skipped paths outside the company's folder", {
+      companyId,
+      skipped: refused.length,
+    });
+  }
+
   const admin = createAdminClient();
   const bucket = admin.storage.from(CONTRACTOR_DOCS_BUCKET);
 
@@ -207,7 +240,7 @@ export async function deleteFilesUnderPrefix(
     return { deletedCount: 0, failedPaths: [], listFailed: true };
   }
 
-  const paths = [...new Set([...found, ...extraPaths.filter(Boolean)])];
+  const paths = [...new Set([...found, ...ownedExtraPaths])];
   if (paths.length === 0) return { deletedCount: 0, failedPaths: [], listFailed: false };
 
   const result = await removeInBatches(bucket, paths, { prefix });
@@ -219,5 +252,5 @@ export async function deleteContractorFiles(
   companyId: string,
   contractorId: string,
 ): Promise<DeleteContractorFilesResult> {
-  return deleteFilesUnderPrefix(`${companyId}/${contractorId}`);
+  return deleteFilesUnderPrefix(companyId, `${companyId}/${contractorId}`);
 }

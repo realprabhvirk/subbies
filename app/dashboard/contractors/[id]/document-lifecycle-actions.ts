@@ -252,6 +252,7 @@ export async function deleteDocument(
   ];
 
   const removed = await deleteFilesUnderPrefix(
+    company.id,
     `${company.id}/${contractor.id}/${doc.id}`,
     knownPaths,
   );
