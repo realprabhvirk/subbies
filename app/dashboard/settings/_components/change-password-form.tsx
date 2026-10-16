@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/app/components/button";
 import { Field } from "@/app/components/input";
 import { PasswordField } from "@/app/components/password-field";
+import { validatePassword, MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
 
 export function ChangePasswordForm() {
   const [password, setPassword] = useState("");
@@ -20,8 +21,9 @@ export function ChangePasswordForm() {
     setError(null);
     setDone(false);
 
-    if (password.length < 8) {
-      setError("Use at least 8 characters.");
+    const pwCheck = validatePassword(password);
+    if (!pwCheck.ok) {
+      setError(pwCheck.error!);
       return;
     }
     if (password !== confirm) {
@@ -60,7 +62,7 @@ export function ChangePasswordForm() {
           id="new-password"
           autoComplete="new-password"
           required
-          minLength={8}
+          minLength={MIN_PASSWORD_LENGTH}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
@@ -71,7 +73,7 @@ export function ChangePasswordForm() {
           id="confirm-password"
           autoComplete="new-password"
           required
-          minLength={8}
+          minLength={MIN_PASSWORD_LENGTH}
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
         />
