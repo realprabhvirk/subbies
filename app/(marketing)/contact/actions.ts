@@ -1,6 +1,12 @@
 "use server";
 
 import { sendContactEmail } from "@/lib/email/contact";
+import {
+  checkRateLimit,
+  clientIp,
+  RATE_LIMITS,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from "@/lib/rate-limit";
 
 export interface ContactState {
   ok: boolean;
@@ -32,6 +38,11 @@ export async function submitContact(
   else if (message.length > 4000) fieldErrors.message = "Keep it under 4000 characters.";
 
   if (Object.keys(fieldErrors).length > 0) return { ok: false, fieldErrors };
+
+  // Per-IP, after validation so a malformed spam flood doesn't even reach the
+  // limiter's slots. Fails open (see checkRateLimit).
+  const allowed = await checkRateLimit(RATE_LIMITS.contact, await clientIp());
+  if (!allowed) return { ok: false, error: TOO_MANY_REQUESTS_MESSAGE };
 
   const result = await sendContactEmail({ name, email, message });
   if (!result.ok) {
