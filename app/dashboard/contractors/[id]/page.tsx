@@ -10,6 +10,7 @@ import { buildContractorActivity } from "@/lib/contractor-activity";
 import { groupFilesByDocument, type GroupedFile } from "@/lib/document-files-logic";
 import { formatAbn, isMissingColumnError } from "@/lib/contractor-details-logic";
 import { describeExpiry, daysUntilExpiry } from "@/lib/reminders/expiry-logic";
+import { complianceToday } from "@/lib/time/compliance-today";
 import { arrangeDocuments, describeRequirement } from "@/lib/document-lifecycle-logic";
 import { formatNoteTimestamp } from "@/lib/contractor-notes-logic";
 import type {
@@ -210,7 +211,7 @@ export default async function ContractorDetailPage(
     }
   }
 
-  const now = new Date();
+  const now = complianceToday();
 
   // Live documents, ordered by name with any pending updated copy directly
   // beneath the approved one it will replace, and flagged for the UI.

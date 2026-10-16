@@ -16,6 +16,7 @@ import {
   sendExpiryEscalationEmail,
 } from "@/lib/email/expiry";
 import { refreshTokenExpiry } from "@/lib/contractors/request-email";
+import { complianceToday } from "@/lib/time/compliance-today";
 import type { SubscriptionStatus } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -73,7 +74,9 @@ export async function GET(req: NextRequest) {
 
   const dryRun = new URL(req.url).searchParams.get("dry") === "1";
   const admin = createAdminClient();
-  const today = new Date();
+  // Today in Queensland (see compliance-today), so a 7am-AEST cron run that is
+  // still "yesterday" in UTC evaluates against the right calendar date.
+  const today = complianceToday();
 
   let evaluated = 0;
   let remindersSent = 0;
