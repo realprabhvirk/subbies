@@ -57,6 +57,13 @@ export default async function OnboardPage(props: PageProps<"/onboard/[token]">) 
       <p className="mt-6 text-center text-xs text-ink-subtle">
         Questions? Reply to the email {companyName} sent you.
       </p>
+      <p className="mt-2 text-center text-xs text-ink-subtle">
+        Documents you upload are handled in line with our{" "}
+        <a href="/privacy" className="underline hover:text-ink-muted">
+          Privacy Policy
+        </a>
+        .
+      </p>
     </main>
   );
 }

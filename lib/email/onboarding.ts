@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getResend, FROM_ADDRESS } from "./resend";
+import { getResend, FROM_ADDRESS, resolveReplyTo } from "./resend";
 import { emailShell, emailButton, calloutBox, paragraph, escapeHtml } from "./template";
 import { REFRESH_NOTE, requestSubject, requestText } from "./request-copy";
 
@@ -89,7 +89,7 @@ export async function sendOnboardingEmail(
   const { data, error } = await resend.emails.send({
     from: FROM_ADDRESS,
     to: input.to,
-    replyTo: input.replyTo ?? undefined,
+    replyTo: resolveReplyTo(input.replyTo),
     subject: requestSubject(input),
     text: requestText(input),
     html: buildHtml(input),
@@ -148,7 +148,7 @@ export async function sendContractorApprovedEmail(
   const { data, error } = await resend.emails.send({
     from: FROM_ADDRESS,
     to: input.to,
-    replyTo: input.replyTo ?? undefined,
+    replyTo: resolveReplyTo(input.replyTo),
     subject: `${input.companyName}: you're approved to work`,
     text,
     html,
@@ -214,7 +214,7 @@ export async function sendDocumentRejectedEmail(
   const { data, error } = await resend.emails.send({
     from: FROM_ADDRESS,
     to: input.to,
-    replyTo: input.replyTo ?? undefined,
+    replyTo: resolveReplyTo(input.replyTo),
     subject: `${input.companyName}: ${input.documentName} needs re-uploading`,
     text,
     html,
