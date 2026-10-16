@@ -22,6 +22,10 @@ export async function createClient() {
           }
         },
       },
+      // Cookies are marked Secure in production (preview + prod are HTTPS) so
+      // the auth token is never sent over plain HTTP; left off locally so
+      // http://localhost still works.
+      cookieOptions: { secure: process.env.NODE_ENV === "production" },
     }
   )
 }
