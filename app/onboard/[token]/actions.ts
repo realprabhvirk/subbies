@@ -17,6 +17,7 @@ import {
   deleteObject,
 } from "@/lib/storage";
 import { canSubmitDocument, MAX_FILES_PER_SUBMISSION } from "@/lib/document-actions-logic";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { classifySubmissionError } from "@/lib/save-error-logic";
 import type { DocumentStatus } from "@/lib/types";
 
@@ -58,6 +59,12 @@ export async function requestDocumentUpload(
 ): Promise<RequestUploadResult> {
   const resolved = await resolveOnboardingToken(token);
   if (!resolved) return { ok: false, error: "This upload link is no longer valid." };
+
+  // Keyed on the token, not the IP, so several contractors sharing a site's
+  // network don't throttle each other, and the limit survives a page reload.
+  if (!(await checkRateLimit(RATE_LIMITS.onboardAction, `upload:${token}`))) {
+    return { ok: false, error: "Too many uploads just now. Wait a moment and try again." };
+  }
 
   const doc = await loadOwnedDocument(resolved.contractorId, contractorDocumentId);
   if (!doc) return { ok: false, error: "That document isn't part of this request." };
@@ -117,6 +124,10 @@ export async function submitStagedDocuments(
 ): Promise<SubmitStagedResult> {
   const resolved = await resolveOnboardingToken(token);
   if (!resolved) return { ok: false, error: "This upload link is no longer valid." };
+
+  if (!(await checkRateLimit(RATE_LIMITS.onboardAction, `submit:${token}`))) {
+    return { ok: false, error: "Too many submissions just now. Wait a moment and try again." };
+  }
 
   if (files.length === 0) {
     return { ok: false, error: "Add at least one file before submitting." };
