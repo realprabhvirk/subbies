@@ -32,6 +32,11 @@ export default function LoginPage() {
     if (params.has("deleted")) {
       setAccountDeleted(true);
     }
+    if (params.get("confirm") === "failed") {
+      setError(
+        "That confirmation link didn't work — it may have expired or already been used. Log in to continue, or sign up again.",
+      );
+    }
   }, []);
 
   const handleLogin = (e: React.FormEvent) => {
@@ -49,10 +54,13 @@ export default function LoginPage() {
       });
 
       if (signInError) {
+        const msg = signInError.message;
         setError(
-          signInError.message === "Invalid login credentials"
+          msg === "Invalid login credentials"
             ? "That email and password don't match an account."
-            : signInError.message,
+            : /email not confirmed/i.test(msg)
+              ? "Please confirm your email first — open the link we sent you. Need another? Sign up again with the same details to resend it."
+              : msg,
         );
         return;
       }

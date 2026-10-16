@@ -1,12 +1,70 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { TriangleAlert } from "lucide-react";
 
 import { Section, Eyebrow } from "../_components/ui";
+import {
+  PRIVACY_POLICY_IN_FORCE,
+  PRIVACY_LAST_UPDATED,
+  PRIVACY_EMAIL,
+  LEGAL_ENTITY_NAME,
+  LEGAL_ENTITY_ABN,
+  DATA_REGION_SUPABASE,
+  DATA_REGION_EMAIL,
+} from "@/lib/legal/privacy";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description: "How Subbies collects, uses, and retains your information.",
 };
+
+/**
+ * The unmissable "this policy isn't live yet" banner. Shown whenever
+ * PRIVACY_POLICY_IN_FORCE is false (the one switch in lib/legal/privacy.ts).
+ * Full-width, large display type, the design system's "expired" red, and
+ * role="alert" so assistive tech announces it.
+ */
+function NotInForceBanner() {
+  return (
+    <div
+      role="alert"
+      className="border-b-2 border-expired-line bg-expired-bg"
+    >
+      <div className="mx-auto flex max-w-5xl items-start gap-4 px-4 py-8 sm:px-6 sm:py-10">
+        <TriangleAlert
+          className="mt-1 h-8 w-8 shrink-0 text-expired sm:h-10 sm:w-10"
+          strokeWidth={2.25}
+          aria-hidden
+        />
+        <div>
+          <p className="font-display text-2xl font-bold leading-tight tracking-tight text-expired sm:text-4xl">
+            This privacy policy is not in use and is not valid.
+          </p>
+          <p className="mt-3 max-w-2xl text-base font-medium text-expired/90 sm:text-lg">
+            Subbies is currently in a testing phase. This document is a draft,
+            has no legal effect, and should not be relied on.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** "To exercise these rights…"-style contact line, used in two places. */
+function PrivacyContact() {
+  if (PRIVACY_EMAIL) {
+    return (
+      <a href={`mailto:${PRIVACY_EMAIL}`} className="text-brand hover:underline">
+        {PRIVACY_EMAIL}
+      </a>
+    );
+  }
+  return (
+    <Link href="/contact" className="text-brand hover:underline">
+      our contact page
+    </Link>
+  );
+}
 
 function H2({ children }: { children: React.ReactNode }) {
   return <h2 className="text-xl font-semibold sm:text-2xl">{children}</h2>;
@@ -26,13 +84,15 @@ function UL({ children }: { children: React.ReactNode }) {
 
 export default function PrivacyPage() {
   return (
-    <Section className="py-section">
+    <>
+      {!PRIVACY_POLICY_IN_FORCE && <NotInForceBanner />}
+      <Section className="py-section">
       <div className="mx-auto max-w-3xl">
         <Eyebrow>Legal</Eyebrow>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
           Privacy Policy
         </h1>
-        <p className="mt-3 text-sm text-ink-subtle">Last updated: 30 September 2026</p>
+        <p className="mt-3 text-sm text-ink-subtle">Last updated: {PRIVACY_LAST_UPDATED}</p>
 
         <div className="mt-10 space-y-10 border-t border-line pt-10">
           <P>
@@ -180,6 +240,21 @@ export default function PrivacyPage() {
               account that requested the document and, where applicable, the
               subcontractor who uploaded it via their unique secure link.
             </P>
+            <P>
+              <strong className="text-ink">Where your data is held:</strong>{" "}
+              our database and uploaded documents are hosted with Supabase in{" "}
+              {DATA_REGION_SUPABASE}. Transactional email is delivered from{" "}
+              {DATA_REGION_EMAIL}. Payment data is held by Stripe. Some
+              providers may process limited data in other regions to run their
+              service.
+            </P>
+            <P>
+              <strong className="text-ink">Data breaches:</strong> if an
+              eligible data breach occurs, we will notify affected individuals
+              and the Office of the Australian Information Commissioner (OAIC)
+              as required by the Notifiable Data Breaches scheme under the
+              Privacy Act 1988 (Cth).
+            </P>
           </section>
 
           <section>
@@ -223,11 +298,7 @@ export default function PrivacyPage() {
               </li>
             </UL>
             <P>
-              To exercise these rights, contact us at{" "}
-              <a href="mailto:privacy@yourdomain.com" className="text-brand hover:underline">
-                privacy@yourdomain.com
-              </a>
-              .
+              To exercise these rights, get in touch through <PrivacyContact />.
             </P>
           </section>
 
@@ -265,13 +336,11 @@ export default function PrivacyPage() {
             <H2>11. Contact us</H2>
             <P>Questions about this policy or your data can be directed to:</P>
             <div className="mt-3 text-sm leading-relaxed text-ink-muted sm:text-base">
-              <p className="font-semibold text-ink">[Business name / trading name]</p>
-              <p>ABN: [Your ABN]</p>
+              <p className="font-semibold text-ink">{LEGAL_ENTITY_NAME}</p>
+              <p>ABN: {LEGAL_ENTITY_ABN}</p>
               <p>
-                Email:{" "}
-                <a href="mailto:privacy@yourdomain.com" className="text-brand hover:underline">
-                  [privacy@yourdomain.com]
-                </a>
+                {PRIVACY_EMAIL ? "Email: " : "Reach us through "}
+                <PrivacyContact />
               </p>
             </div>
           </section>
@@ -286,5 +355,6 @@ export default function PrivacyPage() {
         </p>
       </div>
     </Section>
+    </>
   );
 }

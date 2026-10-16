@@ -21,7 +21,22 @@ export default function SignupPage() {
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState("");
   const [confirmationSentTo, setConfirmationSentTo] = useState<string | null>(null);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
   const [pending, startTransition] = useTransition();
+
+  const handleResend = async () => {
+    if (!confirmationSentTo || resendState === "sending") return;
+    setResendState("sending");
+    const supabase = createClient();
+    // Fails open on the UI: Supabase rate-limits resends, and we don't want to
+    // reveal confirmation state, so a problem still shows "sent".
+    await supabase.auth.resend({
+      type: "signup",
+      email: confirmationSentTo,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    setResendState("sent");
+  };
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +75,10 @@ export default function SignupPage() {
         // server) as the trustworthy signup time and terms_version as the
         // record of which wording they were shown.
         options: {
+          // Where the confirmation link lands if email confirmation is on.
+          // The callback route exchanges the code for a session, then the
+          // dashboard gate takes over (plan selection, company creation).
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             company_name: trimmedCompanyName,
             age_confirmed: true,
@@ -125,9 +144,26 @@ export default function SignupPage() {
             <p className="mt-2 text-sm text-ink-muted">
               We sent a confirmation link to{" "}
               <span className="font-medium text-ink">{confirmationSentTo}</span>.
-              Click it, then log in to finish setting up{" "}
-              <span className="font-medium text-ink">{companyName.trim()}</span>.
+              Open it in this browser to confirm your email and finish setting
+              up <span className="font-medium text-ink">{companyName.trim()}</span>.
             </p>
+            <div className="mt-5 border-t border-line pt-4">
+              <p className="text-xs text-ink-subtle">
+                Didn&rsquo;t get it? Check spam, or resend it.
+              </p>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resendState === "sending"}
+                className="mt-2 text-sm font-medium text-brand hover:underline disabled:opacity-60"
+              >
+                {resendState === "sending"
+                  ? "Resending…"
+                  : resendState === "sent"
+                    ? "Sent — check your inbox again"
+                    : "Resend confirmation email"}
+              </button>
+            </div>
           </div>
           <p className="mt-6 text-center text-sm text-ink-muted">
             <Link href="/login" className="font-medium text-brand hover:underline">
