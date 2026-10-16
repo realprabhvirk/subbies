@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getResend, FROM_ADDRESS } from "./resend";
+import { getResend, FROM_ADDRESS, resolveReplyTo } from "./resend";
 import type { SendResult } from "./onboarding";
 import { emailShell, emailHeading, calloutBox, paragraph } from "./template";
 
@@ -50,6 +50,7 @@ export async function sendAccountDeletionCodeEmail(
 
   const { data, error } = await resend.emails.send({
     from: FROM_ADDRESS,
+    replyTo: resolveReplyTo(),
     to: input.to,
     subject: "Confirm account deletion",
     text,

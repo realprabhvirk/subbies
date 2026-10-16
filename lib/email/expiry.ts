@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getResend, FROM_ADDRESS } from "./resend";
+import { getResend, FROM_ADDRESS, resolveReplyTo } from "./resend";
 import type { SendResult } from "./onboarding";
 import { emailShell, emailButton, paragraph, escapeHtml, emailHeading, docList } from "./template";
 
@@ -25,7 +25,7 @@ async function send(
   const { data, error } = await resend.emails.send({
     from: FROM_ADDRESS,
     to,
-    replyTo: replyTo ?? undefined,
+    replyTo: resolveReplyTo(replyTo),
     subject,
     text,
     html,

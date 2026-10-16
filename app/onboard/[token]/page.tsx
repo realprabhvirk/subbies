@@ -98,6 +98,13 @@ export default async function OnboardPage(props: PageProps<"/onboard/[token]">) 
       <footer className="mt-10 border-t border-line pt-6 text-center text-xs text-ink-muted">
         <p>Questions? Reply to the email {companyName} sent you.</p>
         <p className="mt-2">
+          Documents you upload are handled in line with our{" "}
+          <a href="/privacy" className="underline hover:text-ink">
+            Privacy Policy
+          </a>
+          .
+        </p>
+        <p className="mt-2">
           Sent securely with <span className="font-semibold text-ink">Subbies</span>
         </p>
       </footer>
