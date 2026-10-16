@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { ContractorStatus, DocumentStatus } from "@/lib/types";
+import { complianceTodayUtcMs } from "./time/compliance-today.ts";
 
 interface StatusInputDoc {
   status: DocumentStatus;
@@ -9,9 +10,9 @@ interface StatusInputDoc {
 
 function isPast(dateStr: string | null): boolean {
   if (!dateStr) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return new Date(dateStr).getTime() < today.getTime();
+  // Compared against today's date in Queensland (see compliance-today), not
+  // the server's UTC clock, so a document reads as expired on the right day.
+  return new Date(dateStr + "T00:00:00Z").getTime() < complianceTodayUtcMs();
 }
 
 /**
