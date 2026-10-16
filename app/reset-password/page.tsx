@@ -10,6 +10,7 @@ import { Logo } from "@/app/components/logo";
 import { Button } from "@/app/components/button";
 import { Spinner } from "@/app/components/spinner";
 import { PasswordField } from "@/app/components/password-field";
+import { validatePassword, MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
 
 type Phase = "checking" | "ready" | "invalid" | "done";
 
@@ -163,8 +164,9 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setError("");
 
-    if (password.length < 8) {
-      setError("Use at least 8 characters.");
+    const pwCheck = validatePassword(password);
+    if (!pwCheck.ok) {
+      setError(pwCheck.error!);
       return;
     }
     if (password !== confirm) {
@@ -237,7 +239,7 @@ export default function ResetPasswordPage() {
             <>
               <h1 className="text-xl font-semibold">Set a new password</h1>
               <p className="mt-1 text-sm text-ink-muted">
-                Choose something you haven&apos;t used before. At least 8
+                Choose something you haven&apos;t used before. At least 10
                 characters.
               </p>
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
@@ -249,7 +251,7 @@ export default function ResetPasswordPage() {
                     id="password"
                     autoComplete="new-password"
                     required
-                    minLength={8}
+                    minLength={MIN_PASSWORD_LENGTH}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
@@ -262,7 +264,7 @@ export default function ResetPasswordPage() {
                     id="confirm"
                     autoComplete="new-password"
                     required
-                    minLength={8}
+                    minLength={MIN_PASSWORD_LENGTH}
                     value={confirm}
                     onChange={(e) => setConfirm(e.target.value)}
                   />
