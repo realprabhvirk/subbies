@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Upload, FileText, X, UploadCloud } from "lucide-react";
@@ -35,6 +35,15 @@ type ItemState =
  */
 type StagedByItem = Record<string, File[]>;
 
+/**
+ * What the contractor just submitted, shown until the refreshed server data
+ * arrives. `basedOn` is the `items` array the submit happened against: once
+ * router.refresh() delivers new props that reference changes, the entry stops
+ * applying on its own, so the row never shows a stale "Not uploaded" in the
+ * gap, and never lingers past the real data.
+ */
+type JustSubmitted = Record<string, { fileNames: string[]; basedOn: OnboardingChecklistItem[] }>;
+
 export function OnboardChecklist({
   token,
   items,
@@ -47,6 +56,8 @@ export function OnboardChecklist({
   const [staged, setStaged] = useState<StagedByItem>({});
   const [openingFileId, setOpeningFileId] = useState<string | null>(null);
   const [agreed, setAgreed] = useState(false);
+  const [justSubmitted, setJustSubmitted] = useState<JustSubmitted>({});
+  const [, startRefresh] = useTransition();
   const anyStageable = items.some((item) => canSubmitDocument(item.status));
 
   const setItemState = (id: string, state: ItemState) =>
@@ -126,9 +137,13 @@ export function OnboardChecklist({
       return;
     }
 
+    setJustSubmitted((prev) => ({
+      ...prev,
+      [itemId]: { fileNames: uploaded.map((u) => u.fileName), basedOn: items },
+    }));
     setStaged((prev) => ({ ...prev, [itemId]: [] }));
     setItemState(itemId, { phase: "idle" });
-    router.refresh();
+    startRefresh(() => router.refresh());
   };
 
   const viewFile = async (fileId: string) => {
@@ -172,15 +187,19 @@ export function OnboardChecklist({
         {items.map((item, index) => {
           const state = states[item.id] ?? { phase: "idle" };
           const stagedFiles = staged[item.id] ?? [];
-          const canStage = canSubmitDocument(item.status);
+          // Until the refreshed props land, show what was just submitted.
+          const pending = justSubmitted[item.id];
+          const optimistic = pending && pending.basedOn === items ? pending : null;
+          const status = optimistic ? "uploaded" : item.status;
+          const canStage = canSubmitDocument(status);
           const submitting = state.phase === "submitting";
-          const needsAction = item.status === "requested" || item.status === "rejected";
+          const needsAction = status === "requested" || status === "rejected";
 
           return (
             <li
               key={item.id}
               className={`rounded-card border bg-surface ${
-                item.status === "rejected"
+                status === "rejected"
                   ? "border-expired-line"
                   : needsAction
                     ? "border-line-strong"
@@ -194,7 +213,7 @@ export function OnboardChecklist({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
                     <p className="font-semibold text-ink">{item.documentName}</p>
-                    <StatusBadge kind="document" status={item.status} size="sm" />
+                    <StatusBadge kind="document" status={status} size="sm" />
                   </div>
 
                   {item.isReplacement && (
@@ -204,14 +223,28 @@ export function OnboardChecklist({
                     </p>
                   )}
 
-                  {item.status === "rejected" && item.rejectionReason && (
+                  {status === "rejected" && item.rejectionReason && (
                     <div className="mt-3 rounded-md border border-expired-line bg-expired-bg/60 px-3 py-2.5 text-sm text-expired">
                       <p className="label-caps">Not accepted</p>
                       <p className="mt-1">{item.rejectionReason}</p>
                     </div>
                   )}
 
-                  {item.files.length > 0 && (
+                  {optimistic && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {optimistic.fileNames.map((name, i) => (
+                        <span
+                          key={`${name}-${i}`}
+                          className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-md border border-line-strong bg-surface px-3"
+                        >
+                          <FileText className="h-4 w-4 shrink-0 text-ink-subtle" strokeWidth={2} aria-hidden />
+                          <span className="truncate font-mono text-xs text-ink">{name}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {!optimistic && item.files.length > 0 && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {item.files.map((file, i) => (
                         <button
@@ -270,7 +303,7 @@ export function OnboardChecklist({
                     disabled={submitting || !agreed}
                     prominent={stagedFiles.length === 0 && needsAction}
                     label={
-                      item.files.length > 0 || stagedFiles.length > 0
+                      item.files.length > 0 || optimistic || stagedFiles.length > 0
                         ? "Add another file"
                         : "Add a file or take a photo"
                     }
