@@ -6,7 +6,7 @@ import { CreditCard, Users, FileText, FolderKanban } from "lucide-react";
 
 import { Alert } from "@/app/components/alert";
 import { Button } from "@/app/components/button";
-import { StatCard, type StatTone } from "@/app/components/card";
+import { type StatTone } from "@/app/components/card";
 import { PlanCards, type BillingPlan } from "@/app/components/plan-cards";
 import type { SubscriptionStatus } from "@/lib/types";
 import type { LimitedResource } from "@/lib/billing/plans";
@@ -112,15 +112,14 @@ export function BillingPanel({
         </Alert>
       )}
       {checkout === "cancelled" && (
-        <div className="rounded-md bg-surface-muted px-4 py-3 text-sm text-ink-muted">
-          Checkout cancelled. No plan was started.
-        </div>
+        <Alert tone="info">Checkout cancelled. No plan was started.</Alert>
       )}
 
       {entitlement.paidAccess ? (
-        <div className="rounded-card border border-line bg-surface p-6">
+        <div className="rounded-card border border-line bg-surface p-5 sm:p-6">
           {entitlement.onTrial && !entitlement.cancelAtPeriodEnd && (
-            <Alert tone="warning" className="mb-4">
+            // A trial is information, not a problem: info tone, not warning.
+            <Alert tone="info" className="mb-5">
               You&apos;re on a free trial,{" "}
               <strong>
                 {daysUntil(entitlement.trialEndsAt)}{" "}
@@ -132,7 +131,7 @@ export function BillingPanel({
           )}
 
           {entitlement.status === "past_due" && (
-            <Alert tone="error" className="mb-4">
+            <Alert tone="error" className="mb-5">
               Your last payment didn&apos;t go through. Update your card to keep
               your {entitlement.planName} plan. We&apos;ll keep retrying for a few
               days.
@@ -142,14 +141,17 @@ export function BillingPanel({
           {/* Plan name gets the same weight as a stat number — the price is
               real but secondary information, so it drops to a caption
               underneath rather than sharing the headline's line. */}
-          <p className="font-display text-2xl font-semibold text-brand-ink">
-            {entitlement.planName}
-          </p>
-          {entitlement.planAmount !== null && (
-            <p className="mt-0.5 text-sm text-ink-muted">
-              A${entitlement.planAmount}/month
+          <p className="label-caps text-ink-muted">Current plan</p>
+          <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <p className="font-display text-3xl font-bold tracking-display text-ink">
+              {entitlement.planName}
             </p>
-          )}
+            {entitlement.planAmount !== null && (
+              <p className="text-sm text-ink-muted">
+                <span className="font-mono text-ink">A${entitlement.planAmount}</span> / month
+              </p>
+            )}
+          </div>
           <p className="mt-2 text-sm text-ink-muted">
             {entitlement.cancelAtPeriodEnd
               ? `Cancels ${fmt(entitlement.currentPeriodEnd)}. You keep access until then.`
@@ -160,7 +162,7 @@ export function BillingPanel({
                   : `Renews ${fmt(entitlement.currentPeriodEnd)}.`}
           </p>
 
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-6 flex flex-wrap gap-2 border-t border-line pt-5">
             <Button
               type="button"
               variant="secondary"
@@ -196,13 +198,13 @@ export function BillingPanel({
           </div>
 
           {confirmCancel && !entitlement.cancelAtPeriodEnd && (
-            <div className="mt-4 rounded-md border border-expired-line bg-expired-bg p-3">
+            <div className="mt-4 rounded-md border border-expired-line bg-expired-bg/50 p-3 sm:p-4">
               <p className="text-sm text-expired">
                 Cancel your {entitlement.planName} plan? You&apos;ll keep access
                 until {fmt(entitlement.currentPeriodEnd)}, then the account locks
                 until you choose a plan again. Nothing is deleted.
               </p>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 <Button
                   type="button"
                   variant="danger"
@@ -228,7 +230,7 @@ export function BillingPanel({
         </div>
       ) : (
         <div>
-          <h3 className="text-sm font-semibold">Choose a plan</h3>
+          <h3 className="text-lg">Choose a plan</h3>
           <p className="mt-1 max-w-prose text-sm text-ink-muted">
             Billed monthly in AUD. Change or cancel any time. Have a code? Enter
             it at checkout.
@@ -254,37 +256,52 @@ export function BillingPanel({
         </p>
       )}
 
-      <div>
-        <p className="text-sm font-semibold">Usage</p>
-        <div className="mt-2 grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {(Object.keys(RESOURCE_LABEL) as LimitedResource[]).map((r) => {
+      <section aria-labelledby="usage-heading">
+        <h3 id="usage-heading" className="label-caps text-ink-muted">
+          Usage
+        </h3>
+        <div className="mt-3 grid overflow-hidden rounded-card border border-line bg-surface sm:grid-cols-3">
+          {(Object.keys(RESOURCE_LABEL) as LimitedResource[]).map((r, i) => {
             const limit = limits[r];
             const used = usage[r];
             const atLimit = limit !== null && used >= limit;
             const tone: StatTone = atLimit ? "attention" : "neutral";
+            const Icon = RESOURCE_ICON[r];
             return (
-              <StatCard
+              <div
                 key={r}
-                label={RESOURCE_LABEL[r]}
-                value={used}
-                icon={RESOURCE_ICON[r]}
-                tone={tone}
-                // A fraction against infinity ("1 / unlimited") reads oddly —
-                // the count stands alone as the headline number, with the
-                // ceiling (or lack of one) as a caption underneath instead.
-                note={
-                  limit === null
-                    ? "No limit"
-                    : atLimit
-                      ? `Limit reached — ${limit} max`
-                      : `of ${limit}`
-                }
-                share={limit !== null ? used / limit : undefined}
-              />
+                className={`p-5 sm:p-6 ${i > 0 ? "border-t border-line sm:border-l sm:border-t-0" : ""}`}
+              >
+                <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+                  <Icon className="h-4 w-4 text-ink-subtle" strokeWidth={2} />
+                  {RESOURCE_LABEL[r]}
+                </p>
+                <p className="mt-3 flex items-baseline gap-1.5">
+                  <span className={`figure text-3xl ${tone === "attention" ? "text-attention" : "text-ink"}`}>
+                    {used}
+                  </span>
+                  {/* A fraction against infinity ("1 / unlimited") reads
+                      oddly, so an unlimited ceiling is a caption instead. */}
+                  <span className="text-sm text-ink-muted">
+                    {limit === null ? "· no limit" : `/ ${limit}`}
+                  </span>
+                </p>
+                {limit !== null && (
+                  <div aria-hidden className="mt-3 h-1 overflow-hidden rounded-full bg-line">
+                    <div
+                      className={`h-full ${atLimit ? "bg-attention" : "bg-ink-muted"}`}
+                      style={{ width: `${Math.round(Math.min(1, used / limit) * 100)}%` }}
+                    />
+                  </div>
+                )}
+                {atLimit && (
+                  <p className="mt-2 text-xs font-semibold text-attention">Limit reached</p>
+                )}
+              </div>
             );
           })}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

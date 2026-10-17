@@ -79,7 +79,7 @@ export function SettingsTabs({
 
   return (
     <>
-      <div className="flex gap-1 border-b border-line">
+      <div className="-mx-4 flex gap-1 overflow-x-auto px-4 shadow-[inset_0_-1px_0_var(--color-line)] sm:mx-0 sm:px-0">
         {TABS.map((t) => {
           const active = t.id === tab;
           return (
@@ -88,10 +88,10 @@ export function SettingsTabs({
               type="button"
               onClick={() => switchTab(t.id)}
               aria-current={active ? "page" : undefined}
-              className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+              className={`flex h-11 shrink-0 items-center border-b-2 px-3 text-sm transition-colors ${
                 active
-                  ? "border-brand text-brand-ink"
-                  : "border-transparent text-ink-muted hover:text-ink"
+                  ? "border-brand font-semibold text-ink"
+                  : "border-transparent font-medium text-ink-muted hover:border-line-strong hover:text-ink"
               }`}
             >
               {t.label}
@@ -100,10 +100,10 @@ export function SettingsTabs({
         })}
       </div>
 
-      <div className="mt-8 space-y-6" hidden={tab !== "company"}>
+      <div className="mt-8 max-w-3xl space-y-6" hidden={tab !== "company"}>
         <CompanyProfileForm company={company} />
 
-        <Card className="flex items-center justify-between">
+        <Card className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-start gap-3">
             <FileText
               className="mt-0.5 h-5 w-5 text-ink-subtle"
@@ -111,7 +111,7 @@ export function SettingsTabs({
               aria-hidden
             />
             <div>
-              <p className="text-sm font-medium">Document types</p>
+              <p className="text-sm font-semibold">Document types</p>
               <p className="text-sm text-ink-muted">
                 The compliance documents you collect from contractors.
               </p>
@@ -127,10 +127,10 @@ export function SettingsTabs({
         </Card>
       </div>
 
-      <div className="mt-8 space-y-6" hidden={tab !== "account"}>
+      <div className="mt-8 max-w-3xl space-y-6" hidden={tab !== "account"}>
         <Card>
-          <h3 className="text-sm font-semibold">Account email</h3>
-          <p className="mt-1 text-sm text-ink-muted">{userEmail}</p>
+          <h3 className="label-caps text-ink-muted">Account email</h3>
+          <p className="mt-2 text-sm font-semibold text-ink">{userEmail}</p>
         </Card>
         <ChangePasswordForm />
         <DeleteAccountSection />

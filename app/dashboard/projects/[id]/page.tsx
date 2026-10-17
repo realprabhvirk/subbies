@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, MapPin, CalendarRange, TriangleAlert } from "lucide-react";
+import { MapPin, CalendarRange } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
 import { StatusBadge } from "@/app/components/status-badge";
+import { PageHeader } from "@/app/components/page-header";
+import { Alert } from "@/app/components/alert";
 import { projectIssueCount, type AssignedContractor } from "@/lib/projects";
 import type { ContractorStatus, ProjectStatus } from "@/lib/types";
 import { EditProjectButton } from "./_components/edit-project-button";
@@ -114,69 +115,61 @@ export default async function ProjectDetailPage(
       : null;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <Link
-          href="/dashboard/projects"
-          className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink"
-        >
-          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
-          Projects
-        </Link>
-
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold">{project.name}</h1>
-              <StatusBadge kind="project" status={project.status} />
-            </div>
-            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-ink-muted">
+    <div className="space-y-6">
+      <PageHeader
+        back={{ href: "/dashboard/projects", label: "Projects" }}
+        title={project.name}
+        actions={
+          <>
+            <StatusBadge kind="project" status={project.status} />
+            <EditProjectButton
+              project={{
+                id: project.id,
+                name: project.name,
+                address: project.address,
+                status: project.status,
+                startDate: project.start_date,
+                endDate: project.end_date,
+              }}
+            />
+          </>
+        }
+        meta={
+          (project.address || dateRange) && (
+            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink">
               {project.address && (
                 <span className="inline-flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4" strokeWidth={2} aria-hidden />
+                  <MapPin className="h-4 w-4 text-ink-subtle" strokeWidth={2} aria-hidden />
                   {project.address}
                 </span>
               )}
               {dateRange && (
                 <span className="inline-flex items-center gap-1.5">
-                  <CalendarRange className="h-4 w-4" strokeWidth={2} aria-hidden />
-                  {dateRange}
+                  <CalendarRange className="h-4 w-4 text-ink-subtle" strokeWidth={2} aria-hidden />
+                  <span className="font-mono text-xs">{dateRange}</span>
                 </span>
               )}
             </div>
-          </div>
-          <EditProjectButton
-            project={{
-              id: project.id,
-              name: project.name,
-              address: project.address,
-              status: project.status,
-              startDate: project.start_date,
-              endDate: project.end_date,
-            }}
-          />
-        </div>
-      </div>
+          )
+        }
+      />
 
       {issues > 0 && (
-        <div className="flex items-start gap-2 rounded-md bg-attention-bg px-4 py-3 text-sm text-attention">
-          <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-          <span>
-            {issues} of {assigned.length} assigned{" "}
-            {assigned.length === 1 ? "contractor" : "contractors"} on this project{" "}
-            {issues === 1 ? "isn't" : "aren't"} fully compliant.
-          </span>
-        </div>
+        <Alert tone="warning">
+          {issues} of {assigned.length} assigned{" "}
+          {assigned.length === 1 ? "contractor" : "contractors"} on this project{" "}
+          {issues === 1 ? "isn't" : "aren't"} fully compliant.
+        </Alert>
       )}
       {issues === 0 && assigned.length > 0 && (
-        <div className="rounded-md bg-approved-bg px-4 py-3 text-sm text-approved">
+        <Alert tone="success">
           Every contractor assigned to this project is approved.
-        </div>
+        </Alert>
       )}
 
       <section>
-        <h2 className="text-base font-semibold">Contractors on this project</h2>
-        <p className="mt-0.5 text-sm text-ink-muted">
+        <h2 className="text-lg">Contractors on this project</h2>
+        <p className="mt-1 text-sm text-ink-muted">
           Assign the contractors working here and check their compliance before
           they&apos;re on site.
         </p>

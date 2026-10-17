@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
+import { PageHeader } from "@/app/components/page-header";
 import { canAddDocumentType } from "@/lib/billing/entitlements";
 import type { DocumentType } from "@/lib/types";
 import { DocumentTypesManager } from "./_components/document-types-manager";
@@ -26,8 +27,8 @@ export default async function DocumentTypesPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">Document types</h1>
-        <p className="rounded-md bg-expired-bg px-4 py-3 text-sm text-expired">
+        <PageHeader title="Document types" />
+        <p className="rounded-md border border-expired-line bg-expired-bg/70 px-4 py-3 text-sm text-expired">
           We couldn&apos;t load your document types. Refresh to try again.
         </p>
       </div>

@@ -2,13 +2,14 @@
 
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, CalendarClock, BellRing } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText } from "lucide-react";
 
 import { fieldClasses } from "@/app/components/input";
 import { Button, ButtonLink } from "@/app/components/button";
 import { IconButton } from "@/app/components/icon-button";
 import { DialogFrame } from "@/app/components/dialog";
 import { EmptyState } from "@/app/components/empty-state";
+import { PageHeader } from "@/app/components/page-header";
 import { ReminderScheduleField } from "./reminder-schedule-field";
 import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
 import type { DocumentType } from "@/lib/types";
@@ -53,45 +54,35 @@ export function DocumentTypesManager({
   };
 
   return (
-    <div className="space-y-8">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Document types</h1>
-          <p className="mt-1 max-w-xl text-sm text-ink-muted">
-            The compliance documents you collect from contractors. You&apos;ll
-            pick from this list when onboarding each contractor.
-          </p>
-        </div>
-        {atLimit ? (
-          <ButtonLink
-            href="/dashboard/settings?tab=billing"
-            variant="secondary"
-            className="shrink-0"
-          >
-            Upgrade to add more
-          </ButtonLink>
-        ) : (
-          <Button
-            type="button"
-            onClick={() => setDialog({ mode: "create" })}
-            className="shrink-0"
-          >
-            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-            Add document type
-          </Button>
-        )}
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        title="Document types"
+        description="The compliance documents you collect from contractors. You'll pick from this list when onboarding each contractor."
+        actions={
+          atLimit ? (
+            <ButtonLink href="/dashboard/settings?tab=billing" variant="secondary">
+              Upgrade to add more
+            </ButtonLink>
+          ) : (
+            <Button type="button" onClick={() => setDialog({ mode: "create" })}>
+              <Plus className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              Add document type
+            </Button>
+          )
+        }
+      />
 
       {atLimit && <LimitBanner resource="document types" limit={limit} />}
 
       {deleteError && (
-        <p className="rounded-md bg-expired-bg px-4 py-3 text-sm text-expired">
+        <p className="rounded-md border border-expired-line bg-expired-bg/70 px-4 py-3 text-sm text-expired">
           {deleteError}
         </p>
       )}
 
       {types.length === 0 ? (
         <EmptyState
+          icon={FileText}
           title="No document types yet"
           description="Add the documents you need from contractors, for example Public Liability insurance, a trade licence, or a workers compensation certificate."
           action={
@@ -102,85 +93,103 @@ export function DocumentTypesManager({
           }
         />
       ) : (
-        <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {types.map((type) => (
-            <li
-              key={type.id}
-              className="flex flex-col rounded-card border border-line bg-surface shadow-sm p-card"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <h2 className="text-base font-semibold">{type.name}</h2>
-                <div className="flex shrink-0 gap-1">
-                  <IconButton
-                    onClick={() => setDialog({ mode: "edit", type })}
-                    aria-label={`Edit ${type.name}`}
-                  >
-                    <Pencil className="h-4 w-4" strokeWidth={2} />
-                  </IconButton>
-                  <IconButton
-                    tone="danger"
-                    onClick={() => {
-                      setDeleteError(null);
-                      setDeletingId(type.id);
-                    }}
-                    aria-label={`Delete ${type.name}`}
-                  >
-                    <Trash2 className="h-4 w-4" strokeWidth={2} />
-                  </IconButton>
-                </div>
-              </div>
-
-              <dl className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center gap-2 text-ink-muted">
-                  <CalendarClock className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                  <dt className="sr-only">Default validity</dt>
-                  <dd>
-                    Valid for {type.default_duration_months}{" "}
-                    {type.default_duration_months === 1 ? "month" : "months"}
-                  </dd>
-                </div>
-                <div className="flex items-center gap-2 text-ink-muted">
-                  <BellRing className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                  <dt className="sr-only">Reminder schedule</dt>
-                  <dd>
-                    {type.reminder_days.length > 0
-                      ? `Reminders ${type.reminder_days.join(", ")} days before expiry`
-                      : "No expiry reminders"}
-                  </dd>
-                </div>
-              </dl>
-
-              {deletingId === type.id && (
-                <div className="mt-4 rounded-md border border-expired-line bg-expired-bg p-3">
-                  <p className="text-sm text-expired">
-                    Delete <span className="font-medium">{type.name}</span>? This
-                    can&apos;t be undone.
-                  </p>
-                  <div className="mt-3 flex gap-2">
-                    <Button
-                      type="button"
-                      variant="danger"
-                      size="sm"
-                      onClick={() => handleDelete(type.id)}
-                      pending={isDeleting}
+        <div className="overflow-hidden rounded-card border border-line bg-surface">
+          <div
+            aria-hidden
+            className="hidden grid-cols-[minmax(0,1fr)_9rem_minmax(0,14rem)_5.5rem] items-center gap-6 border-b border-line-strong bg-surface-muted px-5 py-2.5 text-ink-muted md:grid"
+          >
+            <span className="label-caps">Document</span>
+            <span className="label-caps">Valid for</span>
+            <span className="label-caps">Reminders before expiry</span>
+            <span />
+          </div>
+          <ul className="divide-y divide-line">
+            {types.map((type) => (
+              <li key={type.id} className="px-4 py-3.5 sm:px-5">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 md:grid-cols-[minmax(0,1fr)_9rem_minmax(0,14rem)_5.5rem] md:gap-x-6">
+                  <h2 className="truncate font-sans text-sm font-semibold stretch-normal">
+                    {type.name}
+                  </h2>
+                  <div className="col-start-2 row-start-1 flex justify-end gap-0.5 md:col-start-4">
+                    <IconButton
+                      onClick={() => setDialog({ mode: "edit", type })}
+                      aria-label={`Edit ${type.name}`}
                     >
-                      {isDeleting ? "Deleting…" : "Delete"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setDeletingId(null)}
-                      disabled={isDeleting}
+                      <Pencil className="h-4 w-4" strokeWidth={2} />
+                    </IconButton>
+                    <IconButton
+                      tone="danger"
+                      onClick={() => {
+                        setDeleteError(null);
+                        setDeletingId(type.id);
+                      }}
+                      aria-label={`Delete ${type.name}`}
                     >
-                      Cancel
-                    </Button>
+                      <Trash2 className="h-4 w-4" strokeWidth={2} />
+                    </IconButton>
                   </div>
+                  <dl className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs md:col-span-2 md:col-start-2 md:row-start-1 md:grid md:grid-cols-[9rem_minmax(0,14rem)] md:gap-x-6">
+                    <div>
+                      <dt className="sr-only">Default validity</dt>
+                      <dd className="text-ink">
+                        <span className="font-mono">{type.default_duration_months}</span>{" "}
+                        <span className="text-ink-muted">
+                          {type.default_duration_months === 1 ? "month" : "months"}
+                        </span>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="sr-only">Reminder schedule</dt>
+                      <dd className="flex flex-wrap gap-1">
+                        {type.reminder_days.length > 0 ? (
+                          type.reminder_days.map((d) => (
+                            <span
+                              key={d}
+                              className="rounded-sm border border-line-strong bg-surface-muted px-1.5 py-0.5 font-mono text-2xs text-ink"
+                            >
+                              {d}d
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-ink-muted">No reminders</span>
+                        )}
+                      </dd>
+                    </div>
+                  </dl>
                 </div>
-              )}
-            </li>
-          ))}
-        </ul>
+
+                {deletingId === type.id && (
+                  <div className="mt-3 flex flex-wrap items-center gap-3 rounded-md border border-expired-line bg-expired-bg/50 p-3">
+                    <p className="flex-1 text-sm text-expired">
+                      Delete <span className="font-semibold">{type.name}</span>?
+                      This can&apos;t be undone.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDelete(type.id)}
+                        pending={isDeleting}
+                      >
+                        {isDeleting ? "Deleting…" : "Delete"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setDeletingId(null)}
+                        disabled={isDeleting}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {dialog && (

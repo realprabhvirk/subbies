@@ -46,10 +46,10 @@ export function ChangePasswordForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-card border border-line bg-surface shadow-sm p-6"
+      className="space-y-4 rounded-card border border-line bg-surface p-5 sm:p-6"
     >
       <div>
-        <h3 className="text-sm font-semibold">Change password</h3>
+        <h3 className="text-lg">Change password</h3>
         <p className="mt-0.5 text-sm text-ink-muted">
           You&apos;ll stay signed in on this device.
         </p>

@@ -68,8 +68,8 @@ export function ProjectContractorsPanel({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-card border border-line bg-surface shadow-sm p-card">
-        <h3 className="text-sm font-semibold">Assign a contractor</h3>
+      <div className="rounded-card border border-line bg-surface-muted/60 p-4 sm:p-5">
+        <h3 className="label-caps text-ink-muted">Assign a contractor</h3>
         {available.length === 0 ? (
           <p className="mt-2 text-sm text-ink-muted">
             Every contractor you have is already on this project.{" "}
@@ -83,8 +83,8 @@ export function ProjectContractorsPanel({
           </p>
         ) : (
           <div className="mt-3 flex flex-wrap items-end gap-3">
-            <div className="min-w-[12rem] flex-1 space-y-1">
-              <label htmlFor="assign-pick" className="block text-xs font-medium text-ink-muted">
+            <div className="min-w-[12rem] flex-1 space-y-1.5">
+              <label htmlFor="assign-pick" className="block text-xs font-semibold text-ink">
                 Contractor
               </label>
               <select
@@ -102,9 +102,9 @@ export function ProjectContractorsPanel({
                 ))}
               </select>
             </div>
-            <div className="min-w-[10rem] flex-1 space-y-1">
-              <label htmlFor="assign-role" className="block text-xs font-medium text-ink-muted">
-                Role <span className="font-normal">(optional)</span>
+            <div className="min-w-[10rem] flex-1 space-y-1.5">
+              <label htmlFor="assign-role" className="block text-xs font-semibold text-ink">
+                Role <span className="font-normal text-ink-muted">(optional)</span>
               </label>
               <input
                 id="assign-role"
@@ -128,7 +128,7 @@ export function ProjectContractorsPanel({
             </Button>
           </div>
         )}
-        {error && <p className="mt-2 text-sm text-expired">{error}</p>}
+        {error && <p className="mt-3 text-sm font-medium text-expired">{error}</p>}
       </div>
 
       {assigned.length === 0 ? (
@@ -145,7 +145,7 @@ export function ProjectContractorsPanel({
               <div className="min-w-0">
                 <Link
                   href={`/dashboard/contractors/${a.contractorId}`}
-                  className="font-medium hover:text-brand hover:underline"
+                  className="font-semibold hover:text-brand hover:underline"
                 >
                   {a.businessName}
                 </Link>
@@ -172,7 +172,7 @@ export function ProjectContractorsPanel({
       )}
 
       {assigned.some((a) => hasComplianceIssue(a.status)) && (
-        <p className="text-xs text-ink-subtle">
+        <p className="text-xs text-ink-muted">
           Contractors marked anything other than “Approved” have an outstanding
           compliance issue. Open the contractor to see what&apos;s missing.
         </p>

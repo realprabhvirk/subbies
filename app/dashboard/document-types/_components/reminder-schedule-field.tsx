@@ -139,13 +139,13 @@ export function ReminderScheduleField({
             onBlur={handleAddBlur}
             placeholder="Days"
             aria-label="New reminder, days before expiry"
-            className="w-16 rounded-full border border-line-strong bg-surface px-2.5 py-1 text-xs outline-none focus:border-brand"
+            className="h-8 w-20 rounded-sm border border-field-line bg-surface px-2 font-mono text-xs outline-none focus:border-brand"
           />
         ) : (
           <button
             type="button"
             onClick={startAdding}
-            className="inline-flex items-center gap-1 rounded-full border border-dashed border-line-strong px-2.5 py-1 text-xs font-medium text-ink-muted transition-colors hover:border-brand hover:text-brand"
+            className="inline-flex h-8 items-center gap-1 rounded-sm border border-dashed border-field-line px-2.5 text-xs font-semibold text-ink-muted transition-colors hover:border-brand hover:text-brand"
           >
             <Plus className="h-3 w-3" strokeWidth={2.5} aria-hidden />
             Add day
@@ -153,10 +153,10 @@ export function ReminderScheduleField({
         )}
       </div>
 
-      {addError && <p className="mt-1.5 text-xs text-expired">{addError}</p>}
+      {addError && <p className="mt-1.5 text-xs font-medium text-expired">{addError}</p>}
 
       {days.length === 0 && !adding && !addError && (
-        <p className="mt-1.5 text-xs text-ink-subtle">No expiry reminders.</p>
+        <p className="mt-1.5 text-xs text-ink-muted">No expiry reminders.</p>
       )}
     </Field>
   );

@@ -37,7 +37,7 @@ export default async function ProjectsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-2xl font-semibold">Projects</h1>
-        <p className="rounded-md bg-expired-bg px-4 py-3 text-sm text-expired">
+        <p className="rounded-md border border-expired-line bg-expired-bg/70 px-4 py-3 text-sm text-expired">
           We couldn&apos;t load your projects. Refresh to try again.
         </p>
       </div>

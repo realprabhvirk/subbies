@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PageHeader } from "@/app/components/page-header";
 import { getCompany, getUser } from "@/lib/supabase/dal";
 import { getEntitlement, getUsageCounts } from "@/lib/billing/entitlements";
 import { reconcileCompanyFromStripe } from "@/lib/billing/sync";
@@ -61,13 +62,12 @@ export default async function SettingsPage(
   ]);
 
   return (
-    <div className="space-y-8">
-      <header>
-        <h1 className="text-2xl font-semibold">Settings</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Manage your company details, account, and billing.
-        </p>
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        title="Settings"
+        description="Manage your company details, account, and billing."
+        rule={false}
+      />
 
       <SettingsTabs
         initialTab={tab}
