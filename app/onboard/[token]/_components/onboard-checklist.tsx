@@ -137,63 +137,83 @@ export function OnboardChecklist({
   };
 
   return (
-    <ul className="mt-6 space-y-3">
-      {items.map((item) => {
+    <ol className="mt-6 space-y-3">
+      {items.map((item, index) => {
         const state = states[item.id] ?? { phase: "idle" };
         const stagedFiles = staged[item.id] ?? [];
         const canStage = canSubmitDocument(item.status);
         const submitting = state.phase === "submitting";
+        const needsAction = item.status === "requested" || item.status === "rejected";
 
         return (
-          <li key={item.id} className="rounded-md border border-line p-4">
-            <div className="flex items-start justify-between gap-3">
-              <span className="font-medium">{item.documentName}</span>
-              <StatusBadge kind="document" status={item.status} />
+          <li
+            key={item.id}
+            className={`rounded-card border bg-surface ${
+              item.status === "rejected"
+                ? "border-expired-line"
+                : needsAction
+                  ? "border-line-strong"
+                  : "border-line"
+            }`}
+          >
+            <div className="flex items-start gap-3 p-4 sm:p-5">
+              <span className="mt-0.5 font-mono text-xs text-ink-subtle">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+                  <p className="font-semibold text-ink">{item.documentName}</p>
+                  <StatusBadge kind="document" status={item.status} size="sm" />
+                </div>
+
+                {item.isReplacement && (
+                  <p className="mt-2 text-sm text-ink-muted">
+                    Updated copy requested. What you sent before stays valid until
+                    this one is approved.
+                  </p>
+                )}
+
+                {item.status === "rejected" && item.rejectionReason && (
+                  <div className="mt-3 rounded-md border border-expired-line bg-expired-bg/60 px-3 py-2.5 text-sm text-expired">
+                    <p className="label-caps">Not accepted</p>
+                    <p className="mt-1">{item.rejectionReason}</p>
+                  </div>
+                )}
+
+                {item.files.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {item.files.map((file, i) => (
+                      <button
+                        key={file.id}
+                        type="button"
+                        onClick={() => viewFile(file.id)}
+                        className="pressable inline-flex min-h-11 max-w-full items-center gap-2 rounded-md border border-line-strong bg-surface px-3 text-left hover:border-field-line hover:bg-surface-muted"
+                      >
+                        {openingFileId === file.id ? (
+                          <Spinner className="h-4 w-4 shrink-0 text-ink-muted" />
+                        ) : (
+                          <FileText className="h-4 w-4 shrink-0 text-ink-subtle" strokeWidth={2} aria-hidden />
+                        )}
+                        <span className="truncate font-mono text-xs text-ink">
+                          {file.fileName ?? (item.files.length > 1 ? `File ${i + 1}` : "View file")}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            {item.isReplacement && (
-              <p className="mt-2 text-sm text-ink-muted">
-                Updated copy requested. What you sent before stays valid until this one
-                is approved.
-              </p>
-            )}
-
-            {item.status === "rejected" && item.rejectionReason && (
-              <p className="mt-2 text-sm text-expired">
-                Not accepted: {item.rejectionReason}
-              </p>
-            )}
-
-            {item.files.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {item.files.map((file, i) => (
-                  <button
-                    key={file.id}
-                    type="button"
-                    onClick={() => viewFile(file.id)}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted"
-                  >
-                    {openingFileId === file.id ? (
-                      <Spinner className="h-4 w-4" />
-                    ) : (
-                      <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
-                    )}
-                    {file.fileName ?? (item.files.length > 1 ? `File ${i + 1}` : "View file")}
-                  </button>
-                ))}
-              </div>
-            )}
-
             {canStage && (
-              <div className="mt-3 space-y-2">
+              <div className="space-y-2.5 border-t border-line p-4 sm:p-5">
                 {stagedFiles.length > 0 && (
                   <ul className="space-y-1.5">
                     {stagedFiles.map((file, i) => (
                       <li
                         key={`${file.name}-${i}`}
-                        className="flex items-center justify-between gap-2 rounded-md bg-surface-muted px-3 py-1.5 text-sm"
+                        className="flex min-h-11 items-center justify-between gap-2 rounded-md border border-line bg-surface-muted pl-3 pr-1 text-sm"
                       >
-                        <span className="flex min-w-0 items-center gap-1.5">
+                        <span className="flex min-w-0 items-center gap-2">
                           <FileText
                             className="h-4 w-4 shrink-0 text-ink-subtle"
                             strokeWidth={2}
@@ -206,76 +226,92 @@ export function OnboardChecklist({
                           onClick={() => removeStagedFile(item.id, i)}
                           disabled={submitting}
                           aria-label={`Remove ${file.name}`}
-                          className="shrink-0 rounded-md p-1 text-ink-subtle transition-colors hover:bg-line-strong hover:text-ink disabled:opacity-60"
+                          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-line-strong hover:text-ink disabled:opacity-60"
                         >
-                          <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+                          <X className="h-4 w-4" strokeWidth={2.25} />
                         </button>
                       </li>
                     ))}
                   </ul>
                 )}
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <FilePicker
-                    disabled={submitting}
-                    label={
-                      item.files.length > 0 || stagedFiles.length > 0
-                        ? "Add another file"
-                        : "Add file"
-                    }
-                    onPick={(files) => addFiles(item.id, files)}
-                  />
+                <FilePicker
+                  disabled={submitting}
+                  prominent={stagedFiles.length === 0 && needsAction}
+                  label={
+                    item.files.length > 0 || stagedFiles.length > 0
+                      ? "Add another file"
+                      : "Add a file or take a photo"
+                  }
+                  onPick={(files) => addFiles(item.id, files)}
+                />
 
-                  {stagedFiles.length > 0 && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => submit(item.id)}
-                      pending={submitting}
-                    >
-                      <UploadCloud className="h-4 w-4" strokeWidth={2} aria-hidden />
-                      {state.phase === "submitting"
-                        ? `Uploading ${Math.min(state.doneCount + 1, state.total)} of ${state.total}…`
-                        : `Submit ${stagedFiles.length === 1 ? "file" : `${stagedFiles.length} files`}`}
-                    </Button>
-                  )}
-                </div>
+                {stagedFiles.length > 0 && (
+                  <Button
+                    type="button"
+                    size="lg"
+                    fullWidth
+                    onClick={() => submit(item.id)}
+                    pending={submitting}
+                  >
+                    {!submitting && (
+                      <UploadCloud className="h-5 w-5" strokeWidth={2} aria-hidden />
+                    )}
+                    {state.phase === "submitting"
+                      ? `Uploading ${Math.min(state.doneCount + 1, state.total)} of ${state.total}…`
+                      : `Submit ${stagedFiles.length === 1 ? "file" : `${stagedFiles.length} files`}`}
+                  </Button>
+                )}
+
+                {state.phase === "error" && (
+                  <p role="alert" className="text-sm font-medium text-expired">
+                    {state.message}
+                  </p>
+                )}
               </div>
             )}
 
-            {state.phase === "error" && (
-              <p className="mt-2 text-sm text-expired">{state.message}</p>
+            {!canStage && state.phase === "error" && (
+              <p role="alert" className="border-t border-line px-4 py-3 text-sm font-medium text-expired sm:px-5">
+                {state.message}
+              </p>
             )}
           </li>
         );
       })}
-    </ul>
+    </ol>
   );
 }
 
 function FilePicker({
   label,
   disabled,
+  prominent = false,
   onPick,
 }: {
   label: string;
   disabled?: boolean;
+  /** The first, empty pick: a big full-width target for a thumb. */
+  prominent?: boolean;
   onPick: (files: FileList) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
     <>
-      <Button
+      <button
         type="button"
-        variant="secondary"
-        size="sm"
         disabled={disabled}
         onClick={() => inputRef.current?.click()}
+        className={`pressable flex w-full items-center justify-center gap-2 rounded-md border border-dashed font-semibold disabled:cursor-not-allowed disabled:opacity-55 ${
+          prominent
+            ? "min-h-16 border-field-line bg-surface-muted/60 text-base text-ink hover:border-brand hover:bg-brand-tint/50 hover:text-brand"
+            : "min-h-12 border-line-strong text-sm text-ink-muted hover:border-field-line hover:text-ink"
+        }`}
       >
-        <Upload className="h-4 w-4" strokeWidth={2} aria-hidden />
+        <Upload className={prominent ? "h-5 w-5" : "h-4 w-4"} strokeWidth={2} aria-hidden />
         {label}
-      </Button>
+      </button>
       <input
         ref={inputRef}
         type="file"
