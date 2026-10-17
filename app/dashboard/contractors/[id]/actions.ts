@@ -8,6 +8,7 @@ import { getCompany, getUser } from "@/lib/supabase/dal";
 import { getAppUrl } from "@/lib/app-url";
 import { recomputeContractorStatus } from "@/lib/contractor-status";
 import { createSignedDownload } from "@/lib/storage";
+import { isPathOwnedByCompany } from "@/lib/storage-path-ownership";
 import {
   sendDocumentRejectedEmail,
   sendContractorApprovedEmail,
@@ -415,6 +416,19 @@ export async function getDocumentFileUrl(
 
   const ownerCompanyId = file?.contractor_documents?.contractors?.company_id;
   if (!file || ownerCompanyId !== company.id) {
+    return { ok: false, error: "No file to view." };
+  }
+
+  // Owning the row is not owning the file: file_path is just text on a row
+  // this company can write. The signing below uses the service role, which
+  // ignores storage permissions, so the path itself must sit inside this
+  // company's folder. Same generic error as "not found", so a refused path
+  // says nothing about whether the object exists.
+  if (!isPathOwnedByCompany(file.file_path, company.id)) {
+    console.error("getDocumentFileUrl: refused a file_path outside the company's folder", {
+      fileId,
+      companyId: company.id,
+    });
     return { ok: false, error: "No file to view." };
   }
 

@@ -149,9 +149,9 @@ export async function GET(req: NextRequest) {
   if (runInsertProbe && tableExists) {
     const { data: anyDoc, error: anyDocError } = await admin
       .from("contractor_documents")
-      .select("id")
+      .select("id, contractors(company_id)")
       .limit(1)
-      .maybeSingle<{ id: string }>();
+      .maybeSingle<{ id: string; contractors: { company_id: string } | null }>();
 
     if (anyDocError || !anyDoc) {
       insertProbe = {
@@ -160,7 +160,10 @@ export async function GET(req: NextRequest) {
         error: reportError(anyDocError),
       };
     } else {
-      const probePath = `${PROBE_PREFIX}/${crypto.randomUUID()}.pdf`;
+      // Kept inside the owning company's folder: migration 0016 rejects any
+      // file_path that isn't, and a probe that trips that guard would report
+      // a false failure. The __healthcheck__ segment still marks it as a probe.
+      const probePath = `${anyDoc.contractors?.company_id}/${PROBE_PREFIX}/${crypto.randomUUID()}.pdf`;
       // Same three columns, same types, as the real submit path.
       const { data: inserted, error: insertError } = await admin
         .from("contractor_document_files")
