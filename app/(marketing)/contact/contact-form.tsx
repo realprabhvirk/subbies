@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { CircleCheck } from "lucide-react";
 
 import { Spinner } from "@/app/components/spinner";
+import { buttonClasses } from "@/app/components/button";
 import { fieldClasses } from "@/app/components/input";
 import { submitContact, type ContactState } from "./actions";
 
@@ -18,9 +19,9 @@ export function ContactForm() {
 
   if (state?.ok) {
     return (
-      <div className="rounded-card border border-approved-line bg-approved-bg p-6 text-sm text-approved">
-        <CircleCheck className="h-5 w-5" strokeWidth={2} aria-hidden />
-        <p className="mt-2 font-medium">Message sent</p>
+      <div className="rounded-card border border-approved-line bg-approved-bg/60 p-6 text-sm text-approved">
+        <CircleCheck className="h-6 w-6" strokeWidth={2} aria-hidden />
+        <p className="mt-3 font-display text-lg font-semibold">Message sent</p>
         <p className="mt-1 text-approved/90">
           Thanks! We&apos;ll get back to you at the email you gave us.
         </p>
@@ -31,7 +32,7 @@ export function ContactForm() {
   return (
     <form
       action={formAction}
-      className="space-y-4 rounded-card border border-line bg-surface p-5 sm:p-6"
+      className="space-y-5 rounded-card border border-line bg-surface p-5 sm:p-8"
     >
       {/* Honeypot */}
       <div aria-hidden className="hidden">
@@ -87,7 +88,7 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
+        className={buttonClasses("primary", "md", "w-full sm:w-auto")}
       >
         {pending && <Spinner className="h-4 w-4" />}
         {pending ? "Sending…" : "Send message"}

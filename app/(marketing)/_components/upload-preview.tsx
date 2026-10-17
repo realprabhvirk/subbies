@@ -1,51 +1,61 @@
-import { Paperclip } from "lucide-react";
+import { Lock, Upload } from "lucide-react";
 
-import { Button } from "@/app/components/button";
+import { StatusBadge } from "@/app/components/status-badge";
+import type { DocumentStatus } from "@/lib/types";
 
 /**
- * A static recreation of the contractor's upload screen — the page a
+ * The contractor's upload page as it appears on their phone — the screen a
  * subcontractor lands on from the emailed link, with no account and no
- * login. Same reasoning as ProductPreview: this is what the product's
- * request list actually looks like, not a generic icon standing in for it.
+ * login. Built from the same pieces as the real page. Example data only.
  */
+const DOCS: { name: string; status: DocumentStatus }[] = [
+  { name: "Public liability insurance", status: "uploaded" },
+  { name: "Electrical licence", status: "requested" },
+  { name: "Workers' compensation", status: "requested" },
+];
+
 export function UploadPreview() {
   return (
-    <div className="overflow-hidden rounded-card border border-line bg-surface">
-      <div className="flex items-center gap-1.5 border-b border-line bg-surface-muted px-4 py-2.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-        <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-        <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
-        <span className="ml-3 text-xs text-ink-subtle">
-          subbies.com/onboard/…
-        </span>
-      </div>
-      <div className="p-card">
-        <p className="text-sm font-semibold text-brand-ink">
-          Northside Builders needs your documents
-        </p>
-        <p className="mt-1 text-xs text-ink-muted">
-          Hi Dave — please upload the following before you start on site.
-        </p>
-        <ul className="mt-4 space-y-2">
-          {["Public liability insurance", "Electrical licence", "Workers compensation"].map(
-            (doc) => (
-              <li
-                key={doc}
-                className="flex items-center gap-2 rounded-md border border-line bg-canvas px-3 py-2 text-xs"
-              >
-                <Paperclip
-                  className="h-3.5 w-3.5 shrink-0 text-ink-subtle"
-                  strokeWidth={2}
-                  aria-hidden
-                />
-                <span className="truncate font-medium">{doc}</span>
+    <div className="mx-auto w-full max-w-[19rem] rounded-[2rem] border border-line-strong bg-warm-900 p-2 shadow-xl">
+      <div className="overflow-hidden rounded-[1.6rem] bg-canvas text-left">
+        <div className="flex items-center justify-between px-4 pb-1 pt-4">
+          <span className="font-display text-xs font-bold stretch-wide">Subbies</span>
+          <span className="flex items-center gap-1 text-2xs text-ink-muted">
+            <Lock className="h-3 w-3" strokeWidth={2.25} aria-hidden />
+            Secure link
+          </span>
+        </div>
+        <div className="px-4 pb-4 pt-3">
+          <p className="label-caps text-brand">Northside Builders</p>
+          <p className="mt-1 font-display text-lg font-bold leading-tight tracking-display">
+            Documents for Dave&apos;s Electrical
+          </p>
+          <p className="mt-3 text-2xs font-semibold">1 of 3 submitted</p>
+          <div className="mt-1.5 flex gap-1">
+            <span className="h-1 flex-1 rounded-full bg-review" />
+            <span className="h-1 flex-1 rounded-full bg-line-strong" />
+            <span className="h-1 flex-1 rounded-full bg-line-strong" />
+          </div>
+          <ul className="mt-3 space-y-2">
+            {DOCS.map((doc, i) => (
+              <li key={doc.name} className="rounded-md border border-line bg-surface p-2.5">
+                <p className="text-xs font-semibold leading-snug">
+                  <span className="mr-1.5 font-mono text-2xs font-normal text-ink-subtle">
+                    0{i + 1}
+                  </span>
+                  {doc.name}
+                </p>
+                <StatusBadge kind="document" status={doc.status} size="sm" className="mt-1.5" />
+                {doc.status === "requested" && i === 1 && (
+                  <div className="mt-2 flex h-9 items-center justify-center gap-1.5 rounded-sm border border-dashed border-field-line bg-surface-muted/60 text-2xs font-semibold">
+                    <Upload className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+                    Add a file or take a photo
+                  </div>
+                )}
               </li>
-            ),
-          )}
-        </ul>
-        <Button type="button" size="sm" className="mt-4 w-full" tabIndex={-1}>
-          Upload your documents
-        </Button>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );

@@ -11,16 +11,16 @@ export const metadata: Metadata = {
 };
 
 function H2({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-xl font-semibold sm:text-2xl">{children}</h2>;
+  return <h2 className="text-xl sm:text-2xl">{children}</h2>;
 }
 
 function P({ children }: { children: React.ReactNode }) {
-  return <p className="mt-3 text-sm leading-relaxed text-ink-muted sm:text-base">{children}</p>;
+  return <p className="mt-3 max-w-[68ch] text-sm leading-relaxed text-ink sm:text-base">{children}</p>;
 }
 
 function UL({ children }: { children: React.ReactNode }) {
   return (
-    <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-ink-muted sm:text-base">
+    <ul className="mt-3 max-w-[68ch] list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-ink marker:text-ink-subtle sm:text-base">
       {children}
     </ul>
   );
@@ -28,15 +28,15 @@ function UL({ children }: { children: React.ReactNode }) {
 
 export default function TermsPage() {
   return (
-    <Section className="py-16 sm:py-20">
-      <div className="mx-auto max-w-3xl">
+    <Section className="pb-section pt-14 sm:pt-20">
+      <div className="max-w-3xl">
         <Eyebrow>Legal</Eyebrow>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
+        <h1 className="mt-5 text-4xl leading-[1.02] tracking-display sm:text-5xl">
           Terms of Service
         </h1>
-        <p className="mt-3 text-sm text-ink-subtle">Last updated: {TERMS_LAST_UPDATED}</p>
+        <p className="mt-4 font-mono text-xs text-ink-muted">Last updated: {TERMS_LAST_UPDATED}</p>
 
-        <div className="mt-10 space-y-10 border-t border-line pt-10">
+        <div className="mt-10 space-y-10 border-t border-ink pt-10">
           <P>
             These terms are the agreement between you and Subbies
             (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;), the

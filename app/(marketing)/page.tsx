@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check, FileCheck } from "lucide-react";
 
-import { Section, Eyebrow, Reveal, PrimaryLink, CtaBand } from "./_components/ui";
-import { TRIAL_DAYS } from "@/lib/billing/plans";
+import {
+  Section,
+  SectionHead,
+  Eyebrow,
+  Reveal,
+  PrimaryLink,
+  CtaBand,
+} from "./_components/ui";
+import { TRIAL_DAYS, PLANS } from "@/lib/billing/plans";
 import { ProductPreview } from "./_components/product-preview";
 import { UploadPreview } from "./_components/upload-preview";
 import { ReminderPreview } from "./_components/reminder-preview";
@@ -17,45 +24,64 @@ export const metadata: Metadata = {
     "Stop chasing contractors for paperwork and know whether they're approved to work. Collect, review, and track compliance documents in one place.",
 };
 
-type StepVisual = "photo-onboard" | "upload" | "review" | "photo-track";
+const FACTS = [
+  { k: "Contractor logins", v: "None. One link." },
+  { k: "Accepted files", v: "PDF, JPG, PNG, HEIC" },
+  { k: "Expiry reminders", v: "On your schedule" },
+  { k: "Plans from", v: `A$${PLANS.starter.amount} / month` },
+];
 
-const STEPS: { title: string; body: string; visual: StepVisual }[] = [
+const STEPS = [
   {
     title: "Onboard",
-    body: "Add a contractor, choose which documents you need, and send one secure link.",
-    visual: "photo-onboard",
+    body: "Add a contractor, tick the documents you need from them, and Subbies emails one secure link.",
   },
   {
     title: "Collect",
-    body: "They upload everything from their phone. No login, no account, no app to install.",
-    visual: "upload",
+    body: "They upload from their phone on site — a photo of the certificate is fine. No login, no account, no app.",
   },
   {
     title: "Review",
-    body: "Check each document, set its expiry date, approve or send it back with a reason.",
-    visual: "review",
+    body: "Open each file, set its expiry date, approve it or send it back with a reason they'll actually read.",
   },
   {
     title: "Track",
-    body: "Everyone's status stays current, and reminders go out before anything expires.",
-    visual: "photo-track",
+    body: "Everyone's status stays current. Reminders go out before anything expires, and your dashboard shows who needs you.",
   },
 ];
 
 const FEATURES = [
   {
-    title: "No contractor logins",
-    body: "Every competing tool asks the contractor to make an account. That's the step where onboarding stalls — Subbies is one link, nothing to sign up for.",
+    label: "For the contractor",
+    title: "Nothing to sign up for.",
+    body: "The contractor gets a plain email from your business and one link. They see exactly what's outstanding, upload from their phone, and they're done. The step where onboarding usually stalls — making an account — isn't there.",
+    points: [
+      "Works on any phone, no app",
+      "Photos and PDFs both accepted",
+      "Same link works when a document renews",
+    ],
     preview: <UploadPreview />,
   },
   {
-    title: "Automatic expiry reminders",
-    body: "Set an expiry when you approve a document. Subbies reminds the contractor before it lapses, and escalates to you if they ignore it.",
+    label: "For the expiry dates",
+    title: "Reminders before anything lapses.",
+    body: "Set an expiry when you approve a document. Subbies reminds the contractor on the schedule you choose for that document type, and escalates to you if they don't respond.",
+    points: [
+      "A schedule per document type",
+      "Days left shown on every record",
+      "Lapses show up on your dashboard",
+    ],
     preview: <ReminderPreview />,
   },
   {
-    title: "One compliance dashboard",
-    body: "Every certificate, licence, and insurance document for every contractor, reviewed and tracked from one screen — not a shared spreadsheet.",
+    label: "For you",
+    title: "One register, worst first.",
+    body: "Every certificate, licence and insurance document for every contractor, reviewed and tracked in one place. The dashboard leads with what needs you — expired, rejected, waiting for review — not a wall of charts.",
+    points: [
+      "Status stamps you can read at a glance",
+      "Compliance per project",
+      "Full history of every document",
+    ],
     preview: <ProductPreview />,
   },
 ];
@@ -63,210 +89,240 @@ const FEATURES = [
 export default function LandingPage() {
   return (
     <>
-      {/* Hero — full-bleed photo slot with a dark scrim for legible text.
-          The scrim is a plain top-to-bottom gradient over a real photo, which
-          is not the same thing as a decorative gradient-blob background —
-          it's doing a job (contrast), not decoration. */}
-      <section className="relative isolate overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          <Image
-            src="/marketing/hero-construction.webp"
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-warm-900/85 via-warm-900/55 to-warm-900/20" />
-        </div>
-
-        <div className="mx-auto max-w-5xl px-4 py-24 sm:px-6 sm:py-32 lg:py-40">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/70">
-              Contractor onboarding &amp; compliance
-            </p>
-            <h1 className="mt-4 text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-6xl">
-              Stop chasing contractors for paperwork
+      {/* Hero — editorial, left-set, the real product beside the promise.
+          The ruled background is the "register" motif, drawn in the warm
+          hairline colour. */}
+      <section className="relative isolate overflow-hidden border-b border-line">
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent_85%)]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(to bottom, transparent 0, transparent 39px, var(--color-line) 39px, var(--color-line) 40px)",
+          }}
+        />
+        <Section className="grid items-center gap-12 pb-16 pt-14 sm:pb-24 sm:pt-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-14 lg:pb-32 lg:pt-24">
+          <div>
+            <Eyebrow>Contractor onboarding &amp; compliance</Eyebrow>
+            <h1 className="mt-5 text-[2.6rem] leading-[0.98] tracking-display sm:text-6xl xl:text-[4.25rem]">
+              Stop chasing paperwork. Know who&apos;s cleared for site.
             </h1>
-            <p className="mt-5 max-w-xl text-lg text-white/85">
-              Collect insurance certificates, licences, and workers comp from
-              your subcontractors, review them in one place, and know at a
-              glance who is approved to work.
+            <p className="mt-6 max-w-xl text-base text-ink-muted sm:text-lg">
+              Collect insurance certificates, licences and workers comp from your
+              subcontractors, review them in one place, and see at a glance
+              who is approved to work.
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-3">
-              <PrimaryLink href="/signup">Start free</PrimaryLink>
+            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
+              <PrimaryLink href="/signup">Start {TRIAL_DAYS}-day free trial</PrimaryLink>
               <Link
                 href="/how-it-works"
-                className="group inline-flex items-center gap-1.5 text-sm font-medium text-white/90 transition-colors duration-[var(--duration-fast)] hover:text-white"
+                className="group inline-flex items-center gap-1.5 text-sm font-semibold text-ink transition-colors hover:text-brand"
               >
                 See how it works
                 <ArrowRight
-                  className="h-4 w-4 transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)] group-hover:translate-x-0.5"
-                  strokeWidth={2}
+                  className="h-4 w-4 transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5"
+                  strokeWidth={2.25}
                   aria-hidden
                 />
               </Link>
             </div>
-            <p className="mt-5 text-sm text-white/60">
-              {TRIAL_DAYS} days free on any plan, cancel any time. Built for
-              builders, property maintenance, and facilities teams.
+            <p className="mt-6 text-sm text-ink-muted">
+              Card required, nothing charged for {TRIAL_DAYS} days. Built for
+              builders, property maintenance and facilities teams.
             </p>
           </div>
-        </div>
+
+          {/* Product composite: the register with the contractor's phone
+              view overlapping its corner. */}
+          <div aria-hidden className="relative sm:pt-16">
+            <ProductPreview />
+            {/* The moment the product exists for: a contractor's upload
+                landing. Mirrors the app's real notification copy. */}
+            <div className="absolute -left-4 top-0 hidden w-80 items-start gap-3 rounded-card border border-line bg-surface p-3.5 shadow-lg sm:flex xl:-left-10">
+              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-review-line bg-review-bg text-review">
+                <FileCheck className="h-4 w-4" strokeWidth={2.25} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold leading-snug">
+                  BJ Plumbing &amp; Gas uploaded Public liability insurance
+                </p>
+                <p className="mt-1 font-mono text-2xs text-ink-subtle">just now</p>
+              </div>
+            </div>
+          </div>
+        </Section>
       </section>
 
-      {/* The problem — text-led, deliberately light on imagery. The photo
-          did the confidence-building in the hero; this section's job is to
-          name the pain plainly and move on. */}
-      <Section className="py-section">
-        <Reveal className="mx-auto max-w-2xl text-center">
-          <Eyebrow>The problem</Eyebrow>
-          <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">
-            You&apos;re not short on subcontractors. You&apos;re short on
-            certainty about them.
-          </h2>
-          <p className="mt-4 text-ink-muted">
-            Insurance certificates that quietly lapse. A licence you meant to
-            check before the job started. A spreadsheet three people are
-            editing at once, none of them sure which version is current. It
-            costs an afternoon every time you chase it down, and it&apos;s
-            invisible right up until it isn&apos;t — an expired policy on
-            site, discovered at the worst possible moment.
-          </p>
-        </Reveal>
-      </Section>
-
-      {/* How it works — each step paired with either the real product UI or
-          a supporting photo, never an icon standing in on its own. */}
-      <div className="border-y border-line bg-surface">
-        <Section className="py-section">
-          <Reveal>
-            <Eyebrow>How it works</Eyebrow>
-            <h2 className="mt-3 max-w-2xl text-2xl font-semibold sm:text-3xl">
-              From &ldquo;we need someone Monday&rdquo; to approved, without
-              the back-and-forth
-            </h2>
-          </Reveal>
-          <ol className="mt-12 grid gap-6 sm:grid-cols-2">
-            {STEPS.map((step, i) => (
-              <Reveal key={step.title}>
-                <li className="flex h-full flex-col overflow-hidden rounded-card border border-line bg-canvas shadow-sm">
-                  {/* The two photo slots get a fixed 4:3 box (that's the shot
-                      to source). The two product-UI mockups render at their
-                      own natural height instead of being force-fit into the
-                      same ratio — they're real card chrome, not a photo, and
-                      cropping one to 4:3 would just clip rows off it. */}
-                  <div className="shrink-0 p-4 pb-0">
-                    {step.visual === "photo-onboard" && (
-                      <Image
-                        src="/marketing/how-it-works-1.webp"
-                        alt="A tradesperson carefully working a piece of timber by hand"
-                        width={900}
-                        height={675}
-                        sizes="(min-width: 640px) 50vw, 100vw"
-                        className="aspect-[4/3] w-full rounded-md object-cover"
-                      />
-                    )}
-                    {step.visual === "photo-track" && (
-                      <Image
-                        src="/marketing/how-it-works-2.webp"
-                        alt="A tradesperson guiding a track saw through a cut"
-                        width={900}
-                        height={675}
-                        sizes="(min-width: 640px) 50vw, 100vw"
-                        className="aspect-[4/3] w-full rounded-md object-cover"
-                      />
-                    )}
-                    {step.visual === "upload" && (
-                      <div aria-hidden className="overflow-hidden rounded-md">
-                        <UploadPreview />
-                      </div>
-                    )}
-                    {step.visual === "review" && (
-                      <div aria-hidden className="overflow-hidden rounded-md">
-                        <ProductPreview />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-card">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-subtle">
-                        Step {i + 1}
-                      </span>
-                    </div>
-                    <h3 className="mt-1.5 text-lg font-semibold">{step.title}</h3>
-                    <p className="mt-1.5 text-sm text-ink-muted">{step.body}</p>
-                  </div>
-                </li>
-              </Reveal>
+      {/* Facts strip — true statements about the product, in place of a logo
+          wall or invented stats. */}
+      <div className="border-b border-line bg-surface">
+        <Section>
+          <dl className="grid grid-cols-2 lg:grid-cols-4">
+            {FACTS.map((f, i) => (
+              <div
+                key={f.k}
+                className={`py-6 sm:py-8 ${i % 2 === 1 ? "border-l border-line pl-5 sm:pl-8" : ""} ${
+                  i >= 2 ? "border-t border-line lg:border-t-0" : ""
+                } ${i === 2 ? "lg:border-l lg:pl-8" : ""}`}
+              >
+                <dt className="label-caps text-ink-muted">{f.k}</dt>
+                <dd className="mt-2 font-display text-lg font-semibold sm:text-xl">{f.v}</dd>
+              </div>
             ))}
-          </ol>
+          </dl>
         </Section>
       </div>
 
-      {/* Trust — the weakest part of most pre-launch SaaS marketing. No logo
-          wall we don't have yet; a concrete, honest angle instead. */}
+      {/* The problem — named plainly, in two columns: the claim, the cost. */}
       <Section className="py-section">
-        <Reveal>
-          <div className="grid items-center gap-10 rounded-card border border-line bg-surface p-6 shadow-sm sm:p-10 lg:grid-cols-[0.85fr_1.15fr]">
-            {/* The placeholder here was framed as a circular founder headshot
-                — sourcing landed on a genuine crew-at-work shot instead (the
-                brief's other allowed option for this slot), and a wide
-                action photo cropped into a circle reads badly, so the frame
-                is a rounded rectangle instead. Same slot, same section,
-                same position — sized to match the image's real aspect. */}
-            <div className="mx-auto w-full max-w-xs lg:mx-0">
-              <Image
-                src="/marketing/trust-crew.webp"
-                alt="Two site supervisors reviewing rebar layout on a job site"
-                width={900}
-                height={675}
-                sizes="(min-width: 1024px) 20vw, 80vw"
-                className="aspect-[4/3] w-full rounded-card object-cover"
-              />
-            </div>
-            <div>
-              <Eyebrow>Why Subbies exists</Eyebrow>
-              <p className="mt-3 text-xl font-medium leading-relaxed text-ink sm:text-2xl">
-                &ldquo;Built by someone who&apos;s spent real afternoons
-                chasing subcontractors for the same insurance certificate
-                twice, because there was nowhere it was supposed to live.&rdquo;
-              </p>
-              <p className="mt-4 text-sm text-ink-muted">
-                Subbies isn&apos;t a feature bolted onto a bigger project
-                management suite — it&apos;s built for exactly one job: know
-                who&apos;s compliant, without the spreadsheet. What you see
-                on this page is the real product, not a mockup of one.
-              </p>
-            </div>
+        <Reveal className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+          <SectionHead
+            index="01"
+            label="The problem"
+            title="You're not short on subbies. You're short on certainty about them."
+          />
+          <div className="space-y-4 text-base text-ink-muted lg:pt-16">
+            <p>
+              Insurance certificates that quietly lapse. A licence you meant to
+              check before the job started. A spreadsheet three people are
+              editing at once, none of them sure which version is current.
+            </p>
+            <p>
+              It costs an afternoon every time you chase it down, and it&apos;s
+              invisible right up until it isn&apos;t —{" "}
+              <span className="font-semibold text-ink">
+                an expired policy on site, discovered at the worst possible
+                moment.
+              </span>
+            </p>
           </div>
         </Reveal>
       </Section>
 
-      {/* Feature highlights — real screenshots, not stock icons. */}
+      {/* How it works — four ruled, numbered steps. */}
       <div className="border-y border-line bg-surface">
         <Section className="py-section">
           <Reveal>
-            <Eyebrow>What you get</Eyebrow>
-            <h2 className="mt-3 max-w-2xl text-2xl font-semibold sm:text-3xl">
-              The parts that actually take time, handled
-            </h2>
+            <SectionHead
+              index="02"
+              label="How it works"
+              title={
+                <>
+                  From &ldquo;we need someone Monday&rdquo; to approved, without
+                  the back-and-forth.
+                </>
+              }
+            />
           </Reveal>
-          <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <Reveal key={f.title} className="h-full">
-                <div className="flex h-full flex-col overflow-hidden rounded-card border border-line bg-canvas shadow-sm">
-                  <div aria-hidden className="p-4 pb-0">
-                    {f.preview}
-                  </div>
-                  <div className="p-card">
-                    <h3 className="text-base font-semibold">{f.title}</h3>
-                    <p className="mt-1.5 text-sm text-ink-muted">{f.body}</p>
-                  </div>
-                </div>
-              </Reveal>
+          <ol className="mt-14 grid border-t border-ink sm:grid-cols-2 lg:grid-cols-4">
+            {STEPS.map((step, i) => (
+              <li
+                key={step.title}
+                className={`border-b border-line py-7 sm:pr-8 lg:border-b-0 ${
+                  i > 0 ? "lg:border-l lg:pl-8" : ""
+                } ${i % 2 === 1 ? "sm:border-l sm:pl-8 lg:pl-8" : ""}`}
+              >
+                <span className="figure text-4xl text-line-strong">0{i + 1}</span>
+                <h3 className="mt-4 text-xl">{step.title}</h3>
+                <p className="mt-2 text-sm text-ink-muted">{step.body}</p>
+              </li>
             ))}
+          </ol>
+          <div className="mt-10">
+            <Link
+              href="/how-it-works"
+              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
+            >
+              The full walkthrough
+              <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            </Link>
           </div>
+        </Section>
+      </div>
+
+      {/* Features — alternating text and real product, separated by rules. */}
+      <Section className="py-section">
+        <Reveal>
+          <SectionHead
+            index="03"
+            label="What you get"
+            title="The parts that actually take time, handled."
+          />
+        </Reveal>
+        <div className="mt-14 divide-y divide-line border-y border-line">
+          {FEATURES.map((f, i) => (
+            <Reveal key={f.title}>
+              <div className="grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-2 lg:gap-16">
+                <div className={i % 2 === 1 ? "lg:order-2" : ""}>
+                  <Eyebrow className="text-brand">{f.label}</Eyebrow>
+                  <h3 className="mt-3 text-2xl leading-tight tracking-display sm:text-4xl">
+                    {f.title}
+                  </h3>
+                  <p className="mt-4 max-w-lg text-base text-ink-muted">{f.body}</p>
+                  <ul className="mt-6 max-w-lg divide-y divide-line border-y border-line">
+                    {f.points.map((p) => (
+                      <li key={p} className="flex items-center gap-2.5 py-2.5 text-sm">
+                        <Check className="h-4 w-4 shrink-0 text-approved" strokeWidth={2.5} aria-hidden />
+                        {p}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div aria-hidden className={`mx-auto w-full max-w-md ${i % 2 === 1 ? "lg:order-1" : ""}`}>
+                  {f.preview}
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </Section>
+
+      {/* Why Subbies exists — an honest founder note, not a testimonial. */}
+      <div className="border-t border-line bg-surface">
+        <Section className="py-section">
+          <Reveal className="grid items-center gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
+            <Image
+              src="/marketing/trust-crew.webp"
+              alt="Two site supervisors reviewing rebar layout on a job site"
+              width={900}
+              height={675}
+              sizes="(min-width: 1024px) 35vw, 90vw"
+              className="aspect-[4/3] w-full rounded-card object-cover grayscale-[35%]"
+            />
+            <div>
+              <Eyebrow>Why Subbies exists</Eyebrow>
+              <blockquote className="mt-4 font-display text-2xl font-semibold leading-snug tracking-[-0.02em] sm:text-3xl">
+                &ldquo;Built by someone who&apos;s spent real afternoons chasing
+                subcontractors for the same insurance certificate twice, because
+                there was nowhere it was supposed to live.&rdquo;
+              </blockquote>
+              <p className="mt-5 max-w-xl text-sm text-ink-muted">
+                Subbies isn&apos;t a feature bolted onto a bigger project
+                management suite. It does one job: know who&apos;s compliant,
+                without the spreadsheet. The screens on this page are built from
+                the real product, shown with example data.
+              </p>
+            </div>
+          </Reveal>
+        </Section>
+      </div>
+
+      {/* Pricing teaser — one honest line and a link. */}
+      <div className="border-t border-line">
+        <Section className="flex flex-col gap-4 py-10 sm:flex-row sm:items-center sm:justify-between">
+          <p className="font-display text-xl font-semibold sm:text-2xl">
+            Plans from A${PLANS.starter.amount} a month.{" "}
+            <span className="text-ink-muted">
+              No per-contractor fees. {TRIAL_DAYS} days free.
+            </span>
+          </p>
+          <Link
+            href="/pricing"
+            className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
+          >
+            Compare plans
+            <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+          </Link>
         </Section>
       </div>
 
