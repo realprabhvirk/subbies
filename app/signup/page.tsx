@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeEmail } from "@/lib/auth/normalize-email";
 import { classifySignupResult } from "@/lib/auth/signup-logic";
+import { validatePassword, MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
 import { TERMS_VERSION } from "@/lib/legal/terms";
 import { Logo } from "@/app/components/logo";
 import { Button } from "@/app/components/button";
@@ -31,6 +32,12 @@ export default function SignupPage() {
     // anything that skips native form validation.
     if (!agreed) {
       setError("Please confirm you're 18 or over and agree to the Terms and Privacy Policy.");
+      return;
+    }
+
+    const pwCheck = validatePassword(password);
+    if (!pwCheck.ok) {
+      setError(pwCheck.error!);
       return;
     }
 
@@ -188,11 +195,11 @@ export default function SignupPage() {
                 id="password"
                 autoComplete="new-password"
                 required
-                minLength={8}
+                minLength={MIN_PASSWORD_LENGTH}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <p className="text-xs text-ink-subtle">At least 8 characters.</p>
+              <p className="text-xs text-ink-subtle">At least {MIN_PASSWORD_LENGTH} characters.</p>
             </div>
 
             {error && (

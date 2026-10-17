@@ -10,6 +10,7 @@ import {
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
+import { complianceTodayUtcMs } from "@/lib/time/compliance-today";
 import { StatusBadge } from "@/app/components/status-badge";
 import { Card, CardHeader, StatCard, type StatTone } from "@/app/components/card";
 import { Alert } from "@/app/components/alert";
@@ -39,12 +40,6 @@ function initialsOf(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return "–";
   return (words[0][0] + (words[1]?.[0] ?? "")).toUpperCase();
-}
-
-function startOfToday(): number {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
 }
 
 export default async function DashboardPage() {
@@ -102,14 +97,16 @@ export default async function DashboardPage() {
     }
   }
 
-  const today = startOfToday();
+  // UTC midnight of today's Queensland date, matched by the "...T00:00:00Z"
+  // expiry parse below, so buckets flip on the right calendar day.
+  const today = complianceTodayUtcMs();
   const windowEnd = today + EXPIRING_WINDOW_DAYS * 86_400_000;
 
   const expiringContractorIds = new Set<string>();
   const expiredContractorIds = new Set<string>();
   for (const doc of docs) {
     if (doc.status !== "approved" || !doc.expiry_date) continue;
-    const expiry = new Date(doc.expiry_date + "T00:00:00").getTime();
+    const expiry = new Date(doc.expiry_date + "T00:00:00Z").getTime();
     if (expiry < today) expiredContractorIds.add(doc.contractor_id);
     else if (expiry <= windowEnd) expiringContractorIds.add(doc.contractor_id);
   }

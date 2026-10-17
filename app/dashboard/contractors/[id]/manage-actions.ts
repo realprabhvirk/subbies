@@ -24,6 +24,7 @@ import {
   type LifecycleRow,
 } from "@/lib/document-lifecycle-logic";
 import { daysUntilExpiry } from "@/lib/reminders/expiry-logic";
+import { complianceToday } from "@/lib/time/compliance-today";
 import type { DocumentStatus } from "@/lib/types";
 
 const SESSION_EXPIRED = "Your session has expired. Reload and try again.";
@@ -311,7 +312,7 @@ export async function resendDocumentRequests(
     replaces_document_id: r.replaces_document_id,
   }));
 
-  const now = new Date();
+  const now = complianceToday();
   const chosen = live.filter((d) => selection.ids.includes(d.id));
   const steps = planResend(
     chosen.map((d) => {
