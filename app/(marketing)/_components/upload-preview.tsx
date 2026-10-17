@@ -1,6 +1,19 @@
 import { Paperclip } from "lucide-react";
 
 import { Button } from "@/app/components/button";
+import { getSiteUrl } from "@/lib/site-url";
+
+/** The deployment host for the illustrative link, or a neutral label — never a
+ * domain we don't actually serve. */
+function onboardLinkLabel(): string {
+  const url = getSiteUrl();
+  if (!url) return "your Subbies link";
+  try {
+    return `${new URL(url).host}/onboard/\u2026`;
+  } catch {
+    return "your Subbies link";
+  }
+}
 
 /**
  * A static recreation of the contractor's upload screen — the page a
@@ -16,7 +29,7 @@ export function UploadPreview() {
         <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
         <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
         <span className="ml-3 text-xs text-ink-subtle">
-          subbies.com/onboard/…
+          {onboardLinkLabel()}
         </span>
       </div>
       <div className="p-card">
