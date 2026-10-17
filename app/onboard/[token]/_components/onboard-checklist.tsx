@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, FileText, X, UploadCloud } from "lucide-react";
 
@@ -34,6 +34,15 @@ type ItemState =
  */
 type StagedByItem = Record<string, File[]>;
 
+/**
+ * What the contractor just submitted, shown until the refreshed server data
+ * arrives. `basedOn` is the `items` array the submit happened against: once
+ * router.refresh() delivers new props that reference changes, the entry stops
+ * applying on its own — so the row never shows a stale "Not uploaded" in the
+ * gap, and never lingers past the real data.
+ */
+type JustSubmitted = Record<string, { fileNames: string[]; basedOn: OnboardingChecklistItem[] }>;
+
 export function OnboardChecklist({
   token,
   items,
@@ -45,6 +54,8 @@ export function OnboardChecklist({
   const [states, setStates] = useState<Record<string, ItemState>>({});
   const [staged, setStaged] = useState<StagedByItem>({});
   const [openingFileId, setOpeningFileId] = useState<string | null>(null);
+  const [justSubmitted, setJustSubmitted] = useState<JustSubmitted>({});
+  const [, startRefresh] = useTransition();
 
   const setItemState = (id: string, state: ItemState) =>
     setStates((prev) => ({ ...prev, [id]: state }));
@@ -122,9 +133,13 @@ export function OnboardChecklist({
       return;
     }
 
+    setJustSubmitted((prev) => ({
+      ...prev,
+      [itemId]: { fileNames: uploaded.map((u) => u.fileName), basedOn: items },
+    }));
     setStaged((prev) => ({ ...prev, [itemId]: [] }));
     setItemState(itemId, { phase: "idle" });
-    router.refresh();
+    startRefresh(() => router.refresh());
   };
 
   const viewFile = async (fileId: string) => {
@@ -141,14 +156,18 @@ export function OnboardChecklist({
       {items.map((item) => {
         const state = states[item.id] ?? { phase: "idle" };
         const stagedFiles = staged[item.id] ?? [];
-        const canStage = canSubmitDocument(item.status);
+        // Until the refreshed props land, show what was just submitted.
+        const pending = justSubmitted[item.id];
+        const optimistic = pending && pending.basedOn === items ? pending : null;
+        const status = optimistic ? "uploaded" : item.status;
+        const canStage = canSubmitDocument(status);
         const submitting = state.phase === "submitting";
 
         return (
           <li key={item.id} className="rounded-md border border-line p-4">
             <div className="flex items-start justify-between gap-3">
               <span className="font-medium">{item.documentName}</span>
-              <StatusBadge kind="document" status={item.status} />
+              <StatusBadge kind="document" status={status} />
             </div>
 
             {item.isReplacement && (
@@ -158,13 +177,27 @@ export function OnboardChecklist({
               </p>
             )}
 
-            {item.status === "rejected" && item.rejectionReason && (
+            {status === "rejected" && item.rejectionReason && (
               <p className="mt-2 text-sm text-expired">
                 Not accepted: {item.rejectionReason}
               </p>
             )}
 
-            {item.files.length > 0 && (
+            {optimistic && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {optimistic.fileNames.map((name, i) => (
+                  <span
+                    key={`${name}-${i}`}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-sm font-medium text-ink-muted"
+                  >
+                    <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
+                    {name}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {!optimistic && item.files.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-2">
                 {item.files.map((file, i) => (
                   <button
@@ -219,7 +252,7 @@ export function OnboardChecklist({
                   <FilePicker
                     disabled={submitting}
                     label={
-                      item.files.length > 0 || stagedFiles.length > 0
+                      item.files.length > 0 || optimistic || stagedFiles.length > 0
                         ? "Add another file"
                         : "Add file"
                     }

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
+import { getSiteUrl } from "@/lib/site-url";
+
 const display = Space_Grotesk({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
@@ -23,13 +25,32 @@ const mono = IBM_Plex_Mono({
   display: "swap",
 });
 
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
+  // One canonical host (NEXT_PUBLIC_APP_URL) drives absolute URLs for OG tags,
+  // the sitemap and canonicals. Left undefined locally/in preview, where the
+  // current origin is the right answer.
+  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
   title: {
     default: "Subbies",
     template: "%s · Subbies",
   },
   description:
     "Collect, review, and track contractor compliance documents without chasing paperwork.",
+  openGraph: {
+    type: "website",
+    siteName: "Subbies",
+    title: "Subbies — contractor compliance, without the chasing",
+    description:
+      "Collect, review, and track contractor compliance documents without chasing paperwork.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Subbies — contractor compliance, without the chasing",
+    description:
+      "Collect, review, and track contractor compliance documents without chasing paperwork.",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
