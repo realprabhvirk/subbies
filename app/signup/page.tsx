@@ -151,7 +151,7 @@ export default function SignupPage() {
 
           <form onSubmit={handleSignup} className="mt-6 space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="company" className="block text-sm font-medium">
+              <label htmlFor="company" className="block text-sm font-semibold">
                 Company name
               </label>
               <input
@@ -166,7 +166,7 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="email" className="block text-sm font-medium">
+              <label htmlFor="email" className="block text-sm font-semibold">
                 Email
               </label>
               <input
@@ -181,7 +181,7 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="password" className="block text-sm font-medium">
+              <label htmlFor="password" className="block text-sm font-semibold">
                 Password
               </label>
               <PasswordField
@@ -196,7 +196,7 @@ export default function SignupPage() {
             </div>
 
             {error && (
-              <p className="rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">
+              <p className="rounded-md border border-expired-line bg-expired-bg/70 px-3 py-2 text-sm text-expired">
                 {error}
               </p>
             )}

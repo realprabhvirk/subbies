@@ -56,21 +56,22 @@ export function Logo({
       {mark}
       <span className="flex flex-col justify-center leading-none">
         <span
-          className={`font-display font-bold tracking-tight ${
+          className={`font-display font-bold tracking-[-0.02em] stretch-wide ${
             tone === "inverse" ? "text-sidebar-ink" : "text-ink"
           }`}
-          style={{ fontSize: Math.round(height * 0.62) }}
+          style={{ fontSize: Math.round(height * 0.6) }}
         >
           Subbies
         </span>
         {showTagline && (
           <span
-            className={`mt-1 font-semibold uppercase ${
-              tone === "inverse" ? "text-sidebar-ink-subtle" : "text-ink-subtle"
+            className={`mt-1.5 font-semibold uppercase ${
+              tone === "inverse" ? "text-sidebar-ink-muted" : "text-ink-muted"
             }`}
             style={{
-              fontSize: Math.max(8, Math.round(height * 0.26)),
-              letterSpacing: "0.14em",
+              // Never below 10.5px: the old 8–9px tagline was unreadable.
+              fontSize: Math.max(10.5, Math.round(height * 0.3)),
+              letterSpacing: "0.1em",
             }}
           >
             Compliance builds progress

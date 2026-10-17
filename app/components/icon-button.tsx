@@ -28,8 +28,9 @@ const TONE: Record<IconButtonTone, string> = {
   danger: "text-ink-muted hover:bg-expired-bg hover:text-expired",
 };
 
+// 40px square with a pointer, 44px on touch screens (the guideline minimum).
 const BASE =
-  "inline-flex shrink-0 items-center justify-center rounded-md p-2 transition-[background-color,color,transform] duration-[var(--duration-fast)] ease-[var(--ease-standard)] hover:scale-[1.06] active:scale-100 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100";
+  "pressable inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md pointer-coarse:h-11 pointer-coarse:w-11 disabled:cursor-not-allowed disabled:opacity-55";
 
 type IconButtonProps = Omit<React.ComponentProps<"button">, "className"> & {
   tone?: IconButtonTone;

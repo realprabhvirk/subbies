@@ -19,7 +19,7 @@ import type {
 interface StatusMeta {
   label: string;
   icon: LucideIcon;
-  /** Tailwind classes for the badge (text + background + border tokens). */
+  /** Tailwind classes for the stamp (text + background + border tokens). */
   className: string;
 }
 
@@ -27,28 +27,29 @@ export const contractorStatusMeta: Record<ContractorStatus, StatusMeta> = {
   pending: {
     label: "Pending onboarding",
     icon: CircleDashed,
-    className:
-      "text-neutral-status bg-neutral-status-bg",
+    className: "text-neutral-status bg-neutral-status-bg border-neutral-status-line",
   },
   awaiting_review: {
     label: "Awaiting review",
     icon: Clock,
-    className: "text-review bg-review-bg",
+    className: "text-review bg-review-bg border-review-line",
   },
   approved: {
     label: "Approved",
     icon: CircleCheck,
-    className: "text-approved bg-approved-bg",
+    className: "text-approved bg-approved-bg border-approved-line",
   },
   attention_required: {
     label: "Attention required",
     icon: TriangleAlert,
-    className: "text-attention bg-attention-bg",
+    className: "text-attention bg-attention-bg border-attention-line",
   },
+  // The one solid stamp: expired must never be mistaken for "attention",
+  // whose hue is almost identical.
   expired: {
     label: "Expired",
     icon: CircleX,
-    className: "text-expired bg-expired-bg",
+    className: "text-white bg-expired border-expired",
   },
 };
 
@@ -56,28 +57,27 @@ export const documentStatusMeta: Record<DocumentStatus, StatusMeta> = {
   requested: {
     label: "Not uploaded",
     icon: CircleDashed,
-    className:
-      "text-neutral-status bg-neutral-status-bg",
+    className: "text-neutral-status bg-neutral-status-bg border-neutral-status-line",
   },
   uploaded: {
     label: "Awaiting review",
     icon: Clock,
-    className: "text-review bg-review-bg",
+    className: "text-review bg-review-bg border-review-line",
   },
   approved: {
     label: "Approved",
     icon: CircleCheck,
-    className: "text-approved bg-approved-bg",
+    className: "text-approved bg-approved-bg border-approved-line",
   },
   rejected: {
     label: "Rejected",
     icon: CircleX,
-    className: "text-expired bg-expired-bg",
+    className: "text-expired bg-expired-bg border-expired-line",
   },
   revoked: {
     label: "Revoked",
     icon: Ban,
-    className: "text-neutral-status bg-neutral-status-bg",
+    className: "text-neutral-status bg-neutral-status-bg border-neutral-status-line",
   },
 };
 
@@ -85,17 +85,16 @@ export const projectStatusMeta: Record<ProjectStatus, StatusMeta> = {
   active: {
     label: "Active",
     icon: CircleDot,
-    className: "text-review bg-review-bg",
+    className: "text-review bg-review-bg border-review-line",
   },
   on_hold: {
     label: "On hold",
     icon: PauseCircle,
-    className:
-      "text-neutral-status bg-neutral-status-bg",
+    className: "text-neutral-status bg-neutral-status-bg border-neutral-status-line",
   },
   completed: {
     label: "Completed",
     icon: CircleCheck,
-    className: "text-approved bg-approved-bg",
+    className: "text-approved bg-approved-bg border-approved-line",
   },
 };

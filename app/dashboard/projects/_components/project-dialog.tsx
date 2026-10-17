@@ -1,10 +1,9 @@
 "use client";
 
 import { useActionState, useEffect, useTransition } from "react";
-import { X } from "lucide-react";
 
 import { Button } from "@/app/components/button";
-import { IconButton } from "@/app/components/icon-button";
+import { DialogFrame } from "@/app/components/dialog";
 import { fieldClasses } from "@/app/components/input";
 import type { ProjectStatus } from "@/lib/types";
 import { createProject, updateProject, type ProjectFormState } from "../actions";
@@ -59,31 +58,16 @@ export function ProjectDialog({
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div
-        className="dialog-backdrop absolute inset-0 bg-warm-900/40 backdrop-blur-[2px]"
-        onClick={onClose}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="project-dialog-title"
-        className="dialog-panel relative w-full max-w-md rounded-t-card border border-line bg-surface p-6 shadow-xl sm:rounded-card"
-      >
-        <div className="flex items-start justify-between">
-          <h2 id="project-dialog-title" className="text-lg font-semibold">
-            {isEdit ? "Edit project" : "New project"}
-          </h2>
-          <IconButton onClick={onClose} aria-label="Close">
-            <X className="h-5 w-5" strokeWidth={2} />
-          </IconButton>
-        </div>
-
-        <form action={formAction} className="mt-5 space-y-4">
+    <DialogFrame
+      titleId="project-dialog-title"
+      title={isEdit ? "Edit project" : "New project"}
+      onClose={onClose}
+    >
+        <form action={formAction} className="space-y-4">
           {isEdit && <input type="hidden" name="id" value={project!.id} />}
 
           <div className="space-y-1.5">
-            <label htmlFor="name" className="block text-sm font-medium">
+            <label htmlFor="name" className="block text-sm font-semibold">
               Project name
             </label>
             <input
@@ -102,7 +86,7 @@ export function ProjectDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="address" className="block text-sm font-medium">
+            <label htmlFor="address" className="block text-sm font-semibold">
               Address{" "}
               <span className="font-normal text-ink-subtle">(optional)</span>
             </label>
@@ -120,7 +104,7 @@ export function ProjectDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label htmlFor="status" className="block text-sm font-medium">
+            <label htmlFor="status" className="block text-sm font-semibold">
               Status
             </label>
             <select
@@ -139,7 +123,7 @@ export function ProjectDialog({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label htmlFor="start_date" className="block text-sm font-medium">
+              <label htmlFor="start_date" className="block text-sm font-semibold">
                 Start date
               </label>
               <input
@@ -151,7 +135,7 @@ export function ProjectDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <label htmlFor="end_date" className="block text-sm font-medium">
+              <label htmlFor="end_date" className="block text-sm font-semibold">
                 End date
               </label>
               <input
@@ -168,7 +152,7 @@ export function ProjectDialog({
           )}
 
           {state?.error && (
-            <p className="rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">
+            <p className="rounded-md border border-expired-line bg-expired-bg/70 px-3 py-2 text-sm text-expired">
               {state.error}
             </p>
           )}
@@ -182,7 +166,6 @@ export function ProjectDialog({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </DialogFrame>
   );
 }

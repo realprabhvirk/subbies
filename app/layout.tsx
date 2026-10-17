@@ -1,25 +1,29 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Hanken_Grotesk, IBM_Plex_Mono } from "next/font/google";
+import { Mona_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const display = Space_Grotesk({
+/*
+  One variable Mona Sans file carries every weight AND width the product
+  uses: body/UI text at its normal width, headings and big numbers
+  semi-expanded (see --font-stretch-display in globals.css). Only the latin
+  subset is preloaded.
+
+  (Archivo was trialled first for the same width axis and rejected: its
+  stylised ampersand reads as a "6", and trade business names are full of
+  them — "K & J Carpentry", "Plumbing & Gas".)
+*/
+const sans = Mona_Sans({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-space-grotesk",
+  axes: ["wdth"],
+  variable: "--font-mona",
   display: "swap",
 });
 
-const body = Hanken_Grotesk({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-hanken",
-  display: "swap",
-});
-
-const mono = IBM_Plex_Mono({
+/* Reference data only — ABNs, dates in tables, file names. Two weights. */
+const mono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
-  variable: "--font-ibm-plex-mono",
+  variable: "--font-jetbrains",
   display: "swap",
 });
 
@@ -36,7 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${display.variable} ${body.variable} ${mono.variable} h-full`}
+      className={`${sans.variable} ${mono.variable} h-full`}
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full antialiased">{children}</body>

@@ -42,7 +42,7 @@ export function ContactForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="name" className="block text-sm font-medium">
+        <label htmlFor="name" className="block text-sm font-semibold">
           Name
         </label>
         <input id="name" name="name" type="text" required maxLength={120} className={inputClass} />
@@ -52,7 +52,7 @@ export function ContactForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="email" className="block text-sm font-medium">
+        <label htmlFor="email" className="block text-sm font-semibold">
           Email
         </label>
         <input id="email" name="email" type="email" required className={inputClass} />
@@ -62,7 +62,7 @@ export function ContactForm() {
       </div>
 
       <div className="space-y-1.5">
-        <label htmlFor="message" className="block text-sm font-medium">
+        <label htmlFor="message" className="block text-sm font-semibold">
           Message
         </label>
         <textarea
@@ -79,7 +79,7 @@ export function ContactForm() {
       </div>
 
       {state?.error && (
-        <p className="rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">
+        <p className="rounded-md border border-expired-line bg-expired-bg/70 px-3 py-2 text-sm text-expired">
           {state.error}
         </p>
       )}

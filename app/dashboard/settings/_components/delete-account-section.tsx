@@ -217,7 +217,7 @@ export function DeleteAccountSection() {
       )}
 
       {error && (
-        <p className="mt-3 rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">{error}</p>
+        <p className="mt-3 rounded-md border border-expired-line bg-expired-bg/70 px-3 py-2 text-sm text-expired">{error}</p>
       )}
     </div>
   );

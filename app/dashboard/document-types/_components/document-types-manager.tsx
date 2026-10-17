@@ -2,11 +2,12 @@
 
 import { useActionState, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, X, CalendarClock, BellRing } from "lucide-react";
+import { Plus, Pencil, Trash2, CalendarClock, BellRing } from "lucide-react";
 
 import { fieldClasses } from "@/app/components/input";
 import { Button, ButtonLink } from "@/app/components/button";
 import { IconButton } from "@/app/components/icon-button";
+import { DialogFrame } from "@/app/components/dialog";
 import { EmptyState } from "@/app/components/empty-state";
 import { ReminderScheduleField } from "./reminder-schedule-field";
 import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
@@ -230,31 +231,16 @@ function DocumentTypeDialog({
   const existing = isEdit ? dialog.type : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
-      <div
-        className="dialog-backdrop absolute inset-0 bg-warm-900/40 backdrop-blur-[2px]"
-        onClick={onClose}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="doc-type-dialog-title"
-        className="dialog-panel relative w-full max-w-md rounded-t-card border border-line bg-surface p-6 shadow-xl sm:rounded-card"
-      >
-        <div className="flex items-start justify-between">
-          <h2 id="doc-type-dialog-title" className="text-lg font-semibold">
-            {isEdit ? "Edit document type" : "Add document type"}
-          </h2>
-          <IconButton onClick={onClose} aria-label="Close">
-            <X className="h-5 w-5" strokeWidth={2} />
-          </IconButton>
-        </div>
-
-        <form action={formAction} className="mt-5 space-y-4">
+    <DialogFrame
+      titleId="doc-type-dialog-title"
+      title={isEdit ? "Edit document type" : "Add document type"}
+      onClose={onClose}
+    >
+        <form action={formAction} className="space-y-4">
           {isEdit && <input type="hidden" name="id" value={existing!.id} />}
 
           <div className="space-y-1.5">
-            <label htmlFor="name" className="block text-sm font-medium">
+            <label htmlFor="name" className="block text-sm font-semibold">
               Name
             </label>
             <input
@@ -275,7 +261,7 @@ function DocumentTypeDialog({
           <div className="space-y-1.5">
             <label
               htmlFor="default_duration_months"
-              className="block text-sm font-medium"
+              className="block text-sm font-semibold"
             >
               Default validity (months)
             </label>
@@ -308,7 +294,7 @@ function DocumentTypeDialog({
           />
 
           {state?.error && (
-            <p className="rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">
+            <p className="rounded-md border border-expired-line bg-expired-bg/70 px-3 py-2 text-sm text-expired">
               {state.error}
             </p>
           )}
@@ -326,7 +312,6 @@ function DocumentTypeDialog({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </DialogFrame>
   );
 }

@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 <div className="space-y-1.5">
-                  <label htmlFor="email" className="block text-sm font-medium">
+                  <label htmlFor="email" className="block text-sm font-semibold">
                     Email
                   </label>
                   <input
@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
                 </div>
 
                 {error && (
-                  <p className="rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">
+                  <p className="rounded-md border border-expired-line bg-expired-bg/70 px-3 py-2 text-sm text-expired">
                     {error}
                   </p>
                 )}

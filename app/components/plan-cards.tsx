@@ -27,29 +27,31 @@ export function PlanCards({
   disabled?: boolean;
   ctaLabel?: string;
 }) {
+  // One rate card, three columns divided by rules — read across like a price
+  // list, not three floating tiles. The featured plan is marked by a steel
+  // bar along its top edge and a caps label, not by being bigger.
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-3">
-      {plans.map((plan) => (
+    <div className="grid overflow-hidden rounded-card border border-line bg-surface lg:grid-cols-3">
+      {plans.map((plan, i) => (
         <div
           key={plan.id}
-          className={`flex flex-col rounded-card border bg-surface p-6 ${
-            plan.featured
-              ? "border-brand shadow-sm ring-1 ring-brand/20 lg:-my-2 lg:py-8"
-              : "border-line"
-          }`}
+          className={`relative flex flex-col p-6 sm:p-7 ${
+            i > 0 ? "border-t border-line lg:border-l lg:border-t-0" : ""
+          } ${plan.featured ? "bg-brand-tint/40" : ""}`}
         >
           {plan.featured && (
-            <span className="mb-3 inline-flex w-fit rounded-full bg-brand-tint px-2.5 py-0.5 text-xs font-semibold text-brand-ink">
-              Most popular
-            </span>
+            <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-brand" />
           )}
-          <h4 className="text-base font-semibold">{plan.name}</h4>
-          <p className="mt-1 text-sm text-ink-muted">{plan.blurb}</p>
-          <p className="mt-3">
-            <span className="text-3xl font-semibold text-brand-ink">
-              A${plan.amount}
-            </span>
-            <span className="text-sm text-ink-muted">/month</span>
+          <div className="flex items-baseline justify-between gap-3">
+            <h4 className="text-lg font-semibold">{plan.name}</h4>
+            {plan.featured && (
+              <span className="label-caps text-brand">Most popular</span>
+            )}
+          </div>
+          <p className="mt-1.5 min-h-12 text-sm text-ink-muted">{plan.blurb}</p>
+          <p className="mt-5 flex items-baseline gap-1.5">
+            <span className="figure text-5xl text-ink">A${plan.amount}</span>
+            <span className="text-sm text-ink-muted">/ month</span>
           </p>
           <Button
             type="button"
@@ -57,19 +59,20 @@ export function PlanCards({
             onClick={() => onChoose(plan.id)}
             disabled={disabled}
             pending={busyPlanId === plan.id}
-            className="mt-4"
+            className="mt-6"
+            fullWidth
           >
             {ctaLabel} {plan.name}
           </Button>
-          <ul className="mt-5 space-y-2 text-sm">
+          <ul className="mt-6 divide-y divide-line border-t border-line text-sm">
             {plan.features.map((f) => (
-              <li key={f} className="flex items-start gap-2">
+              <li key={f} className="flex items-start gap-2.5 py-2.5">
                 <Check
                   className="mt-0.5 h-4 w-4 shrink-0 text-approved"
                   strokeWidth={2.5}
                   aria-hidden
                 />
-                <span className="text-ink-muted">{f}</span>
+                <span className="text-ink">{f}</span>
               </li>
             ))}
           </ul>

@@ -1,14 +1,15 @@
 /**
- * Card surfaces and the stat tile built on top of one.
+ * Panels and the figure tile built on top of one.
  *
- * `padded={false}` is for cards whose content manages its own padding —
- * tables, lists with full-bleed dividers, anything with a header band.
+ * v3: a panel is paper on the canvas — a hairline border and an 8px corner,
+ * no floating shadow. Structure comes from rules, not elevation.
  *
- * `interactive` adds the hover lift + deeper shadow for a card that's
- * genuinely a clickable unit. Leave it false (the default) for a card that
- * only displays information — a StatCard, a static form panel — since a
- * card that visibly reacts to hover but goes nowhere reads as a bug, not
- * polish.
+ * `padded={false}` is for panels whose content manages its own padding —
+ * tables, lists with full-bleed rules, anything with a header band.
+ *
+ * `interactive` adds a border/background response for a panel that is
+ * genuinely one clickable unit. Leave it false for a panel that only shows
+ * information: a panel that reacts to hover but goes nowhere reads as a bug.
  */
 
 export function Card({
@@ -24,31 +25,37 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-card border border-line bg-surface shadow-sm transition-[box-shadow,transform] duration-[var(--duration-base)] ease-[var(--ease-standard)] ${
-        interactive ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-md" : ""
-      } ${padded ? "p-card" : ""} ${className}`}
+      className={`rounded-card border border-line bg-surface shadow-sm ${
+        interactive
+          ? "cursor-pointer transition-colors duration-[var(--duration-fast)] hover:border-line-strong hover:bg-surface-muted/40"
+          : ""
+      } ${padded ? "p-card sm:p-6" : ""} ${className}`}
     >
       {children}
     </div>
   );
 }
 
-/** The header band at the top of a full-bleed card: title, sub, optional action. */
+/** The header band at the top of a full-bleed panel: title, sub, optional action. */
 export function CardHeader({
   title,
   description,
   action,
+  eyebrow,
 }: {
   title: string;
   description?: string;
   action?: React.ReactNode;
+  /** Optional small caps label above the title. */
+  eyebrow?: string;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-card py-5">
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-card py-4 sm:px-6">
       <div className="min-w-0">
+        {eyebrow && <p className="label-caps mb-1 text-ink-subtle">{eyebrow}</p>}
         <h2 className="text-base font-semibold">{title}</h2>
         {description && (
-          <p className="mt-0.5 text-sm text-ink-muted">{description}</p>
+          <p className="mt-0.5 text-xs text-ink-muted sm:text-sm">{description}</p>
         )}
       </div>
       {action}
@@ -66,16 +73,8 @@ const TONE_TEXT: Record<StatTone, string> = {
   expired: "text-expired",
 };
 
-const TONE_BG: Record<StatTone, string> = {
-  neutral: "bg-neutral-status-bg",
-  approved: "bg-approved-bg",
-  review: "bg-review-bg",
-  attention: "bg-attention-bg",
-  expired: "bg-expired-bg",
-};
-
 const TONE_BAR: Record<StatTone, string> = {
-  neutral: "bg-neutral-status",
+  neutral: "bg-ink-muted",
   approved: "bg-approved",
   review: "bg-review",
   attention: "bg-attention",
@@ -83,9 +82,10 @@ const TONE_BAR: Record<StatTone, string> = {
 };
 
 /**
- * A single headline number. The icon sits in a tinted tile in its status
- * colour, the value is display-face and tabular, and an optional share bar
- * gives the number context against the total without needing a chart.
+ * A single headline figure: small caps label, a big semi-expanded tabular
+ * number, and an optional meter that sets the number against its total.
+ * The icon (optional) sits inline with the label in the tone colour — no
+ * tinted tile.
  */
 export function StatCard({
   label,
@@ -100,35 +100,29 @@ export function StatCard({
   icon?: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   tone?: StatTone;
   note?: string;
-  /** 0–1. Renders a thin proportion bar under the value. */
+  /** 0–1. Renders a thin proportion meter under the value. */
   share?: number;
 }) {
   return (
     <Card>
-      <div className="flex items-center gap-2.5">
+      <div className="flex items-center gap-1.5">
         {Icon && (
-          <span
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${TONE_BG[tone]} ${TONE_TEXT[tone]}`}
-          >
-            <Icon className="h-4 w-4" strokeWidth={2} />
-          </span>
+          <Icon className={`h-4 w-4 shrink-0 ${TONE_TEXT[tone]}`} strokeWidth={2.25} />
         )}
-        <span className="text-sm font-medium text-ink-muted">{label}</span>
+        <span className="label-caps text-ink-muted">{label}</span>
       </div>
 
-      <p className="mt-3 font-display text-3xl font-semibold tabular-nums text-brand-ink">
-        {value}
-      </p>
+      <p className="figure mt-4 text-4xl text-ink">{value}</p>
 
-      {note && <p className="mt-1 text-xs text-ink-subtle">{note}</p>}
+      {note && <p className="mt-2 text-xs text-ink-muted">{note}</p>}
 
       {share !== undefined && (
         <div
-          className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-muted"
+          className="mt-4 h-1 overflow-hidden rounded-full bg-line"
           aria-hidden
         >
           <div
-            className={`h-full rounded-full ${TONE_BAR[tone]}`}
+            className={`h-full ${TONE_BAR[tone]}`}
             style={{ width: `${Math.round(Math.min(1, Math.max(0, share)) * 100)}%` }}
           />
         </div>

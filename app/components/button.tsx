@@ -3,23 +3,17 @@ import Link from "next/link";
 import { Spinner } from "./spinner";
 
 /**
- * The one button in the system. Three variants, three sizes.
+ * The one button in the system. Five variants, three sizes.
  *
  * `pending` renders the spinner and disables the control in one step, since
  * every async action in this app needs both and doing them separately is how
  * you end up with a double-submitted form.
  *
- * Every filled or bordered variant carries a resting shadow that deepens and
- * lifts by a hairline on hover, settling back down on press — previously
- * these had zero shadow at any state, which read as flat regardless of how
- * substantial the color said it should feel. `ghost` is deliberately exempt:
- * it's meant to read as bare text with a hover background, and giving it the
- * same elevation as a real button would blur that distinction everywhere
- * it's used next to one (e.g. the two "Cancel" buttons in delete-account-
- * section.tsx). Timing comes from the shared --duration-fast/--ease-standard
- * tokens rather than Tailwind's defaults, even though the two happen to
- * currently coincide, so every button keeps moving in lockstep if the tokens
- * ever change.
+ * v3: buttons are flat. They don't hover-lift or cast shadows — feedback is
+ * a colour change on hover and a small press-in on pointer-down (`.pressable`
+ * in globals.css), which is what a control should do: respond to the hand,
+ * not float. Primary is the only solid fill on a screen; secondary is a
+ * bordered paper button; ghost is bare text.
  */
 
 export type ButtonVariant =
@@ -30,33 +24,33 @@ export type ButtonVariant =
   | "danger-outline";
 export type ButtonSize = "sm" | "md" | "lg";
 
-const LIFT =
-  "shadow-[var(--shadow-sm)] hover:shadow-[var(--shadow-md)] hover:-translate-y-px active:translate-y-0 active:shadow-[var(--shadow-sm)] disabled:translate-y-0 disabled:shadow-[var(--shadow-sm)]";
-
 const VARIANT: Record<ButtonVariant, string> = {
-  primary: `bg-brand text-white border border-transparent hover:bg-brand-hover ${LIFT}`,
-  secondary: `bg-surface text-ink border border-line-strong hover:bg-surface-muted ${LIFT}`,
+  primary:
+    "bg-brand text-white border border-brand hover:bg-brand-hover hover:border-brand-hover active:bg-brand-active",
+  secondary:
+    "bg-surface text-ink border border-line-strong hover:border-field-line hover:bg-surface-muted",
   ghost:
     "bg-transparent text-ink-muted border border-transparent hover:bg-surface-muted hover:text-ink",
-  danger: `bg-expired text-white border border-transparent hover:opacity-90 ${LIFT}`,
+  danger:
+    "bg-expired text-white border border-expired hover:bg-[color-mix(in_oklch,var(--color-expired)_88%,var(--color-warm-900))]",
   // A destructive action that isn't the final, committed step yet (opening a
-  // confirmation, starting a cancellation flow) — real button weight via a
-  // border, coloured to read as intentional-but-not-yet-final, distinct from
-  // both a neutral secondary action and the solid `danger` confirm button.
-  "danger-outline": `bg-surface text-expired border border-expired-line hover:bg-expired-bg ${LIFT}`,
+  // confirmation, starting a cancellation flow): real weight via a border,
+  // coloured to read as intentional-but-not-final.
+  "danger-outline":
+    "bg-surface text-expired border border-expired-line hover:bg-expired-bg hover:border-expired",
 };
 
-// Heights (with the 1px border): sm ≈ 38px, md ≈ 46px, lg ≈ 54px. md and lg
-// clear the 44px touch-target guideline; md matches fieldClasses' input
-// height so a button sitting beside an input lines up.
+// Heights: sm 36px, md 44px, lg 52px. md and lg clear the 44px touch-target
+// guideline; md matches fieldClasses' input height so a button beside an
+// input lines up.
 const SIZE: Record<ButtonSize, string> = {
-  sm: "px-3.5 py-1.5 text-sm gap-1.5",
-  md: "px-5 py-2.5 text-sm gap-2",
-  lg: "px-6 py-3 text-base gap-2.5",
+  sm: "h-9 px-3 text-xs gap-1.5",
+  md: "h-11 px-4.5 text-sm gap-2",
+  lg: "h-13 px-6 text-base gap-2.5",
 };
 
 const BASE =
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-[background-color,color,box-shadow,transform,opacity] duration-[var(--duration-fast)] ease-[var(--ease-standard)] disabled:cursor-not-allowed disabled:opacity-60";
+  "pressable inline-flex items-center justify-center whitespace-nowrap rounded-md font-semibold tracking-[-0.005em] disabled:cursor-not-allowed disabled:opacity-55";
 
 export function buttonClasses(
   variant: ButtonVariant = "primary",

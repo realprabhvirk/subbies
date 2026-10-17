@@ -1,7 +1,7 @@
 export function Skeleton({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-surface-muted ${className}`}
+      className={`animate-pulse rounded-sm bg-line/70 motion-reduce:animate-none ${className}`}
       aria-hidden
     />
   );
@@ -21,20 +21,20 @@ export function DashboardPageSkeleton({
 }) {
   return (
     <div className="space-y-8" aria-busy="true" aria-label="Loading">
-      <div className="space-y-2">
-        <Skeleton className="h-7 w-48" />
-        <Skeleton className="h-4 w-72" />
+      <div className="space-y-3 border-b border-line pb-6">
+        <Skeleton className="h-9 w-56" />
+        <Skeleton className="h-4 w-80 max-w-full" />
       </div>
 
       {withStats && (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-28 rounded-card" />
+            <Skeleton key={i} className="h-28" />
           ))}
         </div>
       )}
 
-      <div className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+      <div className="overflow-hidden rounded-card border border-line bg-surface">
         {Array.from({ length: rows }).map((_, i) => (
           <div
             key={i}
@@ -44,7 +44,7 @@ export function DashboardPageSkeleton({
               <Skeleton className="h-4 w-40" />
               <Skeleton className="h-3 w-24" />
             </div>
-            <Skeleton className="h-6 w-24 rounded-full" />
+            <Skeleton className="h-7 w-28" />
           </div>
         ))}
       </div>

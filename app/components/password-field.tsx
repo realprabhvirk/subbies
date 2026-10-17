@@ -17,7 +17,7 @@ export function PasswordField({ className = "", ...props }: Props) {
         {...props}
         type={show ? "text" : "password"}
         // Same field treatment as every other input, plus room for the toggle.
-        className={fieldClasses(false, `pr-10 ${className}`)}
+        className={fieldClasses(false, `pr-12 ${className}`)}
       />
       <button
         type="button"
@@ -25,12 +25,12 @@ export function PasswordField({ className = "", ...props }: Props) {
         aria-label={show ? "Hide password" : "Show password"}
         aria-pressed={show}
         tabIndex={-1}
-        className="absolute inset-y-0 right-0 flex items-center rounded-r-md px-3 text-ink-subtle transition-colors hover:text-ink"
+        className="absolute inset-y-0 right-0 flex items-center rounded-r-md px-3.5 text-ink-muted transition-colors hover:text-ink"
       >
         {show ? (
-          <EyeOff className="h-4 w-4" strokeWidth={2} />
+          <EyeOff className="h-4.5 w-4.5" strokeWidth={2} />
         ) : (
-          <Eye className="h-4 w-4" strokeWidth={2} />
+          <Eye className="h-4.5 w-4.5" strokeWidth={2} />
         )}
       </button>
     </div>

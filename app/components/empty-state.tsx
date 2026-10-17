@@ -1,6 +1,8 @@
 /**
- * The "nothing here yet" panel. Dashed border rather than solid so it reads as
- * a placeholder rather than a card with content in it.
+ * The "nothing here yet" panel. A dashed rule rather than a solid one so it
+ * reads as a space waiting to be filled, not a panel with content. Left-set
+ * on wide screens like the rest of the product; the icon sits bare, in the
+ * subtle ink, rather than in a decorative circle.
  */
 export function EmptyState({
   title,
@@ -17,18 +19,18 @@ export function EmptyState({
 }) {
   return (
     <div
-      className={`flex flex-col items-center rounded-card border border-dashed border-line-strong bg-surface px-6 py-14 text-center ${className}`}
+      className={`rounded-card border border-dashed border-line-strong px-6 py-12 sm:px-10 ${className}`}
     >
-      {Icon && (
-        <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted text-ink-subtle">
-          <Icon className="h-5 w-5" strokeWidth={2} />
-        </span>
-      )}
-      <p className="text-sm font-semibold text-ink">{title}</p>
-      {description && (
-        <p className="mt-1 max-w-sm text-sm text-ink-muted">{description}</p>
-      )}
-      {action && <div className="mt-5">{action}</div>}
+      <div className="mx-auto flex max-w-md flex-col items-center text-center">
+        {Icon && (
+          <Icon className="mb-4 h-7 w-7 text-ink-subtle" strokeWidth={1.75} />
+        )}
+        <p className="font-display text-lg font-semibold text-ink">{title}</p>
+        {description && (
+          <p className="mt-1.5 text-sm text-ink-muted">{description}</p>
+        )}
+        {action && <div className="mt-6">{action}</div>}
+      </div>
     </div>
   );
 }

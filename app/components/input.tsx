@@ -11,8 +11,8 @@ import { type InputHTMLAttributes } from "react";
  */
 
 export function fieldClasses(invalid = false, className = ""): string {
-  return `w-full rounded-md border bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition-shadow placeholder:text-ink-subtle ${
-    invalid ? "border-expired" : "border-line-strong"
+  return `block w-full min-h-11 rounded-md border bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition-[border-color,box-shadow] duration-[var(--duration-fast)] placeholder:text-ink-subtle disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted ${
+    invalid ? "border-expired" : "border-field-line hover:border-ink-subtle"
   } ${className}`;
 }
 
@@ -37,15 +37,15 @@ export function Field({
   return (
     <div className="space-y-1.5">
       {label && (
-        <label htmlFor={htmlFor} className="block text-sm font-medium text-ink">
+        <label htmlFor={htmlFor} className="block text-sm font-semibold text-ink">
           {label}
         </label>
       )}
       {children}
       {error ? (
-        <p className="text-xs text-expired">{error}</p>
+        <p className="text-xs font-medium text-expired">{error}</p>
       ) : hint ? (
-        <p className="text-xs text-ink-subtle">{hint}</p>
+        <p className="text-xs text-ink-muted">{hint}</p>
       ) : null}
     </div>
   );

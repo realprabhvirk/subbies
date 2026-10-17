@@ -106,7 +106,7 @@ export default function LoginPage() {
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="block text-sm font-medium">
+                <label htmlFor="password" className="block text-sm font-semibold">
                   Password
                 </label>
                 <Link
@@ -126,7 +126,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <p className="rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">
+              <p className="rounded-md border border-expired-line bg-expired-bg/70 px-3 py-2 text-sm text-expired">
                 {error}
               </p>
             )}

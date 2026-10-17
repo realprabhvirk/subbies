@@ -228,7 +228,7 @@ export function NewContractorForm({
         )}
 
         {state?.error && (
-          <p className="rounded-md bg-expired-bg px-3 py-2 text-sm text-expired">
+          <p className="rounded-md border border-expired-line bg-expired-bg/70 px-3 py-2 text-sm text-expired">
             {state.error}
           </p>
         )}

@@ -1,37 +1,40 @@
 @import "tailwindcss";
 
 /*
-  Subbies Design System (v2)
+  Subbies Design System (v3) — "the site register"
   --------------------------------------------------------------------------
-  Warm off-white canvas, white card surfaces, warm neutral greys, a steel-blue
-  brand accent, and a near-black navy navigation rail. The accent is used
-  sparingly — primary action, active nav, links, key data — never as a large
-  background fill. The one large dark surface is the sidebar, which is what
-  gives the app its structure: dark rail left, light content right.
+  Calm warm paper, near-black ink, ruled hairlines, one steel-blue hand for
+  the things you do, and a dark navy rail for structure. Status is shown the
+  way a site office marks a register: a squared stamp with an icon and a word
+  (see app/components/status-badge.tsx), never colour alone.
 
-  Type: Space Grotesk (display/headings/numbers), Hanken Grotesk (body/UI),
-  IBM Plex Mono (timestamps / tabular values). Loaded via next/font in
-  app/layout.tsx — never an @import here, which would block render.
+  THE PALETTE IS LOCKED. Every raw colour below (warm ramp, accent scale,
+  sidebar set, status hues) is unchanged from v2. v3 only re-points a few
+  SEMANTIC names at different existing palette values, for contrast:
+    ink-muted       warm-500 -> warm-600   (4.32:1 -> 6.95:1 on canvas)
+    ink-subtle      warm-400 -> warm-500   (2.8:1  -> 4.5:1 on surface)
+    neutral-status  warm-500 -> warm-600   (3.79:1 -> 6.1:1 on its bg)
+  and adds one mixed token (field-line) built from two existing greys. Any
+  new tint, border or overlay must be an opacity or color-mix() of these
+  tokens — never a new hex.
 
-  The semantic utility names (bg-surface, text-ink, border-line, bg-brand,
-  rounded-card, the status colours …) are what the whole app is written
-  against, so the product reskins through these tokens rather than through
-  per-component edits.
+  Type: Mona Sans (variable, with a width axis) for everything — normal width
+  for reading, semi-expanded for headings and big numbers — plus JetBrains
+  Mono for reference data (dates in tables, ABNs, file names). Loaded via
+  next/font in app/layout.tsx; never @import a font here.
 
-  Status colours are deliberately independent hues, NOT tints of the brand.
-  The previous system had one orange doing double duty as both brand accent
-  and "needs attention" status, so a brand change silently moved a status
-  colour. That coupling is gone: the accent can change again without touching
-  approved / review / attention / expired.
+  The whole app is written against the semantic utility names (bg-surface,
+  text-ink, border-line, bg-brand, rounded-card, the status colours …), so
+  the product reskins through these tokens rather than per-component edits.
 */
 
 @theme {
-  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, -apple-system,
+  --font-sans: var(--font-mona), ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-display: var(--font-space-grotesk), var(--font-hanken), ui-sans-serif,
-    system-ui, sans-serif;
-  --font-mono: var(--font-ibm-plex-mono), ui-monospace, "SF Mono", Menlo,
-    Consolas, monospace;
+  --font-display: var(--font-mona), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SF Mono", Menlo, Consolas,
+    monospace;
 
   /* Warm neutral ramp */
   --color-warm-0: oklch(99% 0.002 90);
@@ -74,13 +77,17 @@
   --color-surface-muted: var(--color-warm-50);
   --color-line: var(--color-warm-100);
   --color-line-strong: var(--color-warm-200);
+  /* Form-field outline. line-strong is 1.4:1 against white, too faint for a
+     control people must find; this sits between warm-400 and warm-500
+     (≈3.5:1) so a field reads as a field — same palette, mixed. */
+  --color-field-line: color-mix(in oklch, var(--color-warm-400) 40%, var(--color-warm-500));
 
   --color-ink: var(--color-warm-900);
-  --color-ink-muted: var(--color-warm-500);
-  --color-ink-subtle: var(--color-warm-400);
+  --color-ink-muted: var(--color-warm-600);
+  --color-ink-subtle: var(--color-warm-500);
   --color-ink-inverse: var(--color-warm-0);
 
-  /* Brand = the steel-blue accent (primary action, active nav, links, key data) */
+  /* Brand = the steel-blue accent (primary action, active nav, links, focus) */
   --color-brand: var(--color-accent-500);
   --color-brand-hover: var(--color-accent-600);
   --color-brand-active: var(--color-accent-700);
@@ -110,99 +117,95 @@
   --color-expired-bg: oklch(94% 0.045 25);
   --color-expired-line: oklch(86% 0.08 25);
 
-  --color-neutral-status: var(--color-warm-500);
+  --color-neutral-status: var(--color-warm-600); /* was warm-500: 3.79:1 on its bg, now 6.1:1 */
   --color-neutral-status-bg: var(--color-warm-100);
   --color-neutral-status-line: var(--color-warm-200);
 
-  /* Type scale — one full step up from Tailwind's defaults.
-     The whole app is written against text-sm for body copy and text-xs for
-     hints, badges and timestamps, which left everyday reading text at 14px
-     and secondary text at 12px. Rather than re-classing hundreds of
-     elements, the scale itself moves: text-sm is now 16px, text-xs 14px, and
-     every heading size grows in step so headings keep a clear jump over the
-     body text beneath them. Display sizes get tighter line-heights so big
-     headlines don't sprawl vertically. */
-  --text-2xs: 0.75rem; /* 12px — uppercase eyebrows, avatar initials */
+  /* Type scale. Body copy stays at 16px (text-sm) from the scale-up pass —
+     this product is read on site, in daylight, by people who aren't sitting
+     at a desk. What changes is how each size is set: tracking tightens as
+     size grows and leading tightens with it (see the h1–h4 rules and the
+     .tracking-display helpers below). */
+  --text-2xs: 0.75rem; /* 12px — caps labels, stamp counts */
   --text-2xs--line-height: 1rem;
-  --text-xs: 0.875rem; /* 14px (was 12px) */
+  --text-xs: 0.875rem; /* 14px — meta, hints, stamps */
   --text-xs--line-height: 1.25rem;
-  --text-sm: 1rem; /* 16px (was 14px) — body copy across the app */
+  --text-sm: 1rem; /* 16px — body copy across the app */
   --text-sm--line-height: 1.5rem;
-  --text-base: 1.125rem; /* 18px (was 16px) — lead paragraphs */
-  --text-base--line-height: 1.75rem;
-  --text-lg: 1.25rem; /* 20px (was 18px) */
-  --text-lg--line-height: 1.875rem;
-  --text-xl: 1.5rem; /* 24px (was 20px) */
-  --text-xl--line-height: 2rem;
-  --text-2xl: 1.875rem; /* 30px (was 24px) — page titles */
+  --text-base: 1.125rem; /* 18px — lead paragraphs */
+  --text-base--line-height: 1.625rem;
+  --text-lg: 1.25rem; /* 20px — panel titles */
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.5rem; /* 24px */
+  --text-xl--line-height: 1.875rem;
+  --text-2xl: 1.875rem; /* 30px — page titles */
   --text-2xl--line-height: 2.25rem;
-  --text-3xl: 2.25rem; /* 36px (was 30px) — section headings, key stats */
-  --text-3xl--line-height: 2.625rem;
-  --text-4xl: 2.75rem; /* 44px (was 36px) */
-  --text-4xl--line-height: 1.1;
-  --text-5xl: 3.5rem; /* 56px (was 48px) */
-  --text-5xl--line-height: 1.05;
-  --text-6xl: 4.25rem; /* 68px (was 60px) — marketing hero */
-  --text-6xl--line-height: 1.02;
+  --text-3xl: 2.25rem; /* 36px — section heads, key figures */
+  --text-3xl--line-height: 2.5rem;
+  --text-4xl: 2.75rem; /* 44px */
+  --text-4xl--line-height: 1.08;
+  --text-5xl: 3.5rem; /* 56px */
+  --text-5xl--line-height: 1.04;
+  --text-6xl: 4.25rem; /* 68px — marketing hero */
+  --text-6xl--line-height: 1;
 
-  /* Spacing — named, layout-level steps on top of Tailwind's 4px grid.
-     `section` is the vertical rhythm between marketing page bands (it grows
-     at the sm breakpoint, see the :root block below); `card` is the inner
-     padding of every Card surface and header band. */
+  /* Spacing — named, layout-level steps on top of Tailwind's 4px grid. */
   --spacing-section: 4.5rem;
-  --spacing-card: 1.5rem;
+  --spacing-card: 1.25rem;
 
-  /* max-w-sm (was 24rem) — the auth cards and empty-state blurbs. Grown in
-     step with the type so they hold the same number of words per line
-     instead of wrapping the bigger text into a narrow column. */
   --container-sm: 28rem;
 
-  /* Radius — restrained */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-card: 12px;
+  /* Radius — four steps, nothing in between.
+     sm 4  stamps, chips, small tags
+     md 6  buttons, inputs, menu items
+     card 8 panels, tables, cards
+     xl 12 dialogs, sheets */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-card: 8px;
+  --radius-xl: 12px;
   --radius-full: 999px;
 
-  /* Shadows — soft, large-blur, low-opacity only.
-     shadow-sm was near-invisible (a 1px/4% hairline) — every card and button
-     read as flat at rest regardless of what sat on top of it. Given a second,
-     wider layer so resting surfaces read as gently raised; shadow-md deepened
-     to match, so the step up on hover is still a real step, not a rounding
-     error. */
-  --shadow-sm:
-    0 1px 2px oklch(30% 0.02 40 / 0.05), 0 2px 6px oklch(30% 0.02 40 / 0.05);
+  /* Shadows. Structure comes from hairline borders, not shadow; a resting
+     panel carries only a paper edge. Real elevation is reserved for things
+     that genuinely float (menus, popovers, dialogs). All warm-900 at low
+     opacity — no new colour. */
+  --shadow-sm: 0 1px 0 oklch(17% 0.007 30 / 0.04);
   --shadow-md:
-    0 10px 28px oklch(30% 0.02 40 / 0.08), 0 2px 8px oklch(30% 0.02 40 / 0.05);
+    0 1px 2px oklch(17% 0.007 30 / 0.06), 0 8px 24px oklch(17% 0.007 30 / 0.08);
   --shadow-lg:
-    0 24px 56px oklch(30% 0.02 40 / 0.09), 0 4px 12px oklch(30% 0.02 40 / 0.05);
+    0 2px 6px oklch(17% 0.007 30 / 0.06), 0 16px 40px oklch(17% 0.007 30 / 0.12);
   --shadow-xl:
-    0 24px 56px oklch(30% 0.02 40 / 0.09), 0 4px 12px oklch(30% 0.02 40 / 0.05);
-  --shadow-accent-glow: 0 12px 40px rgba(30, 58, 95, 0.18); /* #1E3A5F @ 18% */
+    0 4px 12px oklch(17% 0.007 30 / 0.08), 0 24px 64px oklch(17% 0.007 30 / 0.18);
 
-  --ease-out: cubic-bezier(0, 0, 0.2, 1);
-  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Motion. Short and decelerating: things respond on press and settle, they
+     don't float. */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --ease-standard: cubic-bezier(0.3, 0, 0.2, 1);
 
-  --duration-fast: 150ms;
-  --duration-base: 200ms;
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 240ms;
 }
 
 /*
   Layout constants. Outside @theme because these are raw values read by
-  arbitrary-value utilities (lg:grid-cols-[var(--sidebar-width)_1fr]) rather
-  than things Tailwind should generate a utility class family for.
+  arbitrary-value utilities rather than things Tailwind should generate a
+  utility family for.
 */
 :root {
-  /* Grown with the type scale so the bigger nav labels and page content
-     still have room to breathe. */
-  --sidebar-width: 17rem;
-  --header-height: 4.5rem;
-  --content-max-width: 72rem;
+  --sidebar-width: 15.5rem;
+  --header-height: 4rem;
+  --content-max-width: 76rem;
+
+  /* Width-axis settings for Mona Sans. Headings and figures are set
+     semi-expanded — the sturdy, signage-like proportion that is the
+     typographic signature of the product. Body text stays at 100%. */
+  --font-stretch-display: 112%;
+  --font-stretch-wide: 118%;
 }
 
-/* Marketing sections get more air from the sm breakpoint up. Redefining the
-   theme variable (rather than adding sm:py-* at each call site) keeps the one
-   `py-section` class responsive everywhere it's used. */
 @media (min-width: 40rem) {
   :root {
     --spacing-section: 6.5rem;
@@ -233,18 +236,30 @@
   h3,
   h4 {
     font-family: var(--font-display);
+    font-stretch: var(--font-stretch-display);
     color: var(--color-ink);
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    font-weight: 650;
+    text-wrap: balance;
+  }
+
+  h1 {
+    letter-spacing: -0.025em;
+    font-weight: 700;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 
   /* Tabular / technical values */
   .font-mono,
-  time,
   [data-mono] {
     font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums;
+    font-variant-numeric: tabular-nums slashed-zero;
+    font-stretch: normal;
+    letter-spacing: 0;
   }
 
   /* Visible, on-brand focus ring for keyboard users */
@@ -254,37 +269,84 @@
     border-radius: 4px;
   }
 
-  /* Inside the dark navigation rail that navy ring sits on near-black navy
-     and effectively disappears, so keyboard focus gets a light ring there
-     instead. Scoped by data attribute so it follows the surface, not the
-     breakpoint — the mobile drawer is the same dark surface. */
+  /* On the navy rail the steel-blue ring disappears; use the light ink. */
   [data-surface="sidebar"] :focus-visible {
     outline-color: var(--color-sidebar-ink);
   }
 
-  /* Form fields get an inset accent ring instead of the outline */
+  /* Form fields: brand border plus a soft accent ring instead of an outline */
   input:focus,
   select:focus,
   textarea:focus {
     outline: none;
     border-color: var(--color-brand);
-    box-shadow: 0 0 0 3px var(--color-accent-50);
+    box-shadow: 0 0 0 3px var(--color-accent-100);
   }
   input:focus-visible,
   select:focus-visible,
   textarea:focus-visible {
     outline: none;
   }
+
+  ::selection {
+    background-color: var(--color-accent-100);
+    color: var(--color-ink);
+  }
+}
+
+@layer utilities {
+  /* Semi-expanded display setting — headings, figures, the wordmark. */
+  .font-display {
+    font-family: var(--font-display);
+    font-stretch: var(--font-stretch-display);
+  }
+  .stretch-wide {
+    font-stretch: var(--font-stretch-wide);
+  }
+  .stretch-normal {
+    font-stretch: 100%;
+  }
+
+  /* Big numbers: semi-expanded, tabular, tight. */
+  .figure {
+    font-family: var(--font-display);
+    font-stretch: var(--font-stretch-wide);
+    font-variant-numeric: tabular-nums;
+    font-weight: 650;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  /* Size-specific tracking for display text (large type wants negative). */
+  .tracking-display {
+    letter-spacing: -0.03em;
+  }
+
+  /* 12px caps label — section eyebrows, table heads. */
+  .label-caps {
+    font-size: var(--text-2xs);
+    line-height: var(--text-2xs--line-height);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* Press feedback: respond on pointer-down, settle on release. */
+  .pressable {
+    transition-property: background-color, border-color, color, box-shadow,
+      transform, opacity;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-out);
+  }
+  .pressable:active:not(:disabled) {
+    transform: scale(0.98);
+  }
 }
 
 /*
-  Dialog enter animation — the project and document-type dialogs previously
-  just appeared, fully rendered, the instant their state flipped to open.
-  These play once on mount (there's no exit animation: closing unmounts the
-  dialog immediately, which is the right tradeoff here — an exit transition
-  needs the close to wait for it, and a form the user just cancelled out of
-  shouldn't linger). Reduced-motion gets the same zero-duration snap as
-  .reveal, never a flash of an invisible dialog.
+  Dialog enter animation. Plays once on mount; closing unmounts immediately
+  (a form the user just cancelled out of shouldn't linger). Reduced motion
+  gets no movement at all.
 */
 @media (prefers-reduced-motion: no-preference) {
   @keyframes subbies-backdrop-in {
@@ -295,46 +357,36 @@
   @keyframes subbies-panel-in {
     from {
       opacity: 0;
-      transform: translateY(12px) scale(0.98);
+      transform: translateY(8px) scale(0.985);
+    }
+  }
+  @keyframes subbies-sheet-in {
+    from {
+      transform: translateX(-100%);
     }
   }
   .dialog-backdrop {
-    animation: subbies-backdrop-in var(--duration-base) var(--ease-out) both;
+    animation: subbies-backdrop-in var(--duration-slow) var(--ease-out) both;
   }
   .dialog-panel {
-    animation: subbies-panel-in var(--duration-base) var(--ease-out) both;
+    animation: subbies-panel-in var(--duration-slow) var(--ease-out) both;
   }
-}
-
-/* Soft accent radial glow behind a small element (icon badge, active pill). */
-.accent-glow {
-  position: relative;
-}
-.accent-glow::before {
-  content: "";
-  position: absolute;
-  inset: -60%;
-  z-index: -1;
-  background: radial-gradient(
-    circle,
-    var(--color-accent-100) 0%,
-    transparent 70%
-  );
-  opacity: 0.7;
-  pointer-events: none;
+  .drawer-panel {
+    animation: subbies-sheet-in var(--duration-slow) var(--ease-out) both;
+  }
 }
 
 /*
-  Scroll-reveal for marketing sections. Where scroll-driven animations are
-  supported the element eases in as it enters the viewport; everywhere else
-  the 0s duration snaps it straight to the final (visible) state, so there's
-  no dependency on JavaScript and no flash of hidden content.
+  Scroll-reveal for marketing sections. Content is never fully hidden — it
+  starts at 35% opacity — so nothing disappears for a reader, a crawler or a
+  screenshot that never scrolls. Without scroll-driven animation support (or
+  with reduced motion) it simply isn't animated.
 */
 @media (prefers-reduced-motion: no-preference) {
   @keyframes subbies-reveal {
     from {
-      opacity: 0;
-      transform: translateY(14px);
+      opacity: 0.35;
+      transform: translateY(10px);
     }
     to {
       opacity: 1;
@@ -345,14 +397,12 @@
   .reveal {
     animation: subbies-reveal both;
     animation-timeline: view();
-    animation-range: entry 5% cover 22%;
+    animation-range: entry 0% cover 18%;
   }
 
-  /* Browsers without scroll-driven animations: never hide the content. */
   @supports not (animation-timeline: view()) {
     .reveal {
       animation: none;
     }
   }
 }
-
