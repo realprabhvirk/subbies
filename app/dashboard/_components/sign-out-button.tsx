@@ -30,7 +30,7 @@ export function SignOutButton({
         type="button"
         onClick={handleSignOut}
         disabled={pending}
-        className="flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink disabled:opacity-60"
+        className="flex h-10 w-full items-center gap-3 rounded-md px-3 text-sm font-medium text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink disabled:opacity-60"
       >
         {pending ? (
           <Spinner className="h-4 w-4" />
@@ -48,7 +48,7 @@ export function SignOutButton({
         type="button"
         onClick={handleSignOut}
         disabled={pending}
-        className="inline-flex items-center gap-2 rounded-md border border-line-strong px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted disabled:opacity-60"
+        className="pressable inline-flex h-9 items-center gap-2 rounded-md border border-line-strong bg-surface px-3 text-xs font-semibold text-ink-muted hover:border-field-line hover:text-ink disabled:opacity-60"
       >
         {pending && <Spinner className="h-4 w-4" />}
         {pending ? "Signing out…" : "Sign out"}

@@ -49,15 +49,17 @@ export async function DashboardGate({ children }: { children: React.ReactNode })
     const defaultName = companyNameFromMetadata(data.user?.user_metadata?.company_name);
 
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center px-4 text-center">
-        <div className="w-full max-w-md rounded-card border border-line bg-surface p-8 shadow-sm">
-          <Logo className="mb-6" />
-          <h1 className="text-lg font-semibold">Finish setting up your account</h1>
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <Logo className="mb-8" />
+          <div className="rounded-card border border-line bg-surface p-6 sm:p-8">
+          <h1 className="text-2xl">Finish setting up your account</h1>
           <p className="mt-2 text-sm text-ink-muted">
             Your login is ready. Confirm your company name to finish setting up
             and get to your dashboard.
           </p>
           <AccountSetupForm defaultName={defaultName} />
+          </div>
           <div className="mt-6">
             <SignOutButton variant="inline" />
           </div>

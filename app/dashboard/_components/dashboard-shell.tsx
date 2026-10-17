@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,11 +11,13 @@ import {
   Settings,
   Menu,
   X,
+  ArrowRight,
   type LucideIcon,
 } from "lucide-react";
 
 import { Logo } from "@/app/components/logo";
 import { Spinner } from "@/app/components/spinner";
+import { Avatar } from "@/app/components/avatar";
 import { SignOutButton } from "./sign-out-button";
 
 interface NavItem {
@@ -69,9 +70,11 @@ function NavLink({
       href={item.href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
-      className={`flex items-center gap-2.5 rounded-md px-3 py-2.5 text-sm transition-colors ${
+      // The active item is marked twice — a raised fill and a light bar on
+      // its left edge — so it reads at a glance on the dark rail.
+      className={`relative flex h-10 items-center gap-3 rounded-md px-3 text-sm transition-colors duration-[var(--duration-fast)] ${
         active
-          ? "bg-sidebar-active-bg font-semibold text-sidebar-ink"
+          ? "bg-sidebar-active-bg font-semibold text-sidebar-ink before:absolute before:inset-y-2.5 before:-left-3 before:w-0.75 before:rounded-r-full before:bg-sidebar-ink"
           : "font-medium text-sidebar-ink-muted hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
       }`}
     >
@@ -81,26 +84,11 @@ function NavLink({
   );
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="px-3 pb-1.5 text-2xs font-semibold uppercase tracking-[0.08em] text-sidebar-ink-subtle">
-      {children}
-    </p>
-  );
-}
-
 function trialDaysLeft(iso: string): number {
   return Math.max(
     0,
     Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000),
   );
-}
-
-/** Up to two initials from the company name, for the avatar tile. */
-function initialsOf(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "–";
-  return (words[0][0] + (words[1]?.[0] ?? "")).toUpperCase();
 }
 
 export function DashboardShell({
@@ -122,7 +110,10 @@ export function DashboardShell({
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const initials = initialsOf(companyName);
+  const daysLeft = trialEndsAt ? trialDaysLeft(trialEndsAt) : null;
+  const section = [...MAIN_NAV, ...ACCOUNT_NAV].find((item) =>
+    isActive(pathname, item),
+  );
 
   /**
    * One sidebar body, rendered twice — fixed rail on desktop, drawer on
@@ -131,9 +122,8 @@ export function DashboardShell({
    */
   const sidebarBody = (onNavigate?: () => void) => (
     <>
-      <nav className="flex-1 overflow-y-auto p-3">
-        <SectionLabel>Main menu</SectionLabel>
-        <div className="flex flex-col gap-1">
+      <nav aria-label="Main" className="flex-1 overflow-y-auto px-3 py-4">
+        <div className="flex flex-col gap-0.5">
           {MAIN_NAV.map((item) => (
             <NavLink
               key={item.href}
@@ -144,9 +134,9 @@ export function DashboardShell({
           ))}
         </div>
 
-        <div className="my-3 border-t border-sidebar-border" />
+        <div className="my-4 border-t border-sidebar-border" />
 
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0.5">
           {ACCOUNT_NAV.map((item) => (
             <NavLink
               key={item.href}
@@ -158,40 +148,15 @@ export function DashboardShell({
         </div>
       </nav>
 
-      {/* Decorative brand panel. Desktop only — on a phone the drawer needs
-          its height for navigation, not atmosphere. */}
-      <div className="relative hidden h-28 shrink-0 overflow-hidden lg:block">
-        <Image
-          src="/brand/blueprint.jpg"
-          alt=""
-          fill
-          sizes="248px"
-          className="object-cover opacity-[0.14] grayscale"
-        />
-        <div className="absolute inset-0 flex flex-col justify-end p-5">
-          <p className="text-2xs font-semibold uppercase leading-relaxed tracking-[0.08em] text-sidebar-ink-muted">
-            Safer sites
-            <br />
-            Stronger builds
-          </p>
-          <span className="mt-2 h-px w-8 bg-sidebar-ink-subtle" aria-hidden />
-        </div>
-      </div>
-
       <div className="shrink-0 border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-2.5 px-1 pb-2">
-          <span
-            aria-hidden
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sidebar-active-bg text-2xs font-semibold text-sidebar-ink"
-          >
-            {initials}
-          </span>
+        <div className="flex items-center gap-3 px-2 pb-3 pt-1">
+          <Avatar name={companyName} tone="navy" />
           <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-sidebar-ink">
+            <p className="truncate text-sm font-semibold text-sidebar-ink">
               {companyName}
             </p>
             {userEmail && (
-              <p className="truncate text-xs text-sidebar-ink-subtle">
+              <p className="truncate text-xs text-sidebar-ink-muted">
                 {userEmail}
               </p>
             )}
@@ -202,32 +167,68 @@ export function DashboardShell({
     </>
   );
 
+  /**
+   * The trial strip. A trial is not a problem, so it sits calm and neutral —
+   * plan, countdown, link — and only takes the attention colour on the last
+   * day, when the card is about to be charged.
+   */
+  const trialStrip =
+    trialEndsAt && daysLeft !== null ? (
+      <Link
+        href="/dashboard/settings?tab=billing"
+        className={`group flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 border-b px-4 py-2 text-xs transition-colors sm:text-sm lg:justify-start lg:px-10 ${
+          daysLeft === 0
+            ? "border-attention-line bg-attention-bg text-attention"
+            : "border-line bg-surface-muted text-ink-muted hover:text-ink"
+        }`}
+      >
+        <span>
+          <span className="font-semibold">
+            {planName ? `${planName} trial` : "Free trial"}
+          </span>
+          <span aria-hidden className="mx-2 opacity-50">
+            /
+          </span>
+          {daysLeft === 0
+            ? "Ends today: your card is charged next"
+            : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left`}
+        </span>
+        <span className="inline-flex items-center gap-1 font-semibold text-brand group-hover:underline">
+          Manage billing
+          <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+        </span>
+      </Link>
+    ) : null;
+
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[var(--sidebar-width)_1fr]">
       {/* Desktop rail */}
       <aside
         data-surface="sidebar"
-        className="hidden border-r border-sidebar-border bg-sidebar-bg lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col"
+        className="hidden bg-sidebar-bg lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col"
       >
-        <div className="flex h-(--header-height) shrink-0 items-center px-5">
-          <Link href="/dashboard" aria-label="Subbies home">
-            <Logo tone="inverse" height={30} showTagline priority />
+        <div className="flex h-(--header-height) shrink-0 items-center border-b border-sidebar-border px-5">
+          <Link href="/dashboard" aria-label="Subbies home" className="rounded-sm">
+            <Logo tone="inverse" height={26} priority />
           </Link>
         </div>
         {sidebarBody()}
       </aside>
 
       {/* Mobile header */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-sidebar-border bg-sidebar-bg px-4 lg:hidden">
-        <Link href="/dashboard" aria-label="Subbies home">
+      <header
+        data-surface="sidebar"
+        className="sticky top-0 z-30 flex h-14 items-center justify-between bg-sidebar-bg pl-4 pr-1.5 lg:hidden"
+      >
+        <Link href="/dashboard" aria-label="Subbies home" className="rounded-sm">
           <Logo tone="inverse" height={24} priority />
         </Link>
-        <div className="flex items-center gap-1 text-sidebar-ink-muted">
+        <div className="flex items-center text-sidebar-ink-muted">
           {notificationsSlot}
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="rounded-md p-2 text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
+            className="flex h-11 w-11 items-center justify-center rounded-md text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
             aria-label="Open menu"
           >
             <Menu className="h-5 w-5" strokeWidth={2} />
@@ -239,19 +240,19 @@ export function DashboardShell({
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
           <div
-            className="absolute inset-0 bg-warm-900/50 backdrop-blur-[2px]"
+            className="dialog-backdrop absolute inset-0 bg-warm-900/55"
             onClick={() => setMobileOpen(false)}
           />
           <div
             data-surface="sidebar"
-            className="absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-sidebar-bg shadow-lg"
+            className="drawer-panel absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-sidebar-bg shadow-xl"
           >
-            <div className="flex h-14 shrink-0 items-center justify-between border-b border-sidebar-border px-4">
+            <div className="flex h-14 shrink-0 items-center justify-between border-b border-sidebar-border pl-4 pr-1.5">
               <Logo tone="inverse" height={24} />
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="rounded-md p-2 text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
+                className="flex h-11 w-11 items-center justify-center rounded-md text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
                 aria-label="Close menu"
               >
                 <X className="h-5 w-5" strokeWidth={2} />
@@ -263,45 +264,27 @@ export function DashboardShell({
       )}
 
       <div className="flex min-w-0 flex-col">
-        {/* Desktop top bar. No search field: the app has no search to run, and
-            a box that does nothing is worse than no box. */}
-        <header className="sticky top-0 z-20 hidden h-(--header-height) items-center justify-end gap-3 border-b border-line bg-surface px-10 text-ink-muted lg:flex">
+        {/* Desktop top bar: where you are (company / section) and
+            notifications. No search field: the app has no search to run,
+            and a box that does nothing is worse than no box. */}
+        <header className="sticky top-0 z-20 hidden h-(--header-height) items-center justify-between gap-4 border-b border-line bg-surface/95 px-10 text-ink-muted backdrop-blur-sm lg:flex">
+          <p className="flex min-w-0 items-center gap-2 text-sm">
+            <span className="truncate font-medium text-ink-muted">{companyName}</span>
+            {section && (
+              <>
+                <span aria-hidden className="text-line-strong">
+                  /
+                </span>
+                <span className="font-semibold text-ink">{section.label}</span>
+              </>
+            )}
+          </p>
           {notificationsSlot}
-          <div className="flex items-center gap-2.5 border-l border-line pl-3">
-            <span
-              aria-hidden
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-2xs font-semibold text-white"
-            >
-              {initials}
-            </span>
-            <div className="min-w-0 text-sm leading-tight">
-              <p className="truncate font-medium text-ink">{companyName}</p>
-              {userEmail && (
-                <p className="truncate text-xs text-ink-subtle">{userEmail}</p>
-              )}
-            </div>
-          </div>
         </header>
 
-        {trialEndsAt && (
-          <Link
-            href="/dashboard/settings?tab=billing"
-            className="flex flex-wrap items-center justify-center gap-x-1.5 border-b border-line bg-attention-bg px-4 py-2 text-center text-sm text-attention transition-colors hover:brightness-[0.98]"
-          >
-            <span>
-              {trialDaysLeft(trialEndsAt) === 0
-                ? `Your ${planName ? `${planName} ` : ""}trial ends today: your card is charged next`
-                : `${trialDaysLeft(trialEndsAt)} ${
-                    trialDaysLeft(trialEndsAt) === 1 ? "day" : "days"
-                  } left of your free trial`}
-            </span>
-            <span className="font-semibold underline underline-offset-2">
-              Manage billing
-            </span>
-          </Link>
-        )}
+        {trialStrip}
 
-        <main className="mx-auto w-full max-w-(--content-max-width) flex-1 px-4 py-10 sm:px-6 lg:px-10">
+        <main className="mx-auto w-full max-w-(--content-max-width) flex-1 px-4 pb-16 pt-8 sm:px-6 lg:px-10 lg:pt-10">
           {children}
         </main>
       </div>

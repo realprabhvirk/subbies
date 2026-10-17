@@ -22,19 +22,18 @@ export function SoftLock() {
         <SignOutButton variant="inline" />
       </div>
 
-      <div className="mt-10 flex items-start gap-3">
-        <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-muted text-ink-subtle">
-          <Lock className="h-5 w-5" strokeWidth={2} aria-hidden />
-        </span>
-        <div className="max-w-2xl">
-          <h1 className="text-2xl font-semibold sm:text-3xl">
-            Your plan is no longer active
-          </h1>
-          <p className="mt-2 text-ink-muted">
-            Your account and everything in it are safe. Choose a plan to pick up
-            exactly where you left off.
-          </p>
-        </div>
+      <div className="mt-12 max-w-2xl border-b border-line pb-8">
+        <p className="label-caps flex items-center gap-1.5 text-ink-muted">
+          <Lock className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
+          Plan inactive
+        </p>
+        <h1 className="mt-3 text-3xl sm:text-4xl">
+          Your plan is no longer active
+        </h1>
+        <p className="mt-3 text-base text-ink-muted">
+          Your account and everything in it are safe. Choose a plan to pick up
+          exactly where you left off.
+        </p>
       </div>
 
       <div className="mt-10">

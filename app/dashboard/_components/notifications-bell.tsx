@@ -59,7 +59,7 @@ export function NotificationsBell({
         // Inherits its colour from whichever header it sits in — the light
         // desktop bar or the navy mobile one — and tints its own hover from
         // that colour, so one bell works on both surfaces.
-        className="relative rounded-md p-2 text-current transition-colors hover:bg-current/10"
+        className="pressable relative flex h-10 w-10 items-center justify-center rounded-md text-current hover:bg-current/10 pointer-coarse:h-11 pointer-coarse:w-11"
         aria-label={
           unreadCount > 0
             ? `Notifications, ${unreadCount} unread`
@@ -68,19 +68,19 @@ export function NotificationsBell({
       >
         <Bell className="h-5 w-5" strokeWidth={2} />
         {unreadCount > 0 && (
-          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-expired px-1 text-[10px] font-semibold leading-none text-white">
+          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-sm bg-expired px-1 font-mono text-2xs font-medium leading-none text-white ring-2 ring-surface in-data-[surface=sidebar]:ring-sidebar-bg">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-card border border-line bg-surface shadow-lg">
-          <div className="border-b border-line px-4 py-2.5 text-sm font-semibold">
-            Notifications
+        <div className="absolute right-0 z-50 mt-2 w-[22rem] max-w-[calc(100vw-1.5rem)] origin-top-right overflow-hidden rounded-card border border-line bg-surface text-ink shadow-lg">
+          <div className="flex items-center justify-between border-b border-line px-4 py-3">
+            <p className="label-caps text-ink-muted">Notifications</p>
           </div>
           {notifications.length === 0 ? (
-            <p className="px-4 py-8 text-center text-sm text-ink-muted">
+            <p className="px-5 py-8 text-sm text-ink-muted">
               Nothing yet. You&apos;ll be notified when a contractor submits a
               document.
             </p>
@@ -89,8 +89,8 @@ export function NotificationsBell({
               {notifications.map((n) => {
                 const body = (
                   <>
-                    <p className="text-sm">{n.message}</p>
-                    <p className="mt-0.5 text-xs text-ink-subtle">
+                    <p className="text-sm text-ink">{n.message}</p>
+                    <p className="mt-1 font-mono text-2xs text-ink-subtle">
                       {relativeTime(n.created_at)}
                     </p>
                   </>

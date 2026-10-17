@@ -12,8 +12,8 @@ export function LimitBanner({
   accessLapsed?: boolean;
 }) {
   return (
-    <div className="flex items-start gap-2 rounded-md bg-attention-bg px-4 py-3 text-sm text-attention">
-      <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+    <div className="flex items-start gap-2.5 rounded-md border border-attention-line bg-attention-bg/70 px-3.5 py-3 text-sm text-attention">
+      <TriangleAlert className="mt-0.5 h-4.5 w-4.5 shrink-0" strokeWidth={2.25} aria-hidden />
       <span>
         {accessLapsed ? (
           <>Your access has ended. </>
@@ -24,7 +24,7 @@ export function LimitBanner({
         )}
         <Link
           href="/dashboard/settings?tab=billing"
-          className="font-medium underline"
+          className="font-semibold underline underline-offset-2"
         >
           {accessLapsed ? "Choose a plan" : "Upgrade your plan"}
         </Link>{" "}
