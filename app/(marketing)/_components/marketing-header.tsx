@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
 import { Logo } from "@/app/components/logo";
-import { ButtonLink } from "@/app/components/button";
+import { buttonClasses } from "@/app/components/button-styles";
 
 const LINKS = [
   { href: "/how-it-works", label: "How it works" },
@@ -53,9 +53,9 @@ export function MarketingHeader() {
           >
             Log in
           </Link>
-          <ButtonLink href="/signup" size="sm">
+          <Link href="/signup" className={buttonClasses("primary", "sm")}>
             Start free trial
-          </ButtonLink>
+          </Link>
         </div>
 
         <button
@@ -88,10 +88,12 @@ export function MarketingHeader() {
               </Link>
             ))}
             <div className="mt-5 grid grid-cols-2 gap-2">
-              <ButtonLink href="/login" variant="secondary">
+              <Link href="/login" className={buttonClasses("secondary", "md")}>
                 Log in
-              </ButtonLink>
-              <ButtonLink href="/signup">Start free trial</ButtonLink>
+              </Link>
+              <Link href="/signup" className={buttonClasses("primary", "md")}>
+                Start free trial
+              </Link>
             </div>
           </nav>
         </div>

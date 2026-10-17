@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeEmail } from "@/lib/auth/normalize-email";
 import { safeRedirectPath } from "@/lib/auth/redirect-path";
-import { AuthShell, AuthHeading } from "@/app/components/auth-shell";
+import { AuthHeading } from "@/app/components/auth-heading";
 import { Alert } from "@/app/components/alert";
 import { Button } from "@/app/components/button";
 import { Field, fieldClasses } from "@/app/components/input";
@@ -71,7 +71,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthShell>
+    <>
         <div>
           <AuthHeading
             title="Log in"
@@ -142,6 +142,6 @@ export default function LoginPage() {
             Create one
           </Link>
         </p>
-    </AuthShell>
+    </>
   );
 }

@@ -7,7 +7,7 @@ import { CircleCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getSiteUrl } from "@/lib/site-url";
 import { normalizeEmail } from "@/lib/auth/normalize-email";
-import { AuthShell, AuthHeading } from "@/app/components/auth-shell";
+import { AuthHeading } from "@/app/components/auth-heading";
 import { Button } from "@/app/components/button";
 import { fieldClasses } from "@/app/components/input";
 
@@ -46,7 +46,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <AuthShell>
+    <>
         <div>
           {sent ? (
             <div>
@@ -100,6 +100,6 @@ export default function ForgotPasswordPage() {
             Back to log in
           </Link>
         </p>
-    </AuthShell>
+    </>
   );
 }

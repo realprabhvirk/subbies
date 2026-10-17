@@ -1,16 +1,15 @@
 "use client"; // Error boundaries must be Client Components
 
-import Link from "next/link";
-import { RotateCw } from "lucide-react";
-
-import { Button } from "@/app/components/button";
-
 /**
  * Branded fallback for an unexpected runtime error in any route segment.
  * Says what happened in plain words and offers the two things that help:
  * try again, or go somewhere known. Production errors from Server
  * Components carry only a digest (no message), shown so support can match
  * it to the server logs.
+ *
+ * Deliberately dependency-light (no Button, no icon library): a root error
+ * boundary ships with every page, so anything imported here is paid for on
+ * every route.
  */
 export default function Error({
   error,
@@ -28,16 +27,22 @@ export default function Error({
         know what you were doing.
       </p>
       <div className="mt-8 flex flex-wrap items-center gap-3">
-        <Button type="button" onClick={() => retry()}>
-          <RotateCw className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+        <button
+          type="button"
+          onClick={() => retry()}
+          className="pressable inline-flex h-11 items-center rounded-md border border-brand bg-brand px-4.5 text-sm font-semibold text-white hover:border-brand-hover hover:bg-brand-hover"
+        >
           Try again
-        </Button>
-        <Link
+        </button>
+        {/* A plain anchor (full page load) on purpose: after an error a
+            fresh load is the safer way out, and it keeps next/link's client
+            runtime out of this every-page boundary. */}
+        <a
           href="/contact"
           className="inline-flex h-11 items-center px-2 text-sm font-semibold text-brand hover:underline"
         >
           Contact support
-        </Link>
+        </a>
       </div>
       {error.digest && (
         <p className="mt-8 border-t border-line pt-4 font-mono text-2xs text-ink-muted">

@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { CircleCheck } from "lucide-react";
 
 import { Spinner } from "@/app/components/spinner";
-import { buttonClasses } from "@/app/components/button";
+import { buttonClasses } from "@/app/components/button-styles";
 import { fieldClasses } from "@/app/components/input";
 import { submitContact, type ContactState } from "./actions";
 

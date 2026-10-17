@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { normalizeEmail } from "@/lib/auth/normalize-email";
 import { classifySignupResult } from "@/lib/auth/signup-logic";
 import { TERMS_VERSION } from "@/lib/legal/terms";
-import { AuthShell, AuthHeading } from "@/app/components/auth-shell";
+import { AuthHeading } from "@/app/components/auth-heading";
 import { Button } from "@/app/components/button";
 import { fieldClasses } from "@/app/components/input";
 import { PasswordField } from "@/app/components/password-field";
@@ -118,7 +118,7 @@ export default function SignupPage() {
 
   if (confirmationSentTo) {
     return (
-      <AuthShell>
+      <>
           <div>
             <MailCheck className="mb-5 h-8 w-8 text-brand" strokeWidth={1.75} aria-hidden />
             <h1 className="text-3xl">Check your email</h1>
@@ -134,12 +134,12 @@ export default function SignupPage() {
               Go to log in
             </Link>
           </p>
-      </AuthShell>
+      </>
     );
   }
 
   return (
-    <AuthShell>
+    <>
         <div>
           <AuthHeading
             title="Create your account"
@@ -249,6 +249,6 @@ export default function SignupPage() {
             Log in
           </Link>
         </p>
-    </AuthShell>
+    </>
   );
 }

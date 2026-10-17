@@ -18,7 +18,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
     <main className="min-h-screen lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <div className="flex min-h-screen flex-col px-5 py-6 sm:px-10 lg:py-8">
         <header>
-          <Link href="/" aria-label="Subbies home" className="inline-block rounded-sm">
+          <Link href="/" prefetch={false} aria-label="Subbies home" className="inline-block rounded-sm">
             <Logo height={28} priority />
           </Link>
         </header>
@@ -29,13 +29,16 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
 
         <footer className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-ink-muted">
           <span>© {new Date().getFullYear()} Subbies</span>
-          <Link href="/privacy" className="hover:text-ink hover:underline">
+          {/* prefetch off: these are rarely visited from here, and
+              prefetching them would pull marketing-route code into every
+              auth page load. */}
+          <Link href="/privacy" prefetch={false} className="hover:text-ink hover:underline">
             Privacy
           </Link>
-          <Link href="/terms" className="hover:text-ink hover:underline">
+          <Link href="/terms" prefetch={false} className="hover:text-ink hover:underline">
             Terms
           </Link>
-          <Link href="/contact" className="hover:text-ink hover:underline">
+          <Link href="/contact" prefetch={false} className="hover:text-ink hover:underline">
             Contact
           </Link>
         </footer>
@@ -108,21 +111,5 @@ function AuthPanel() {
         </ul>
       </div>
     </aside>
-  );
-}
-
-/** Title block used at the top of each auth form. */
-export function AuthHeading({
-  title,
-  description,
-}: {
-  title: string;
-  description?: React.ReactNode;
-}) {
-  return (
-    <div className="mb-8">
-      <h1 className="text-3xl">{title}</h1>
-      {description && <p className="mt-2 text-sm text-ink-muted">{description}</p>}
-    </div>
   );
 }

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CircleCheck } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
-import { AuthShell, AuthHeading } from "@/app/components/auth-shell";
+import { AuthHeading } from "@/app/components/auth-heading";
 import { Button, ButtonLink } from "@/app/components/button";
 import { Spinner } from "@/app/components/spinner";
 import { PasswordField } from "@/app/components/password-field";
@@ -189,7 +189,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <AuthShell>
+    <>
         <div>
           {phase === "checking" && (
             <div className="flex items-center gap-2 text-sm text-ink-muted">
@@ -281,6 +281,6 @@ export default function ResetPasswordPage() {
             </Link>
           </p>
         )}
-    </AuthShell>
+    </>
   );
 }
