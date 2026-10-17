@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowLeft, FileText, Lock } from "lucide-react";
+import { FileText, Lock } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
@@ -8,6 +7,7 @@ import { canAddContractor } from "@/lib/billing/entitlements";
 import type { DocumentType } from "@/lib/types";
 import { ButtonLink } from "@/app/components/button";
 import { EmptyState } from "@/app/components/empty-state";
+import { PageHeader } from "@/app/components/page-header";
 import { NewContractorForm } from "./_components/new-contractor-form";
 
 export const metadata: Metadata = { title: "Add contractor" };
@@ -31,21 +31,12 @@ export default async function NewContractorPage() {
   const limitCheck = await limitCheckPromise;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <Link
-          href="/dashboard/contractors"
-          className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink"
-        >
-          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
-          Contractors
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Add contractor</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Enter their details, choose which documents to request, and we&apos;ll
-          email them a secure upload link.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        back={{ href: "/dashboard/contractors", label: "Contractors" }}
+        title="Add contractor"
+        description="Enter their details, choose which documents to request, and we'll email them a secure upload link."
+      />
 
       {!limitCheck.allowed ? (
         <EmptyState
@@ -59,7 +50,7 @@ export default async function NewContractorPage() {
           }
         />
       ) : error ? (
-        <p className="rounded-md bg-expired-bg px-4 py-3 text-sm text-expired">
+        <p className="rounded-md border border-expired-line bg-expired-bg/70 px-4 py-3 text-sm text-expired">
           We couldn&apos;t load your document types. Refresh to try again.
         </p>
       ) : documentTypes.length === 0 ? (

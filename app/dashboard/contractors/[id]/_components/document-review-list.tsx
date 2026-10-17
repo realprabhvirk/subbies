@@ -12,6 +12,7 @@ import {
   Pencil,
   Archive,
   Trash2,
+  CalendarClock,
 } from "lucide-react";
 
 import { StatusBadge } from "@/app/components/status-badge";
@@ -89,14 +90,14 @@ export function DocumentReviewList({
 }) {
   if (documents.length === 0) {
     return (
-      <p className="rounded-card border border-line bg-surface shadow-sm px-card py-8 text-center text-sm text-ink-muted">
+      <p className="rounded-card border border-dashed border-line-strong px-card py-8 text-center text-sm text-ink-muted">
         No documents were requested from this contractor.
       </p>
     );
   }
 
   return (
-    <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+    <ul className="divide-y divide-line rounded-card border border-line bg-surface">
       {documents.map((doc) => (
         <DocumentRow key={doc.id} doc={doc} />
       ))}
@@ -154,7 +155,7 @@ function ActionsMenu({
         onClick();
       }}
       disabled={disabled}
-      className={`flex w-full items-center gap-2.5 px-3.5 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+      className={`flex min-h-10 w-full items-center gap-2.5 rounded-md px-3 text-left text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
         danger
           ? "text-expired hover:bg-expired-bg"
           : "text-ink hover:bg-surface-muted"
@@ -176,7 +177,7 @@ function ActionsMenu({
       </IconButton>
 
       {open && (
-        <div className="absolute right-0 z-20 mt-1.5 w-52 overflow-hidden rounded-card border border-line bg-surface py-1 shadow-lg">
+        <div className="absolute right-0 z-20 mt-1 w-56 origin-top-right overflow-hidden rounded-card border border-line bg-surface p-1 shadow-lg">
           {resendable &&
             item(
               // An approved copy stays valid; what's being asked for is a fresh one.
@@ -198,7 +199,7 @@ function ActionsMenu({
               true,
             )}
           {removable && (
-            <div className="my-1 border-t border-line" role="separator" />
+            <div className="-mx-1 my-1 border-t border-line" role="separator" />
           )}
           {removable &&
             item(
@@ -350,13 +351,13 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
   const view = optimisticDoc;
 
   return (
-    <li className="px-card py-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
+    <li className="relative px-4 py-4 sm:px-5">
+      <div className="flex flex-wrap items-start gap-x-4 gap-y-2">
+        <div className="min-w-0 flex-1 basis-60">
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 font-semibold text-ink">
             {view.documentName}
             {view.isReplacement && (
-              <span className="rounded-full bg-review-bg px-2 py-0.5 text-2xs font-medium text-review">
+              <span className="rounded-sm border border-review-line bg-review-bg px-1.5 py-0.5 text-2xs font-semibold text-review">
                 Updated copy
               </span>
             )}
@@ -370,21 +371,6 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
           {view.hasPendingReplacement && (
             <p className="mt-0.5 text-sm text-ink-muted">
               Updated copy requested. This one stays valid until it&apos;s replaced.
-            </p>
-          )}
-          {view.status === "approved" && view.expiryDate && !editingExpiry && (
-            <p
-              className={`mt-0.5 text-sm ${
-                view.expiryStatus?.tone === "expired"
-                  ? "font-medium text-expired"
-                  : view.expiryStatus?.tone === "soon"
-                    ? "font-medium text-attention"
-                    : "text-ink-muted"
-              }`}
-            >
-              {view.expiryStatus?.tone === "expired" ? "Expired" : "Expires"}{" "}
-              {formatDate(view.expiryDate)}
-              {view.expiryStatus?.detail ? ` · ${view.expiryStatus.detail}` : ""}
             </p>
           )}
           {view.status === "requested" && (
@@ -404,7 +390,18 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
             </p>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Expiry sits beside the stamp, so "approved, but nearly due"
+              reads as one fact rather than a green badge contradicted by red
+              text underneath it. */}
+          {view.status === "approved" && view.expiryDate && !editingExpiry && (
+            <ExpiryTag
+              date={formatDate(view.expiryDate)}
+              tone={view.expiryStatus?.tone ?? "ok"}
+              detail={view.expiryStatus?.detail ?? null}
+            />
+          )}
           <StatusBadge kind="document" status={view.status} />
           <ActionsMenu
             doc={view}
@@ -435,25 +432,27 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
               type="button"
               onClick={() => viewFile(file.id)}
               disabled={pending}
-              className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted disabled:opacity-60"
+              className="pressable inline-flex min-h-9 max-w-full items-center gap-2 rounded-md border border-line-strong bg-surface px-2.5 text-left hover:border-field-line hover:bg-surface-muted disabled:opacity-60 pointer-coarse:min-h-11"
             >
               {openingFileId === file.id ? (
-                <Spinner className="h-4 w-4" />
+                <Spinner className="h-4 w-4 shrink-0 text-ink-muted" />
               ) : (
-                <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
+                <FileText className="h-4 w-4 shrink-0 text-ink-subtle" strokeWidth={2} aria-hidden />
               )}
-              {file.fileName ?? (view.files.length > 1 ? `File ${i + 1}` : "View file")}
+              <span className="truncate font-mono text-xs text-ink">
+                {file.fileName ?? (view.files.length > 1 ? `File ${i + 1}` : "View file")}
+              </span>
             </button>
           ))}
         </div>
       )}
 
       {editingExpiry && (
-        <div className="mt-3 flex flex-wrap items-end gap-3 rounded-md bg-surface-muted p-3">
-          <div className="space-y-1">
+        <div className="mt-4 flex flex-wrap items-end gap-3 rounded-md border border-line-strong bg-surface-muted/60 p-3 sm:p-4">
+          <div className="space-y-1.5">
             <label
               htmlFor={`edit-expiry-${doc.id}`}
-              className="block text-xs font-medium text-ink-muted"
+              className="label-caps block text-ink-muted"
             >
               New expiry date
             </label>
@@ -462,22 +461,21 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
               type="date"
               value={editExpiryValue}
               onChange={(e) => setEditExpiryValue(e.target.value)}
-              className={fieldClasses(false, "py-1.5")}
+              className={fieldClasses(false, "w-44 font-mono")}
             />
           </div>
-          <Button type="button" size="sm" onClick={saveExpiry} pending={pending}>
+          <Button type="button" onClick={saveExpiry} pending={pending}>
             Save
           </Button>
           <Button
             type="button"
             variant="secondary"
-            size="sm"
             onClick={() => setEditingExpiry(false)}
             disabled={pending}
           >
             Cancel
           </Button>
-          <p className="w-full text-xs text-ink-subtle">
+          <p className="w-full text-xs text-ink-muted">
             This only corrects the recorded date — it doesn&apos;t touch the
             uploaded file. To replace the file itself, reject the document so
             the contractor can upload a new one.
@@ -486,11 +484,14 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
       )}
 
       {view.status === "uploaded" && !rejecting && (
-        <div className="mt-3 flex flex-wrap items-end gap-3 rounded-md bg-surface-muted p-3">
-          <div className="space-y-1">
+        // The decision bar: tinted in the "awaiting review" hue so it reads
+        // as the thing waiting on you, not a disabled grey well.
+        <div className="mt-4 flex flex-wrap items-end gap-3 rounded-md border border-review-line bg-review-bg/40 p-3 sm:p-4">
+          <p className="label-caps w-full text-review">Your review</p>
+          <div className="space-y-1.5">
             <label
               htmlFor={`expiry-${doc.id}`}
-              className="block text-xs font-medium text-ink-muted"
+              className="block text-xs font-semibold text-ink"
             >
               Expiry date
             </label>
@@ -500,7 +501,7 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
               value={expiry}
               min={toISODate(new Date())}
               onChange={(e) => setExpiry(e.target.value)}
-              className={fieldClasses(false, "py-1.5")}
+              className={fieldClasses(false, "w-44 font-mono")}
             />
           </div>
           <Button type="button" onClick={approve} pending={pending}>
@@ -520,10 +521,10 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
       )}
 
       {view.status === "uploaded" && rejecting && (
-        <div className="mt-3 space-y-2 rounded-md border border-expired-line bg-expired-bg p-3">
+        <div className="mt-4 space-y-3 rounded-md border border-expired-line bg-expired-bg/50 p-3 sm:p-4">
           <label
             htmlFor={`reason-${doc.id}`}
-            className="block text-sm font-medium text-expired"
+            className="block text-sm font-semibold text-expired"
           >
             Why is this being rejected?
           </label>
@@ -536,11 +537,10 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
             placeholder="e.g. The certificate has expired, please upload a current one."
             className={fieldClasses()}
           />
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               variant="danger"
-              size="sm"
               onClick={confirmReject}
               pending={pending}
             >
@@ -549,7 +549,6 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
             <Button
               type="button"
               variant="secondary"
-              size="sm"
               onClick={() => {
                 setRejecting(false);
                 setReason("");
@@ -566,8 +565,8 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
         </div>
       )}
 
-      {error && <p className="mt-2 text-sm text-expired">{error}</p>}
-      {notice && <p className="mt-2 text-sm text-attention">{notice}</p>}
+      {error && <p className="mt-3 text-sm font-medium text-expired">{error}</p>}
+      {notice && <p className="mt-3 text-sm font-medium text-attention">{notice}</p>}
 
       {confirming === "archive" && (
         <ConfirmDialog
@@ -617,9 +616,46 @@ function DocumentRow({ doc }: { doc: ReviewDocument }) {
  */
 function MissingWarning({ name }: { name: string }) {
   return (
-    <p className="mt-3 rounded-md bg-attention-bg px-3 py-2 text-attention">
+    <p className="mt-3 rounded-md border border-attention-line bg-attention-bg/70 px-3 py-2 text-attention">
       This is the only current copy of {name}. The requirement goes back to{" "}
       <strong>Missing</strong> and the contractor&apos;s compliance status will update.
     </p>
+  );
+}
+
+/**
+ * Expiry beside the status stamp. Calm mono date when it's fine; the
+ * attention tint with the days left when it's due soon; expired in the
+ * expired colour. Always says it in words as well as colour.
+ */
+function ExpiryTag({
+  date,
+  tone,
+  detail,
+}: {
+  date: string;
+  tone: "expired" | "soon" | "ok";
+  detail: string | null;
+}) {
+  if (tone === "ok") {
+    return (
+      <span className="whitespace-nowrap text-xs text-ink-muted">
+        Expires <span className="font-mono text-ink">{date}</span>
+      </span>
+    );
+  }
+  return (
+    <span
+      className={`inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-sm border px-2 text-xs font-semibold ${
+        tone === "expired"
+          ? "border-expired-line bg-expired-bg text-expired"
+          : "border-attention-line bg-attention-bg text-attention"
+      }`}
+    >
+      <CalendarClock className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+      {tone === "expired" ? "Expired" : "Expires"}{" "}
+      <span className="font-mono font-medium">{date}</span>
+      {detail && <span className="hidden font-medium sm:inline">· {detail}</span>}
+    </span>
   );
 }

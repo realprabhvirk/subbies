@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Mail, Phone, Briefcase, Hash } from "lucide-react";
+import { Mail, Phone, Briefcase, Hash } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
 import { StatusBadge } from "@/app/components/status-badge";
+import { PageHeader } from "@/app/components/page-header";
 import { buildContractorActivity } from "@/lib/contractor-activity";
 import { groupFilesByDocument, type GroupedFile } from "@/lib/document-files-logic";
 import { formatAbn, isMissingColumnError } from "@/lib/contractor-details-logic";
@@ -323,53 +324,47 @@ export default async function ContractorDetailPage(
   const meta = [
     contractor.trade ? { icon: Briefcase, text: contractor.trade } : null,
     { icon: Mail, text: contractor.email },
-    contractor.phone ? { icon: Phone, text: contractor.phone } : null,
-    contractor.abn ? { icon: Hash, text: `ABN ${formatAbn(contractor.abn)}` } : null,
-  ].filter(Boolean) as { icon: typeof Mail; text: string }[];
+    contractor.phone ? { icon: Phone, text: contractor.phone, mono: true } : null,
+    contractor.abn
+      ? { icon: Hash, label: "ABN", text: formatAbn(contractor.abn), mono: true }
+      : null,
+  ].filter(Boolean) as { icon: typeof Mail; text: string; label?: string; mono?: boolean }[];
 
   const activeProjectCount = projects.filter((p) => !p.removedAt).length;
 
   return (
-    <div className="space-y-8">
-      <div>
-        <Link
-          href="/dashboard/contractors"
-          className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink"
-        >
-          <ArrowLeft className="h-4 w-4" strokeWidth={2} aria-hidden />
-          Contractors
-        </Link>
-
-        <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold">{contractor.business_name}</h1>
-            {contractor.contact_name && (
-              <p className="mt-0.5 text-sm text-ink-muted">
-                {contractor.contact_name}
-              </p>
-            )}
-          </div>
-          <StatusBadge kind="contractor" status={contractor.status} />
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-ink-muted">
-          {meta.map((m, i) => {
-            const Icon = m.icon;
-            return (
-              <span key={i} className="inline-flex items-center gap-1.5">
-                <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
-                {m.text}
-              </span>
-            );
-          })}
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        back={{ href: "/dashboard/contractors", label: "Contractors" }}
+        title={contractor.business_name}
+        description={contractor.contact_name ?? undefined}
+        actions={<StatusBadge kind="contractor" status={contractor.status} />}
+        rule={false}
+        meta={
+          <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink-muted">
+            {meta.map((m, i) => {
+              const Icon = m.icon;
+              return (
+                <div key={i} className="inline-flex min-w-0 items-center gap-1.5">
+                  <dt className="contents">
+                    <Icon className="h-4 w-4 shrink-0 text-ink-subtle" strokeWidth={2} aria-hidden />
+                    {m.label && <span className="label-caps text-ink-subtle">{m.label}</span>}
+                  </dt>
+                  <dd className={`truncate ${m.mono ? "font-mono text-xs text-ink" : "text-ink"}`}>
+                    {m.text}
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+        }
+      />
 
       {/* Scrolls sideways on a narrow phone rather than pushing the whole page
           wider. The bottom rule is an inset shadow, not a border, so the
           active tab's underline can sit on it without the -mb-px overhang
           that a scroll container would clip. */}
-      <div className="flex gap-1 overflow-x-auto shadow-[inset_0_-1px_0_var(--color-line)]">
+      <div className="-mx-4 flex gap-1 overflow-x-auto px-4 shadow-[inset_0_-1px_0_var(--color-line)] sm:mx-0 sm:px-0">
         {TABS.map((t) => {
           const active = t.id === tab;
           const count =
@@ -383,15 +378,15 @@ export default async function ContractorDetailPage(
               key={t.id}
               href={`/dashboard/contractors/${contractor.id}?tab=${t.id}`}
               aria-current={active ? "page" : undefined}
-              className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex h-11 shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3 text-sm transition-colors ${
                 active
-                  ? "border-brand text-brand-ink"
-                  : "border-transparent text-ink-muted hover:text-ink"
+                  ? "border-brand font-semibold text-ink"
+                  : "border-transparent font-medium text-ink-muted hover:border-line-strong hover:text-ink"
               }`}
             >
               {t.label}
               {count !== null && (
-                <span className="rounded-full bg-surface-muted px-1.5 text-xs text-ink-muted">
+                <span className="rounded-sm bg-surface-muted px-1.5 font-mono text-2xs text-ink-muted">
                   {count}
                 </span>
               )}
@@ -401,22 +396,24 @@ export default async function ContractorDetailPage(
       </div>
 
       {tab === "documents" && (
-        <section>
-          <p className="text-sm text-ink-muted">
-            Review each submitted document, set its expiry date, and approve or
-            reject it.
-          </p>
-          <div className="mt-4">
-            <DocumentReviewList documents={documents} />
+        <section className="space-y-10">
+          <div>
+            <p className="text-sm text-ink-muted">
+              Review each submitted document, set its expiry date, and approve
+              or reject it.
+            </p>
+            <div className="mt-4">
+              <DocumentReviewList documents={documents} />
+            </div>
           </div>
-          <div className="mt-8">
+          <div>
             <ResendRequestsPanel
               contractorId={contractor.id}
               contractorEmail={contractor.email}
               documents={resendable}
             />
           </div>
-          <div className="mt-10">
+          <div>
             <DocumentHistory items={history} />
           </div>
         </section>

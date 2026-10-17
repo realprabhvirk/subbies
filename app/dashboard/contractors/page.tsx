@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Plus, Users } from "lucide-react";
 
+import { PageHeader } from "@/app/components/page-header";
+import { Avatar } from "@/app/components/avatar";
+
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
 import { canAddContractor } from "@/lib/billing/entitlements";
@@ -18,13 +21,6 @@ type ContractorRow = Pick<
   Contractor,
   "id" | "business_name" | "contact_name" | "email" | "trade" | "status" | "created_at"
 >;
-
-/** Up to two initials from a business name, for the avatar tile. */
-function initialsOf(name: string): string {
-  const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "–";
-  return (words[0][0] + (words[1]?.[0] ?? "")).toUpperCase();
-}
 
 export default async function ContractorsPage(
   props: PageProps<"/dashboard/contractors">,
@@ -84,30 +80,33 @@ export default async function ContractorsPage(
     year: "numeric",
   });
 
+  const counts = {
+    total: contractors.length,
+    approved: contractors.filter((c) => c.status === "approved").length,
+  };
+
   return (
-    <div className="space-y-8">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Contractors</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Everyone you&apos;ve requested compliance documents from.
-          </p>
-        </div>
-        {limitCheck.allowed ? (
-          <ButtonLink href="/dashboard/contractors/new" className="shrink-0">
-            <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
-            Add contractor
-          </ButtonLink>
-        ) : (
-          <ButtonLink
-            href="/dashboard/settings?tab=billing"
-            variant="secondary"
-            className="shrink-0"
-          >
-            Upgrade to add more
-          </ButtonLink>
-        )}
-      </header>
+    <div className="space-y-6">
+      <PageHeader
+        title="Contractors"
+        description={
+          contractors.length === 0
+            ? "Everyone you've requested compliance documents from."
+            : `${counts.total} on the register · ${counts.approved} fully approved`
+        }
+        actions={
+          limitCheck.allowed ? (
+            <ButtonLink href="/dashboard/contractors/new">
+              <Plus className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              Add contractor
+            </ButtonLink>
+          ) : (
+            <ButtonLink href="/dashboard/settings?tab=billing" variant="secondary">
+              Upgrade to add more
+            </ButtonLink>
+          )
+        }
+      />
 
       {!limitCheck.allowed && (
         <Alert tone="warning">
@@ -171,77 +170,100 @@ export default async function ContractorsPage(
           }
         />
       ) : (
-        <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
-          {contractors.map((c) => {
-            const p = progress.get(c.id);
-            return (
-              <li
-                key={c.id}
-                // pr-* reserves room for the chevron (and, on desktop, its label)
-                // so the badge and Resend button never slide underneath it.
-                className="group relative flex flex-wrap items-center justify-between gap-x-6 gap-y-3 py-4 pl-5 pr-10 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted sm:pr-32"
-              >
-                <div className="flex min-w-0 grow items-center gap-3">
-                  <span
-                    aria-hidden
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-muted text-xs font-semibold text-ink-muted"
-                  >
-                    {initialsOf(c.business_name)}
-                  </span>
-                  <div className="min-w-0">
-                    {/* The name is the link, stretched over the whole row by
-                        the ::after, so the entire row is clickable while the
-                        markup stays a single real anchor (keyboard, screen
-                        readers and middle-click all behave normally). */}
-                    <Link
-                      href={`/dashboard/contractors/${c.id}`}
-                      className="font-medium after:absolute after:inset-0 hover:text-brand hover:underline focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-brand"
-                    >
-                      {c.business_name}
-                    </Link>
-                    <p className="truncate text-sm text-ink-muted">
-                      {[c.trade, c.email].filter(Boolean).join(" · ")}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Nowrap so the badge and button never break onto two lines in a
-                    squeezed row; the group itself wraps instead. */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 [&_button]:whitespace-nowrap [&_span]:whitespace-nowrap">
-                  <div className="hidden text-right text-xs text-ink-subtle sm:block">
-                    {p && p.total > 0 && (
-                      <p className="tabular-nums">
-                        {p.approved}/{p.total} approved
-                      </p>
-                    )}
-                    <p>Added {dateFmt.format(new Date(c.created_at))}</p>
-                  </div>
-                  <StatusBadge kind="contractor" status={c.status} />
-                  {(c.status === "pending" ||
-                    c.status === "awaiting_review" ||
-                    c.status === "attention_required") && (
-                    <div className="relative z-10">
-                      <ResendButton contractorId={c.id} />
-                    </div>
-                  )}
-                </div>
-
-                {/* The "this opens" cue. Always visible (a phone has no hover),
-                    and purely decorative: the row's real link is the name. */}
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-y-0 right-3 flex items-center gap-1.5 text-ink-muted transition-colors duration-[var(--duration-fast)] group-hover:text-brand group-focus-within:text-brand"
+        <div className="overflow-hidden rounded-card border border-line bg-surface">
+          {/* Column heads — visual only; every value in a row is
+              self-describing for screen readers. */}
+          <div
+            aria-hidden
+            className="hidden grid-cols-[minmax(0,1fr)_8.5rem_11.5rem_7.5rem_11rem] items-center gap-6 border-b border-line-strong bg-surface-muted px-5 py-2.5 text-ink-muted lg:grid"
+          >
+            <span className="label-caps">Contractor</span>
+            <span className="label-caps">Documents</span>
+            <span className="label-caps">Status</span>
+            <span className="label-caps">Added</span>
+            <span />
+          </div>
+          <ul className="divide-y divide-line">
+            {contractors.map((c) => {
+              const p = progress.get(c.id);
+              const canResend =
+                c.status === "pending" ||
+                c.status === "awaiting_review" ||
+                c.status === "attention_required";
+              return (
+                <li
+                  key={c.id}
+                  className="group relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-4 py-4 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted/70 sm:px-5 lg:grid-cols-[minmax(0,1fr)_8.5rem_11.5rem_7.5rem_11rem] lg:gap-x-6"
                 >
-                  <span className="hidden text-xs font-medium sm:inline">View details</span>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <Avatar name={c.business_name} />
+                    <div className="min-w-0">
+                      {/* The name is the link, stretched over the whole row
+                          by the ::after, so the entire row is clickable while
+                          the markup stays a single real anchor (keyboard,
+                          screen readers and middle-click all behave). */}
+                      <Link
+                        href={`/dashboard/contractors/${c.id}`}
+                        className="block truncate font-semibold text-ink after:absolute after:inset-0 group-hover:text-brand focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-brand"
+                      >
+                        {c.business_name}
+                      </Link>
+                      <p className="truncate text-sm text-ink-muted">
+                        {[c.trade, c.email].filter(Boolean).join(" · ")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Mobile: chevron cue top-right. */}
                   <ChevronRight
-                    className="h-5 w-5 transition-transform duration-[var(--duration-fast)] ease-[var(--ease-standard)] group-hover:translate-x-0.5"
+                    aria-hidden
+                    className="h-5 w-5 text-ink-subtle transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5 group-hover:text-brand lg:hidden"
                     strokeWidth={2}
                   />
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+
+                  <div className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-2 pl-12 lg:contents">
+                    <div className="flex items-center gap-2.5 lg:block">
+                      {p && p.total > 0 ? (
+                        <>
+                          <p className="font-mono text-xs text-ink">
+                            {p.approved}/{p.total}
+                            <span className="font-sans text-ink-muted"> approved</span>
+                          </p>
+                          <div
+                            aria-hidden
+                            className="h-1 w-16 overflow-hidden rounded-full bg-line lg:mt-1.5 lg:w-24"
+                          >
+                            <div
+                              className="h-full bg-approved"
+                              style={{ width: `${Math.round((p.approved / p.total) * 100)}%` }}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-xs text-ink-subtle">No documents</p>
+                      )}
+                    </div>
+                    <div>
+                      <StatusBadge kind="contractor" status={c.status} />
+                    </div>
+                    <p className="font-mono text-xs text-ink-muted">
+                      <span className="lg:hidden">Added </span>
+                      {dateFmt.format(new Date(c.created_at))}
+                    </p>
+                    <div className="relative z-10 flex items-center justify-end gap-2 max-lg:ml-auto">
+                      {canResend && <ResendButton contractorId={c.id} />}
+                      <ChevronRight
+                        aria-hidden
+                        className="hidden h-5 w-5 shrink-0 text-ink-subtle transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5 group-hover:text-brand lg:block"
+                        strokeWidth={2}
+                      />
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
       )}
     </div>
   );

@@ -83,27 +83,23 @@ export function ResendRequestsPanel({
   };
 
   return (
-    <section className="rounded-card border border-line bg-surface p-card shadow-sm">
-      <h2 className="text-base font-semibold">Resend requests</h2>
-      <p className="mt-0.5 text-sm text-ink-muted">
+    <section>
+      <h2 className="text-lg">Resend requests</h2>
+      <p className="mt-1 max-w-3xl text-sm text-ink-muted">
         Email {contractorEmail} a link for the documents you tick. An approved
         document stays valid: ticking it asks for an updated copy, and the current
         one is only replaced once the new one is approved.
       </p>
 
       {documents.length === 0 ? (
-        <p className="mt-4 rounded-md bg-surface-muted px-4 py-3 text-sm text-ink-muted">
+        <p className="mt-4 rounded-md border border-dashed border-line-strong px-4 py-3 text-sm text-ink-muted">
           No documents have been requested from this contractor yet.
         </p>
       ) : (
         <>
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 overflow-hidden rounded-card border border-line bg-surface">
             <label
-              className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm transition-colors ${
-                allOn || someOn
-                  ? "border-brand bg-brand-tint"
-                  : "border-line hover:bg-surface-muted"
-              }`}
+              className="flex min-h-12 cursor-pointer items-center gap-3 border-b border-line-strong bg-surface-muted px-4 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-brand sm:px-5"
             >
               <input
                 ref={allRef}
@@ -114,21 +110,21 @@ export function ResendRequestsPanel({
                 className="sr-only"
               />
               <Box state={allOn ? "on" : someOn ? "some" : "off"} />
-              <span className="font-medium">Select all</span>
-              <span className="ml-auto text-xs text-ink-muted">
-                {live.length} of {documents.length} selected
+              <span className="font-semibold">Select all</span>
+              <span className="ml-auto font-mono text-xs text-ink-muted">
+                {live.length}/{documents.length} selected
               </span>
             </label>
 
-            <fieldset className="space-y-2">
+            <fieldset className="divide-y divide-line">
               <legend className="sr-only">Documents to resend</legend>
               {documents.map((doc) => {
                 const on = selected.has(doc.id);
                 return (
                   <label
                     key={doc.id}
-                    className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm transition-colors ${
-                      on ? "border-brand bg-brand-tint" : "border-line hover:bg-surface-muted"
+                    className={`flex cursor-pointer items-start gap-3 px-4 py-3.5 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-brand sm:px-5 ${
+                      on ? "bg-brand-tint/60" : "hover:bg-surface-muted/70"
                     }`}
                   >
                     <input
@@ -140,8 +136,8 @@ export function ResendRequestsPanel({
                     />
                     <Box state={on ? "on" : "off"} />
                     <span className="min-w-0">
-                      <span className="font-medium">{doc.name}</span>
-                      <span className="block text-xs text-ink-muted">{doc.note}</span>
+                      <span className="font-semibold">{doc.name}</span>
+                      <span className="mt-0.5 block text-xs text-ink-muted">{doc.note}</span>
                     </span>
                   </label>
                 );
@@ -155,9 +151,9 @@ export function ResendRequestsPanel({
             </Alert>
           )}
 
-          <div className="mt-4 flex items-center justify-end gap-3">
+          <div className="mt-4 flex flex-wrap items-center justify-end gap-3">
             {live.length === 0 && !message && (
-              <span className="text-sm text-ink-subtle">Select at least one document</span>
+              <span className="text-sm text-ink-muted">Select at least one document</span>
             )}
             <Button
               type="button"
@@ -179,9 +175,9 @@ export function ResendRequestsPanel({
 function Box({ state }: { state: "on" | "off" | "some" }) {
   return (
     <span
-      className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+      className={`mt-px flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-sm border transition-colors ${
         state === "off"
-          ? "border-line-strong bg-surface"
+          ? "border-field-line bg-surface"
           : "border-brand bg-brand text-white"
       }`}
       aria-hidden

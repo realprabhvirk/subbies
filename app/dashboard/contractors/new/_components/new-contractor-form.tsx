@@ -72,21 +72,31 @@ export function NewContractorForm({
   };
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form action={formAction} className="max-w-2xl space-y-5">
       {/* Step indicator */}
-      <ol className="flex items-center gap-3 text-sm">
-        <li className={step === 1 ? "font-medium text-brand-ink" : "text-ink-subtle"}>
-          1. Details
-        </li>
-        <li aria-hidden className="h-px w-8 bg-line-strong" />
-        <li className={step === 2 ? "font-medium text-brand-ink" : "text-ink-subtle"}>
-          2. Documents
-        </li>
+      <ol className="grid grid-cols-2 gap-2 text-sm">
+        {(["Details", "Documents"] as const).map((label, i) => {
+          const n = (i + 1) as 1 | 2;
+          const current = step === n;
+          const done = step > n;
+          return (
+            <li
+              key={label}
+              aria-current={current ? "step" : undefined}
+              className={`flex items-center gap-2.5 border-t-2 pt-3 ${
+                current || done ? "border-brand text-ink" : "border-line-strong text-ink-muted"
+              }`}
+            >
+              <span className="font-mono text-xs">0{n}</span>
+              <span className={current ? "font-semibold" : "font-medium"}>{label}</span>
+            </li>
+          );
+        })}
       </ol>
 
       {/* Step 1 — kept mounted so its values submit with the form */}
       <div
-        className={`space-y-4 rounded-card border border-line bg-surface shadow-sm p-6 ${
+        className={`space-y-4 rounded-card border border-line bg-surface p-5 sm:p-6 ${
           step === 1 ? "" : "hidden"
         }`}
       >
@@ -160,7 +170,7 @@ export function NewContractorForm({
 
         {stepOneError && <p className="text-sm text-expired">{stepOneError}</p>}
 
-        <div className="flex justify-end pt-1">
+        <div className="flex justify-end border-t border-line pt-4">
           <Button type="button" onClick={handleContinue}>
             Continue
           </Button>
@@ -169,28 +179,26 @@ export function NewContractorForm({
 
       {/* Step 2 */}
       <div
-        className={`space-y-4 rounded-card border border-line bg-surface shadow-sm p-6 ${
+        className={`space-y-4 rounded-card border border-line bg-surface p-5 sm:p-6 ${
           step === 2 ? "" : "hidden"
         }`}
       >
         <div>
-          <h2 className="text-base font-semibold">Documents to request</h2>
-          <p className="mt-0.5 text-sm text-ink-muted">
+          <h2 className="text-lg">Documents to request</h2>
+          <p className="mt-1 text-sm text-ink-muted">
             The contractor will be asked to upload each of these.
           </p>
         </div>
 
-        <fieldset className="space-y-2">
+        <fieldset className="divide-y divide-line overflow-hidden rounded-md border border-line">
           <legend className="sr-only">Select required documents</legend>
           {documentTypes.map((dt) => {
             const isOn = selected.has(dt.id);
             return (
               <label
                 key={dt.id}
-                className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm transition-colors ${
-                  isOn
-                    ? "border-brand bg-brand-tint"
-                    : "border-line hover:bg-surface-muted"
+                className={`flex min-h-14 cursor-pointer items-start gap-3 px-4 py-3.5 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-brand ${
+                  isOn ? "bg-brand-tint/60" : "hover:bg-surface-muted/70"
                 }`}
               >
                 <input
@@ -202,16 +210,16 @@ export function NewContractorForm({
                   className="sr-only"
                 />
                 <span
-                  className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                    isOn ? "border-brand bg-brand text-white" : "border-line-strong bg-surface"
+                  className={`mt-px flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-sm border transition-colors ${
+                    isOn ? "border-brand bg-brand text-white" : "border-field-line bg-surface"
                   }`}
                   aria-hidden
                 >
                   {isOn && <Check className="h-3 w-3" strokeWidth={3} />}
                 </span>
                 <span>
-                  <span className="font-medium">{dt.name}</span>
-                  <span className="block text-xs text-ink-muted">
+                  <span className="font-semibold">{dt.name}</span>
+                  <span className="mt-0.5 block text-xs text-ink-muted">
                     Valid {dt.default_duration_months}{" "}
                     {dt.default_duration_months === 1 ? "month" : "months"}
                   </span>
@@ -233,7 +241,7 @@ export function NewContractorForm({
           </p>
         )}
 
-        <div className="flex items-center justify-between pt-1">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-4">
           <Button type="button" variant="secondary" onClick={() => setStep(1)}>
             Back
           </Button>

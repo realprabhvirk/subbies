@@ -29,7 +29,7 @@ export function ResendButton({ contractorId }: { contractorId: string }) {
         type="button"
         onClick={handleClick}
         disabled={pending}
-        className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-xs font-medium text-ink-muted transition-colors hover:bg-surface-muted disabled:opacity-60"
+        className="pressable inline-flex h-9 items-center whitespace-nowrap gap-1.5 rounded-md border border-line-strong bg-surface px-3 text-xs font-semibold text-ink-muted hover:border-field-line hover:text-ink disabled:opacity-60 pointer-coarse:h-11"
       >
         {pending ? (
           <Spinner className="h-3.5 w-3.5" />
@@ -40,7 +40,8 @@ export function ResendButton({ contractorId }: { contractorId: string }) {
       </button>
       {message && (
         <p
-          className={`text-xs ${message.ok ? "text-approved" : "text-expired"}`}
+          role="status"
+          className={`max-w-48 text-right text-xs font-medium ${message.ok ? "text-approved" : "text-expired"}`}
         >
           {message.text}
         </p>

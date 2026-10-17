@@ -50,7 +50,7 @@ export function CardHeader({
   eyebrow?: string;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-card py-4 sm:px-6">
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-4 sm:px-5 sm:px-6">
       <div className="min-w-0">
         {eyebrow && <p className="label-caps mb-1 text-ink-subtle">{eyebrow}</p>}
         <h2 className="text-base font-semibold">{title}</h2>

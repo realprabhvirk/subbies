@@ -81,7 +81,7 @@ export function NotesPanel({
       <form
         onSubmit={add}
         noValidate
-        className="rounded-card border border-line bg-surface p-card shadow-sm"
+        className="rounded-card border border-line bg-surface p-card sm:p-6"
       >
         <label htmlFor="note-body" className="text-base font-semibold">
           Add a note
@@ -112,7 +112,7 @@ export function NotesPanel({
         )}
 
         <div className="mt-3 flex items-center justify-between gap-3">
-          <span className="text-xs tabular-nums text-ink-subtle">
+          <span className="font-mono text-2xs text-ink-subtle">
             {draft.length.toLocaleString("en-AU")} / {MAX_NOTE_LENGTH.toLocaleString("en-AU")}
           </span>
           <Button type="submit" disabled={draft.trim().length === 0} pending={pending && !deleting}>
@@ -122,27 +122,25 @@ export function NotesPanel({
       </form>
 
       <section>
-        <h2 className="text-base font-semibold">
-          History{notes.length > 0 && <span className="ml-2 font-normal text-ink-subtle">{notes.length}</span>}
+        <h2 className="text-lg">
+          History{notes.length > 0 && <span className="ml-2 align-middle font-mono text-sm font-medium text-ink-subtle">{notes.length}</span>}
         </h2>
 
         {notes.length === 0 ? (
-          <div className="mt-3 flex flex-col items-center rounded-card border border-dashed border-line-strong bg-surface px-6 py-10 text-center">
-            <span className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted text-ink-subtle">
-              <StickyNote className="h-5 w-5" strokeWidth={2} aria-hidden />
-            </span>
-            <p className="text-sm font-medium">No notes yet</p>
+          <div className="mt-3 flex flex-col items-center rounded-card border border-dashed border-line-strong px-6 py-12 text-center">
+            <StickyNote className="mb-4 h-7 w-7 text-ink-subtle" strokeWidth={1.75} aria-hidden />
+            <p className="font-display text-lg font-semibold">No notes yet</p>
             <p className="mt-1 max-w-sm text-sm text-ink-muted">
               Add one above. The newest note is always at the top.
             </p>
           </div>
         ) : (
-          <ul className="mt-3 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+          <ul className="mt-3 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
             {notes.map((note) => (
-              <li key={note.id} className="flex items-start justify-between gap-3 px-card py-4">
+              <li key={note.id} className="flex items-start justify-between gap-3 px-4 py-4 sm:px-5">
                 <div className="min-w-0">
                   <p className="whitespace-pre-wrap break-words text-sm">{note.body}</p>
-                  <p className="mt-1.5 text-xs text-ink-subtle">{note.createdLabel}</p>
+                  <p className="mt-1.5 font-mono text-2xs text-ink-subtle">{note.createdLabel}</p>
                 </div>
                 <IconButton
                   tone="danger"

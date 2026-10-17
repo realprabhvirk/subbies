@@ -13,7 +13,7 @@ const ROWS = [
 
 export function ReminderPreview() {
   return (
-    <div className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+    <div className="overflow-hidden rounded-card border border-line bg-surface">
       <div className="flex items-center gap-2 border-b border-line bg-surface-muted px-4 py-2.5">
         <BellRing className="h-3.5 w-3.5 text-ink-subtle" strokeWidth={2} aria-hidden />
         <span className="text-xs text-ink-subtle">Reminders sent automatically</span>

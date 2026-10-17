@@ -30,7 +30,7 @@ const ROWS = [
 
 export function ProductPreview() {
   return (
-    <div className="overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+    <div className="overflow-hidden rounded-card border border-line bg-surface">
       <div className="flex items-center gap-1.5 border-b border-line bg-surface-muted px-4 py-2.5">
         <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />
         <span className="h-2.5 w-2.5 rounded-full bg-line-strong" />

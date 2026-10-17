@@ -257,7 +257,7 @@
   .font-mono,
   [data-mono] {
     font-family: var(--font-mono);
-    font-variant-numeric: tabular-nums slashed-zero;
+    font-variant-numeric: tabular-nums;
     font-stretch: normal;
     letter-spacing: 0;
   }

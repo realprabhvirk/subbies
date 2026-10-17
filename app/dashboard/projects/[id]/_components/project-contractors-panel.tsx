@@ -132,15 +132,15 @@ export function ProjectContractorsPanel({
       </div>
 
       {assigned.length === 0 ? (
-        <p className="rounded-card border border-line bg-surface shadow-sm px-card py-8 text-center text-sm text-ink-muted">
+        <p className="rounded-card border border-dashed border-line-strong px-card py-8 text-center text-sm text-ink-muted">
           No contractors assigned to this project yet.
         </p>
       ) : (
-        <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+        <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
           {assigned.map((a) => (
             <li
               key={a.projectContractorId}
-              className="flex flex-wrap items-center justify-between gap-3 px-card py-4"
+              className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-5"
             >
               <div className="min-w-0">
                 <Link

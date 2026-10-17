@@ -96,7 +96,7 @@ export function ContractorDetailsPanel({
       <form
         onSubmit={submit}
         noValidate
-        className="rounded-card border border-line bg-surface p-card shadow-sm"
+        className="rounded-card border border-line bg-surface p-card sm:p-6"
       >
         <h2 className="text-base font-semibold">Contact and business details</h2>
         <p className="mt-0.5 text-sm text-ink-muted">
@@ -203,7 +203,7 @@ export function ContractorDetailsPanel({
 
         <div className="mt-5 flex items-center justify-end gap-3">
           {!dirty && !status && (
-            <span className="text-sm text-ink-subtle">No unsaved changes</span>
+            <span className="text-sm text-ink-muted">No unsaved changes</span>
           )}
           <Button type="submit" disabled={!dirty} pending={pending}>
             {pending ? "Saving…" : "Save changes"}
@@ -211,7 +211,7 @@ export function ContractorDetailsPanel({
         </div>
       </form>
 
-      <div className="rounded-card border border-expired-line bg-surface p-card shadow-sm">
+      <div className="rounded-card border border-expired-line bg-surface p-card sm:p-6">
         <div className="flex items-start gap-3">
           <TriangleAlert
             className="mt-0.5 h-5 w-5 shrink-0 text-expired"

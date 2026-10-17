@@ -32,11 +32,9 @@ export function ContractorProjects({
 
   if (projects.length === 0) {
     return (
-      <div className="flex flex-col items-center rounded-card border border-dashed border-line-strong bg-surface px-6 py-14 text-center">
-        <span className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted text-ink-subtle">
-          <FolderKanban className="h-5 w-5" strokeWidth={2} aria-hidden />
-        </span>
-        <p className="text-sm font-medium">Not on any projects</p>
+      <div className="flex flex-col items-center rounded-card border border-dashed border-line-strong px-6 py-12 text-center">
+        <FolderKanban className="mb-4 h-7 w-7 text-ink-subtle" strokeWidth={1.75} aria-hidden />
+        <p className="font-display text-lg font-semibold">Not on any projects</p>
         <p className="mt-1 max-w-sm text-sm text-ink-muted">
           Assign this contractor to a project from the project&apos;s page.
         </p>
@@ -67,19 +65,19 @@ function Group({
 }) {
   return (
     <div>
-      <h3 className="text-sm font-semibold text-ink-muted">{title}</h3>
-      <ul className="mt-2 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+      <h3 className="label-caps text-ink-muted">{title}</h3>
+      <ul className="mt-2 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
         {items.map((p) => (
           <li
             key={p.assignmentId}
-            className={`flex flex-wrap items-center justify-between gap-3 px-card py-4 ${
+            className={`flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-5 ${
               muted ? "opacity-70" : ""
             }`}
           >
             <div className="min-w-0">
               <Link
                 href={`/dashboard/projects/${p.projectId}`}
-                className="font-medium hover:text-brand hover:underline"
+                className="font-semibold hover:text-brand hover:underline"
               >
                 {p.projectName}
               </Link>

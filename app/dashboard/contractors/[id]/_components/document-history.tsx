@@ -28,24 +28,22 @@ export interface HistoryItem {
 export function DocumentHistory({ items }: { items: HistoryItem[] }) {
   return (
     <section>
-      <h2 className="text-base font-semibold">Document history</h2>
-      <p className="mt-0.5 text-sm text-ink-muted">
+      <h2 className="text-lg">Document history</h2>
+      <p className="mt-1 text-sm text-ink-muted">
         Archived documents, kept as a record. They don&apos;t count toward compliance.
       </p>
 
       {items.length === 0 ? (
-        <div className="mt-4 flex flex-col items-center rounded-card border border-dashed border-line-strong bg-surface px-6 py-10 text-center">
-          <span className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-muted text-ink-subtle">
-            <Archive className="h-5 w-5" strokeWidth={2} aria-hidden />
-          </span>
-          <p className="text-sm font-medium">Nothing archived yet</p>
+        <div className="mt-4 flex flex-col items-center rounded-card border border-dashed border-line-strong px-6 py-12 text-center">
+          <Archive className="mb-4 h-7 w-7 text-ink-subtle" strokeWidth={1.75} aria-hidden />
+          <p className="font-display text-lg font-semibold">Nothing archived yet</p>
           <p className="mt-1 max-w-sm text-sm text-ink-muted">
             Documents you archive, and ones replaced by an approved updated copy, are
             kept here.
           </p>
         </div>
       ) : (
-        <ul className="mt-4 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface shadow-sm">
+        <ul className="mt-4 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
           {items.map((item) => (
             <HistoryRow key={item.id} item={item} />
           ))}
@@ -91,10 +89,10 @@ function HistoryRow({ item }: { item: HistoryItem }) {
   };
 
   return (
-    <li className="px-card py-4">
+    <li className="px-4 py-4 sm:px-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="font-medium">{item.documentName}</p>
+          <p className="font-semibold">{item.documentName}</p>
           <p className="mt-0.5 text-sm text-ink-muted">
             {item.expiryLabel ? `Expiry ${item.expiryLabel}` : "No expiry date"}
             {" · "}Archived {item.archivedLabel}
@@ -121,7 +119,7 @@ function HistoryRow({ item }: { item: HistoryItem }) {
               type="button"
               onClick={() => view(file.id)}
               disabled={pending}
-              className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted disabled:opacity-60"
+              className="pressable inline-flex min-h-9 max-w-full items-center gap-2 rounded-md border border-line-strong bg-surface px-2.5 text-left font-mono text-xs text-ink hover:border-field-line hover:bg-surface-muted disabled:opacity-60 pointer-coarse:min-h-11"
             >
               {openingId === file.id ? (
                 <Spinner className="h-4 w-4" />
@@ -133,7 +131,7 @@ function HistoryRow({ item }: { item: HistoryItem }) {
           ))}
         </div>
       ) : (
-        <p className="mt-3 text-sm text-ink-subtle">No file was attached to this record.</p>
+        <p className="mt-3 text-sm text-ink-muted">No file was attached to this record.</p>
       )}
 
       {error && <p className="mt-2 text-sm text-expired">{error}</p>}
