@@ -6,6 +6,7 @@ import { getEntitlement } from "@/lib/billing/entitlements";
 import { hasUsedTrial } from "@/lib/billing/trial-eligibility";
 import { PLANS, PLAN_IDS, TRIAL_DAYS } from "@/lib/billing/plans";
 import { Logo } from "@/app/components/logo";
+import { Alert } from "@/app/components/alert";
 import { SignOutButton } from "@/app/dashboard/_components/sign-out-button";
 import { PlanSelection } from "./_components/plan-selection";
 
@@ -40,17 +41,18 @@ export default async function OnboardingPage(
   }));
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
+    <main className="mx-auto w-full max-w-5xl px-5 py-6 sm:px-8 sm:py-8">
       <div className="flex items-center justify-between">
         <Logo />
         <SignOutButton variant="inline" />
       </div>
 
-      <div className="mt-10 max-w-2xl">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+      <div className="mt-14 max-w-2xl border-b border-line pb-8 sm:mt-20">
+        <p className="label-caps text-ink-subtle">Last step · Choose a plan</p>
+        <h1 className="mt-3 text-3xl sm:text-5xl">
           Welcome to Subbies, {company.name}
         </h1>
-        <p className="mt-3 text-lg text-ink-muted">
+        <p className="mt-4 text-base text-ink-muted">
           {noTrial
             ? "Pick the plan that fits your operation. This account isn't eligible for a free trial, so you'll be charged as soon as you subscribe."
             : `Pick the plan that fits your operation. Every plan starts with ${TRIAL_DAYS} days free. You'll enter a card, nothing is charged today, and you can cancel any time before day ${TRIAL_DAYS}.`}
@@ -58,10 +60,10 @@ export default async function OnboardingPage(
       </div>
 
       {cancelled && (
-        <p className="mt-6 rounded-md bg-surface-muted px-4 py-3 text-sm text-ink-muted">
+        <Alert tone="info" className="mt-6">
           Checkout cancelled. No plan was started and nothing was charged. Pick
           a plan below whenever you&apos;re ready.
-        </p>
+        </Alert>
       )}
 
       <div className="mt-10">

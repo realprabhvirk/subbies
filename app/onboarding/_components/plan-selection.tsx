@@ -35,7 +35,7 @@ export function PlanSelection({
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-base font-semibold">{heading}</h2>
+        <h2 className="text-lg">{heading}</h2>
         <p className="mt-1 max-w-prose text-sm text-ink-muted">{intro}</p>
       </div>
 

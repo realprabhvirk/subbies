@@ -7,7 +7,7 @@ import { CircleCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { getSiteUrl } from "@/lib/site-url";
 import { normalizeEmail } from "@/lib/auth/normalize-email";
-import { Logo } from "@/app/components/logo";
+import { AuthShell, AuthHeading } from "@/app/components/auth-shell";
 import { Button } from "@/app/components/button";
 import { fieldClasses } from "@/app/components/input";
 
@@ -46,15 +46,13 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <Logo className="mb-8" height={32} showTagline priority />
-        <div className="rounded-card border border-line bg-surface p-6 shadow-sm sm:p-8">
+    <AuthShell>
+        <div>
           {sent ? (
-            <div className="space-y-2">
-              <CircleCheck className="h-6 w-6 text-approved" strokeWidth={2} aria-hidden />
-              <h1 className="text-xl font-semibold">Check your email</h1>
-              <p className="text-sm text-ink-muted">
+            <div>
+              <CircleCheck className="mb-5 h-8 w-8 text-approved" strokeWidth={1.75} aria-hidden />
+              <h1 className="text-3xl">Check your email</h1>
+              <p className="mt-2 text-sm text-ink-muted">
                 If an account exists for <span className="font-medium">{email}</span>,
                 we&apos;ve sent a link to reset your password. It expires after a
                 short while.
@@ -62,12 +60,12 @@ export default function ForgotPasswordPage() {
             </div>
           ) : (
             <>
-              <h1 className="text-xl font-semibold">Reset your password</h1>
-              <p className="mt-1 text-sm text-ink-muted">
-                Enter your account email and we&apos;ll send you a reset link.
-              </p>
+              <AuthHeading
+                title="Reset your password"
+                description="Enter your account email and we'll send you a reset link."
+              />
 
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-1.5">
                   <label htmlFor="email" className="block text-sm font-semibold">
                     Email
@@ -97,12 +95,11 @@ export default function ForgotPasswordPage() {
           )}
         </div>
 
-        <p className="mt-6 text-center text-sm text-ink-muted">
-          <Link href="/login" className="font-medium text-brand hover:underline">
+        <p className="mt-8 border-t border-line pt-6 text-sm text-ink-muted">
+          <Link href="/login" className="font-semibold text-brand hover:underline">
             Back to log in
           </Link>
         </p>
-      </div>
-    </main>
+    </AuthShell>
   );
 }

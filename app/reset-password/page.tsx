@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { CircleCheck } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
-import { Logo } from "@/app/components/logo";
-import { Button } from "@/app/components/button";
+import { AuthShell, AuthHeading } from "@/app/components/auth-shell";
+import { Button, ButtonLink } from "@/app/components/button";
 import { Spinner } from "@/app/components/spinner";
 import { PasswordField } from "@/app/components/password-field";
 
@@ -189,10 +189,8 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <Logo className="mb-8" height={32} showTagline priority />
-        <div className="rounded-card border border-line bg-surface p-6 shadow-sm sm:p-8">
+    <AuthShell>
+        <div>
           {phase === "checking" && (
             <div className="flex items-center gap-2 text-sm text-ink-muted">
               <Spinner className="h-4 w-4" />
@@ -201,32 +199,27 @@ export default function ResetPasswordPage() {
           )}
 
           {phase === "invalid" && (
-            <div className="space-y-2">
-              <h1 className="text-xl font-semibold">This link isn&apos;t valid</h1>
-              <p className="text-sm text-ink-muted">
+            <div>
+              <h1 className="text-3xl">This link isn&apos;t valid</h1>
+              <p className="mt-2 text-sm text-ink-muted">
                 {invalidReason ??
                   "The reset link may have expired, already been used, or been opened in a different browser than the one you requested it from."}
               </p>
-              <p className="pt-2 text-sm">
-                <Link
-                  href="/forgot-password"
-                  className="font-medium text-brand hover:underline"
-                >
-                  Request a new link
-                </Link>
-              </p>
+              <ButtonLink href="/forgot-password" className="mt-6">
+                Request a new link
+              </ButtonLink>
             </div>
           )}
 
           {phase === "done" && (
-            <div className="space-y-2">
+            <div>
               <CircleCheck
-                className="h-6 w-6 text-approved"
-                strokeWidth={2}
+                className="mb-5 h-8 w-8 text-approved"
+                strokeWidth={1.75}
                 aria-hidden
               />
-              <h1 className="text-xl font-semibold">Password updated</h1>
-              <p className="text-sm text-ink-muted">
+              <h1 className="text-3xl">Password updated</h1>
+              <p className="mt-2 text-sm text-ink-muted">
                 Taking you to the login page so you can sign in with your new
                 password.
               </p>
@@ -235,12 +228,11 @@ export default function ResetPasswordPage() {
 
           {phase === "ready" && (
             <>
-              <h1 className="text-xl font-semibold">Set a new password</h1>
-              <p className="mt-1 text-sm text-ink-muted">
-                Choose something you haven&apos;t used before. At least 8
-                characters.
-              </p>
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <AuthHeading
+                title="Set a new password"
+                description="Choose something you haven't used before. At least 8 characters."
+              />
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-1.5">
                   <label htmlFor="password" className="block text-sm font-semibold">
                     New password
@@ -283,13 +275,12 @@ export default function ResetPasswordPage() {
         </div>
 
         {(phase === "checking" || phase === "ready") && (
-          <p className="mt-6 text-center text-sm text-ink-muted">
-            <Link href="/login" className="font-medium text-brand hover:underline">
+          <p className="mt-8 border-t border-line pt-6 text-sm text-ink-muted">
+            <Link href="/login" className="font-semibold text-brand hover:underline">
               Back to log in
             </Link>
           </p>
         )}
-      </div>
-    </main>
+    </AuthShell>
   );
 }

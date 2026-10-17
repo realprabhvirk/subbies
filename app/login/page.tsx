@@ -7,7 +7,8 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { normalizeEmail } from "@/lib/auth/normalize-email";
 import { safeRedirectPath } from "@/lib/auth/redirect-path";
-import { Logo } from "@/app/components/logo";
+import { AuthShell, AuthHeading } from "@/app/components/auth-shell";
+import { Alert } from "@/app/components/alert";
 import { Button } from "@/app/components/button";
 import { Field, fieldClasses } from "@/app/components/input";
 import { PasswordField } from "@/app/components/password-field";
@@ -70,28 +71,26 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <Logo className="mb-8" height={32} showTagline priority />
-        <div className="rounded-card border border-line bg-surface p-6 shadow-sm sm:p-8">
-          <h1 className="text-xl font-semibold">Log in</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Access your contractor and compliance records.
-          </p>
+    <AuthShell>
+        <div>
+          <AuthHeading
+            title="Log in"
+            description="Access your contractor and compliance records."
+          />
 
           {resetDone && (
-            <p className="mt-4 rounded-md bg-approved-bg px-3 py-2 text-sm text-approved">
+            <Alert tone="success" className="mb-6">
               Your password has been updated. Log in with your new password.
-            </p>
+            </Alert>
           )}
 
           {accountDeleted && (
-            <p className="mt-4 rounded-md bg-surface-muted px-3 py-2 text-sm text-ink-muted">
+            <Alert tone="info" className="mb-6">
               Your account and all its data have been permanently deleted.
-            </p>
+            </Alert>
           )}
 
-          <form onSubmit={handleLogin} className="mt-6 space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5">
             <Field label="Email" htmlFor="email">
               <input
                 id="email"
@@ -111,7 +110,7 @@ export default function LoginPage() {
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-xs font-medium text-brand hover:underline"
+                  className="text-xs font-semibold text-brand hover:underline"
                 >
                   Forgot password?
                 </Link>
@@ -137,13 +136,12 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-ink-muted">
+        <p className="mt-8 border-t border-line pt-6 text-sm text-ink-muted">
           Need an account?{" "}
-          <Link href="/signup" className="font-medium text-brand hover:underline">
+          <Link href="/signup" className="font-semibold text-brand hover:underline">
             Create one
           </Link>
         </p>
-      </div>
-    </main>
+    </AuthShell>
   );
 }

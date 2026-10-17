@@ -2,13 +2,14 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { MailCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/client";
 import { normalizeEmail } from "@/lib/auth/normalize-email";
 import { classifySignupResult } from "@/lib/auth/signup-logic";
 import { TERMS_VERSION } from "@/lib/legal/terms";
-import { Logo } from "@/app/components/logo";
+import { AuthShell, AuthHeading } from "@/app/components/auth-shell";
 import { Button } from "@/app/components/button";
 import { fieldClasses } from "@/app/components/input";
 import { PasswordField } from "@/app/components/password-field";
@@ -117,11 +118,10 @@ export default function SignupPage() {
 
   if (confirmationSentTo) {
     return (
-      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm">
-          <Logo className="mb-8" height={32} showTagline priority />
-          <div className="rounded-card border border-line bg-surface p-6 shadow-sm sm:p-8">
-            <h1 className="text-xl font-semibold">Check your email</h1>
+      <AuthShell>
+          <div>
+            <MailCheck className="mb-5 h-8 w-8 text-brand" strokeWidth={1.75} aria-hidden />
+            <h1 className="text-3xl">Check your email</h1>
             <p className="mt-2 text-sm text-ink-muted">
               We sent a confirmation link to{" "}
               <span className="font-medium text-ink">{confirmationSentTo}</span>.
@@ -129,27 +129,24 @@ export default function SignupPage() {
               <span className="font-medium text-ink">{companyName.trim()}</span>.
             </p>
           </div>
-          <p className="mt-6 text-center text-sm text-ink-muted">
-            <Link href="/login" className="font-medium text-brand hover:underline">
+          <p className="mt-8 border-t border-line pt-6 text-sm text-ink-muted">
+            <Link href="/login" className="font-semibold text-brand hover:underline">
               Go to log in
             </Link>
           </p>
-        </div>
-      </main>
+      </AuthShell>
     );
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4 py-12">
-      <div className="w-full max-w-sm">
-        <Logo className="mb-8" height={32} showTagline priority />
-        <div className="rounded-card border border-line bg-surface p-6 shadow-sm sm:p-8">
-          <h1 className="text-xl font-semibold">Create your account</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Start collecting contractor documents in a few minutes.
-          </p>
+    <AuthShell>
+        <div>
+          <AuthHeading
+            title="Create your account"
+            description="Start collecting contractor documents in a few minutes. 7 days free on every plan."
+          />
 
-          <form onSubmit={handleSignup} className="mt-6 space-y-4">
+          <form onSubmit={handleSignup} className="space-y-5">
             <div className="space-y-1.5">
               <label htmlFor="company" className="block text-sm font-semibold">
                 Company name
@@ -192,7 +189,7 @@ export default function SignupPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
-              <p className="text-xs text-ink-subtle">At least 8 characters.</p>
+              <p className="text-xs text-ink-muted">At least 8 characters.</p>
             </div>
 
             {error && (
@@ -203,7 +200,7 @@ export default function SignupPage() {
 
             <label
               htmlFor="terms"
-              className="flex items-start gap-2.5 text-sm text-ink"
+              className="flex items-start gap-3 rounded-md border border-line bg-surface p-3.5 text-sm text-ink"
             >
               <input
                 id="terms"
@@ -211,7 +208,7 @@ export default function SignupPage() {
                 required
                 checked={agreed}
                 onChange={(e) => setAgreed(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 rounded border-line-strong text-brand focus:ring-brand"
+                className="mt-0.5 h-[18px] w-[18px] shrink-0 accent-brand"
               />
               <span>
                 I&rsquo;m 18 or over, I&rsquo;m signing up on behalf of a
@@ -246,13 +243,12 @@ export default function SignupPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-sm text-ink-muted">
+        <p className="mt-8 border-t border-line pt-6 text-sm text-ink-muted">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-brand hover:underline">
+          <Link href="/login" className="font-semibold text-brand hover:underline">
             Log in
           </Link>
         </p>
-      </div>
-    </main>
+    </AuthShell>
   );
 }
