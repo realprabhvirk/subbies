@@ -25,9 +25,10 @@ const COMPARISON: {
   { label: "Document types", value: (p) => limitText(p.limits.documentTypes) },
   { label: "Projects", value: (p) => limitText(p.limits.projects) },
   {
+    // Storage isn't metered per plan (the real limit is the shared Supabase
+    // project), so this says what's true rather than a number we don't enforce.
     label: "Document storage",
-    value: (p) =>
-      p.storageMarketing === null ? "Unlimited" : `${p.storageMarketing}`,
+    value: (p) => (p.id === "pro" ? "Unlimited" : "Fair use"),
   },
 ];
 
@@ -161,8 +162,9 @@ export default function PricingPage() {
         </div>
         <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-subtle">
           <Minus className="h-3 w-3" strokeWidth={2} aria-hidden />
-          Document storage figures are a guide. We&apos;ll be in touch well before
-          any account approaches a real limit.
+          Document storage is fair-use — generous for normal compliance
+          paperwork. We&apos;ll be in touch if an account ever approaches a real
+          limit.
         </p>
       </Section>
 
