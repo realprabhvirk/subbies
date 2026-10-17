@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Mona_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
+import { getSiteUrl } from "@/lib/site-url";
+
 /*
   One variable Mona Sans file carries every weight AND width the product
   uses: body/UI text at its normal width, headings and big numbers
@@ -27,13 +29,32 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
+  // One canonical host (NEXT_PUBLIC_APP_URL) drives absolute URLs for OG tags,
+  // the sitemap and canonicals. Left undefined locally/in preview, where the
+  // current origin is the right answer.
+  ...(siteUrl ? { metadataBase: new URL(siteUrl) } : {}),
   title: {
     default: "Subbies",
     template: "%s · Subbies",
   },
   description:
     "Collect, review, and track contractor compliance documents without chasing paperwork.",
+  openGraph: {
+    type: "website",
+    siteName: "Subbies",
+    title: "Subbies: contractor compliance, without the chasing",
+    description:
+      "Collect, review, and track contractor compliance documents without chasing paperwork.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Subbies: contractor compliance, without the chasing",
+    description:
+      "Collect, review, and track contractor compliance documents without chasing paperwork.",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
