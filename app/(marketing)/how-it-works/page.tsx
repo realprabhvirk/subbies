@@ -167,7 +167,7 @@ export default function HowItWorksPage() {
                   href={`#step-${i + 1}`}
                   className="group flex min-h-12 items-center gap-4 py-2 text-sm font-semibold transition-colors hover:text-brand"
                 >
-                  <span className="font-mono text-xs font-normal text-ink-subtle">0{i + 1}</span>
+                  <span className="font-mono text-xs font-normal text-ink-muted">0{i + 1}</span>
                   {step.title}
                 </a>
               </li>

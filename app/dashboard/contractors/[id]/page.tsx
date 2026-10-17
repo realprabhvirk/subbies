@@ -348,7 +348,7 @@ export default async function ContractorDetailPage(
                 <div key={i} className="inline-flex min-w-0 items-center gap-1.5">
                   <dt className="contents">
                     <Icon className="h-4 w-4 shrink-0 text-ink-subtle" strokeWidth={2} aria-hidden />
-                    {m.label && <span className="label-caps text-ink-subtle">{m.label}</span>}
+                    {m.label && <span className="label-caps text-ink-muted">{m.label}</span>}
                   </dt>
                   <dd className={`truncate ${m.mono ? "font-mono text-xs text-ink" : "text-ink"}`}>
                     {m.text}

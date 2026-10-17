@@ -232,7 +232,7 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 border-b border-line pb-6">
         <div className="min-w-0">
-          <p className="label-caps text-ink-subtle">{todayLabel}</p>
+          <p className="label-caps text-ink-muted">{todayLabel}</p>
           <h1 className="mt-2 text-2xl sm:text-3xl">{company.name}</h1>
           <p className="mt-2 text-sm text-ink-muted">
             {total === 0 ? (
@@ -342,7 +342,7 @@ export default async function DashboardPage() {
                   <h2 id="needs-you" className="text-xl">
                     Needs you
                     {queue.length > 0 && (
-                      <span className="ml-2 align-middle font-mono text-sm font-medium text-ink-subtle">
+                      <span className="ml-2 align-middle font-mono text-sm font-medium text-ink-muted">
                         {queue.length}
                       </span>
                     )}

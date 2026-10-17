@@ -57,7 +57,7 @@ export default async function OnboardPage(props: PageProps<"/onboard/[token]">) 
 
       <section aria-label="Progress" className="mt-6">
         <div className="flex items-baseline justify-between gap-3 text-sm">
-          <p className="font-semibold tabular-nums text-ink">
+          <p className="font-semibold text-ink">
             {submitted} of {items.length} submitted
           </p>
           {!allDone && (

@@ -48,7 +48,7 @@ export default async function OnboardingPage(
       </div>
 
       <div className="mt-14 max-w-2xl border-b border-line pb-8 sm:mt-20">
-        <p className="label-caps text-ink-subtle">Last step · Choose a plan</p>
+        <p className="label-caps text-ink-muted">Last step · Choose a plan</p>
         <h1 className="mt-3 text-3xl sm:text-5xl">
           Welcome to Subbies, {company.name}
         </h1>

@@ -123,7 +123,7 @@ export function NotesPanel({
 
       <section>
         <h2 className="text-lg">
-          History{notes.length > 0 && <span className="ml-2 align-middle font-mono text-sm font-medium text-ink-subtle">{notes.length}</span>}
+          History{notes.length > 0 && <span className="ml-2 align-middle font-mono text-sm font-medium text-ink-muted">{notes.length}</span>}
         </h2>
 
         {notes.length === 0 ? (

@@ -308,10 +308,11 @@
   }
 
   /* Big numbers: semi-expanded, tabular, tight. */
+  /* Not tabular: Mona Sans' tabular zero is slashed, which reads as "Ø"
+     in a lone figure. Columns of numbers use the mono face instead. */
   .figure {
     font-family: var(--font-display);
     font-stretch: var(--font-stretch-wide);
-    font-variant-numeric: tabular-nums;
     font-weight: 650;
     letter-spacing: -0.03em;
     line-height: 1;
@@ -404,5 +405,15 @@
     .reveal {
       animation: none;
     }
+  }
+}
+
+/* Reduced motion: keep press feedback as colour only, no movement. */
+@media (prefers-reduced-motion: reduce) {
+  .pressable:active:not(:disabled) {
+    transform: none;
+  }
+  * {
+    scroll-behavior: auto !important;
   }
 }
