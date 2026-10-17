@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getResend, FROM_ADDRESS } from "./resend";
-import { emailShell, emailButton, calloutBox, paragraph, escapeHtml } from "./template";
+import { emailShell, emailButton, emailHeading, docList, calloutBox, paragraph, escapeHtml } from "./template";
 import { REFRESH_NOTE, requestSubject, requestText } from "./request-copy";
 
 export interface OnboardingEmailInput {
@@ -30,10 +30,8 @@ function buildHtml(input: OnboardingEmailInput): string {
   const greeting = input.contactName
     ? `Hi ${escapeHtml(input.contactName)},`
     : "Hi,";
-  const list = (names: string[]) =>
-    `<ul style="margin:0 0 24px;padding-left:20px;font-size:15px;line-height:1.6;">${names
-      .map((name) => `<li style="margin:4px 0;">${escapeHtml(name)}</li>`)
-      .join("")}</ul>`;
+  const list = (names: string[], tag?: string) =>
+    docList(names.map((name) => ({ name, tag })));
 
   const needed = input.documentNames;
   const refresh = input.refreshDocumentNames ?? [];
@@ -55,11 +53,15 @@ function buildHtml(input: OnboardingEmailInput): string {
           ? `They've also asked for an updated copy of the following. ${REFRESH_NOTE}`
           : `${company} uses Subbies to collect and review contractor compliance documents. They've asked for an updated copy of the following. ${REFRESH_NOTE}`,
       ),
-      list(refresh),
+      list(refresh, "updated copy"),
     );
   }
 
   const body = [
+    emailHeading(
+      needed.length === 0 ? "Updated copy requested" : "Documents requested",
+      input.companyName,
+    ),
     paragraph(greeting),
     ...sections,
     emailButton(input.onboardUrl, "Upload your documents"),
@@ -133,6 +135,7 @@ export async function sendContractorApprovedEmail(
   const html = emailShell({
     preheader: `${input.companyName} has approved all your documents. You're cleared to work.`,
     bodyHtml: [
+      emailHeading("You're cleared to work", input.companyName),
       paragraph(htmlGreeting),
       calloutBox(
         "approved",
@@ -198,6 +201,7 @@ export async function sendDocumentRejectedEmail(
   const html = emailShell({
     preheader: `${input.documentName} needs to be re-uploaded. Here's why.`,
     bodyHtml: [
+      emailHeading("A document needs re-uploading", input.companyName),
       paragraph(htmlGreeting),
       paragraph(
         `${escapeHtml(input.companyName)} has reviewed the <strong>${escapeHtml(input.documentName)}</strong> you submitted and it needs to be re-uploaded.`,

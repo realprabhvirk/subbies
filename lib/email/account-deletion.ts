@@ -2,7 +2,7 @@ import "server-only";
 
 import { getResend, FROM_ADDRESS } from "./resend";
 import type { SendResult } from "./onboarding";
-import { emailShell, calloutBox, paragraph } from "./template";
+import { emailShell, emailHeading, calloutBox, paragraph } from "./template";
 
 export interface AccountDeletionCodeEmailInput {
   to: string;
@@ -32,6 +32,7 @@ export async function sendAccountDeletionCodeEmail(
   const html = emailShell({
     preheader: `Your account deletion code: ${input.code}`,
     bodyHtml: [
+      emailHeading("Confirm account deletion", "Security"),
       paragraph(
         "Enter this code to permanently delete your Subbies account and all its data. This cannot be undone.",
       ),

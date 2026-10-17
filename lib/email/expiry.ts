@@ -2,7 +2,7 @@ import "server-only";
 
 import { getResend, FROM_ADDRESS } from "./resend";
 import type { SendResult } from "./onboarding";
-import { emailShell, emailButton, calloutBox, paragraph, escapeHtml } from "./template";
+import { emailShell, emailButton, paragraph, escapeHtml, emailHeading, docList } from "./template";
 
 /**
  * The two expiry emails: the contractor nudge before a document lapses, and
@@ -102,29 +102,29 @@ export async function sendExpiryReminderEmail(
     `If you have questions, reply to this email and it will reach ${input.companyName}.`,
   ].join("\n");
 
-  const items = input.documents
-    .map(
-      (d) =>
-        `<li style="margin:4px 0;"><strong>${escapeHtml(d.documentName)}</strong> — expires ${escapeHtml(
-          formatDate(d.expiryDate),
-        )} (${escapeHtml(whenPhrase(d.daysLeft))})</li>`,
-    )
-    .join("");
 
   const html = emailShell({
     preheader: multiple
       ? `${input.documents.length} of your documents for ${input.companyName} are expiring soon.`
       : `Your ${input.documents[0].documentName} expires ${whenPhrase(soonest)}.`,
     bodyHtml: [
+      emailHeading(
+        multiple ? "Documents expiring soon" : "A document is expiring soon",
+        input.companyName,
+      ),
       paragraph(greeting),
       paragraph(
         `<strong>${escapeHtml(input.companyName)}</strong> needs ${
           multiple ? "these documents" : "this document"
         } kept current:`,
       ),
-      calloutBox(
-        soonest <= 7 ? "expired" : "attention",
-        `<ul style="margin:0;padding-left:18px;">${items}</ul>`,
+      docList(
+        input.documents.map((d) => ({
+          name: d.documentName,
+          detail: `Expires ${formatDate(d.expiryDate)}`,
+          tag: whenPhrase(d.daysLeft),
+          urgent: d.daysLeft <= 7,
+        })),
       ),
       emailButton(input.onboardUrl, multiple ? "Upload replacements" : "Upload a replacement"),
       paragraph(
@@ -182,26 +182,29 @@ export async function sendExpiryEscalationEmail(
     input.dashboardUrl,
   ].join("\n");
 
-  const items = input.documents
-    .map(
-      (d) =>
-        `<li style="margin:4px 0;"><strong>${escapeHtml(d.contractorName)}</strong> — ${escapeHtml(
-          d.documentName,
-        )}, expired ${escapeHtml(formatDate(d.expiryDate))}</li>`,
-    )
-    .join("");
 
   const html = emailShell({
     preheader: multiple
       ? `${input.documents.length} contractor documents have expired.`
       : `${input.documents[0].contractorName}'s ${input.documents[0].documentName} has expired.`,
     bodyHtml: [
+      emailHeading(
+        multiple ? "Documents have expired" : "A document has expired",
+        "Not cleared for site",
+      ),
       paragraph(
         multiple
           ? "These contractor documents have expired and haven&rsquo;t been replaced:"
           : "This contractor document has expired and hasn&rsquo;t been replaced:",
       ),
-      calloutBox("expired", `<ul style="margin:0;padding-left:18px;">${items}</ul>`),
+      docList(
+        input.documents.map((d) => ({
+          name: d.contractorName,
+          detail: `${d.documentName} · expired ${formatDate(d.expiryDate)}`,
+          tag: `${d.daysOverdue}d overdue`,
+          urgent: true,
+        })),
+      ),
       emailButton(input.dashboardUrl, "Review in Subbies"),
       paragraph(
         "The contractor was reminded before this lapsed. You may want to follow up directly, or hold them off site until it&rsquo;s current.",

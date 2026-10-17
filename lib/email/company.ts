@@ -2,7 +2,7 @@ import "server-only";
 
 import { getResend, FROM_ADDRESS } from "./resend";
 import type { SendResult } from "./onboarding";
-import { emailShell, emailButton, paragraph, escapeHtml } from "./template";
+import { emailShell, emailButton, paragraph, escapeHtml, emailHeading, docList } from "./template";
 
 export interface DocumentSubmittedEmailInput {
   to: string;
@@ -29,17 +29,15 @@ export async function sendDocumentSubmittedEmail(
     input.reviewUrl,
   ].join("\n");
 
-  const items = input.documentNames
-    .map((n) => `<li style="margin:4px 0;">${escapeHtml(n)}</li>`)
-    .join("");
 
   const html = emailShell({
     preheader: `${input.contractorName} submitted ${input.documentNames.length === 1 ? "a document" : "documents"} for review.`,
     bodyHtml: [
+      emailHeading("New documents to review", "Awaiting your review"),
       paragraph(
         `<strong>${escapeHtml(input.contractorName)}</strong> has submitted documents for review:`,
       ),
-      `<ul style="margin:0 0 24px;padding-left:20px;font-size:15px;line-height:1.6;">${items}</ul>`,
+      docList(input.documentNames.map((name) => ({ name }))),
       emailButton(input.reviewUrl, "Review documents"),
     ].join("\n"),
   });

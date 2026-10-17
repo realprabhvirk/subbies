@@ -9,10 +9,10 @@ import "server-only";
  * browser one. So this sticks to the subset that's actually reliable:
  * table-based layout, inline styles only, real hex colors (no oklch — no
  * email client parses CSS Color 4), and a system-font stack instead of the
- * app's Space Grotesk/Hanken Grotesk webfonts, which most clients strip.
+ * app's webfonts (Mona Sans / JetBrains Mono), which most clients strip.
  *
  * Colors below are hex renders of the tokens in app/globals.css (oklch ->
- * sRGB), not eyeballed — see the "Subbies Design System (v2)" tokens there.
+ * sRGB), not eyeballed — see the "Subbies Design System (v3)" tokens there.
  * Keep the two in sync if the palette changes.
  */
 
@@ -32,9 +32,12 @@ export const EMAIL_COLORS = {
   expiredBg: "#ffe0dc", // --color-expired-bg
 } as const;
 
-/** Approximates the app's Hanken Grotesk / system-ui stack for clients that strip web fonts. */
+/** A system stack: most clients strip web fonts, so the app's Mona Sans is not attempted. */
 const FONT_STACK =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+
+/** Dates and counts, matching the app's mono reference data where available. */
+const MONO_STACK = "ui-monospace,'SF Mono',Menlo,Consolas,'Courier New',monospace";
 
 export function escapeHtml(value: string): string {
   return value
@@ -53,8 +56,8 @@ export function escapeHtml(value: string): string {
  */
 function logoMark(): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-    <td style="width:28px;height:28px;background-color:${EMAIL_COLORS.brand};border-radius:6px;text-align:center;vertical-align:middle;font-family:${FONT_STACK};font-size:15px;font-weight:700;color:#ffffff;line-height:28px;">S</td>
-    <td style="padding-left:9px;font-family:${FONT_STACK};font-size:16px;font-weight:700;color:${EMAIL_COLORS.ink};vertical-align:middle;">Subbies</td>
+    <td style="width:26px;height:26px;background-color:${EMAIL_COLORS.brand};border-radius:5px;text-align:center;vertical-align:middle;font-family:${FONT_STACK};font-size:14px;font-weight:800;color:#ffffff;line-height:26px;">S</td>
+    <td style="padding-left:9px;font-family:${FONT_STACK};font-size:17px;font-weight:800;letter-spacing:-0.02em;color:${EMAIL_COLORS.ink};vertical-align:middle;">Subbies</td>
   </tr></table>`;
 }
 
@@ -71,11 +74,48 @@ function preheaderHtml(text: string): string {
 
 /** A primary call-to-action button. Table-cell background + padded link, not a <button> — the reliable email-safe pattern. */
 export function emailButton(href: string, label: string): string {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 4px;"><tr>
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 20px;"><tr>
     <td style="border-radius:6px;background-color:${EMAIL_COLORS.brand};">
-      <a href="${href}" style="display:inline-block;padding:11px 24px;font-family:${FONT_STACK};font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;">${escapeHtml(label)}</a>
+      <a href="${href}" style="display:inline-block;padding:14px 26px;font-family:${FONT_STACK};font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:6px;">${escapeHtml(label)} &rarr;</a>
     </td>
   </tr></table>`;
+}
+
+/**
+ * The title block at the top of an email body: a small caps label and a
+ * heading — the same label + heading rhythm as the app's page headers.
+ */
+export function emailHeading(title: string, eyebrow?: string): string {
+  const label = eyebrow
+    ? `<p style="margin:0 0 8px;font-family:${FONT_STACK};font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${EMAIL_COLORS.inkMuted};">${escapeHtml(eyebrow)}</p>`
+    : "";
+  return `${label}<h1 style="margin:0 0 20px;font-family:${FONT_STACK};font-size:24px;line-height:1.2;font-weight:800;letter-spacing:-0.02em;color:${EMAIL_COLORS.ink};">${escapeHtml(title)}</h1>`;
+}
+
+/**
+ * A ruled list of documents — each on its own row with a hairline under it,
+ * like the register in the app. `detail` is an optional muted second line;
+ * `tag` an optional right-aligned note (e.g. "in 6 days"), set in the
+ * attention colour when `urgent`.
+ */
+export function docList(
+  items: { name: string; detail?: string; tag?: string; urgent?: boolean }[],
+): string {
+  const rows = items
+    .map(
+      (item) => `<tr>
+      <td style="padding:11px 0;border-bottom:1px solid ${EMAIL_COLORS.border};font-family:${FONT_STACK};font-size:15px;line-height:1.4;font-weight:600;color:${EMAIL_COLORS.ink};">
+        <span style="display:inline-block;width:8px;height:8px;margin-right:10px;border:1.5px solid ${EMAIL_COLORS.brand};border-radius:2px;vertical-align:1px;"></span>${escapeHtml(item.name)}${
+          item.detail
+            ? `<br /><span style="display:inline-block;padding-left:21px;font-size:13px;font-weight:400;color:${EMAIL_COLORS.inkMuted};">${escapeHtml(item.detail)}</span>`
+            : ""
+        }
+      </td>
+      <td align="right" style="padding:11px 0 11px 12px;border-bottom:1px solid ${EMAIL_COLORS.border};font-family:${MONO_STACK};font-size:12px;white-space:nowrap;color:${item.urgent ? EMAIL_COLORS.attention : EMAIL_COLORS.inkMuted};">${item.tag ? escapeHtml(item.tag) : ""}</td>
+    </tr>`,
+    )
+    .join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;border-top:1px solid ${EMAIL_COLORS.border};">${rows}</table>`;
 }
 
 export type CalloutTone = "attention" | "expired" | "approved";
@@ -90,7 +130,7 @@ const CALLOUT_COLORS: Record<CalloutTone, { bg: string; text: string }> = {
 export function calloutBox(tone: CalloutTone, html: string): string {
   const { bg, text } = CALLOUT_COLORS[tone];
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin:0 0 20px;"><tr>
-    <td style="padding:12px 14px;background-color:${bg};border-radius:6px;font-family:${FONT_STACK};font-size:14px;line-height:1.6;color:${text};">${html}</td>
+    <td style="padding:14px 16px;background-color:${bg};border-left:3px solid ${text};border-radius:0 6px 6px 0;font-family:${FONT_STACK};font-size:14px;line-height:1.6;color:${text};">${html}</td>
   </tr></table>`;
 }
 
@@ -122,20 +162,24 @@ export function emailShell(input: {
     ${preheaderHtml(input.preheader)}
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${EMAIL_COLORS.canvas};">
       <tr>
-        <td align="center" style="padding:32px 12px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;background-color:${EMAIL_COLORS.card};border:1px solid ${EMAIL_COLORS.border};border-radius:12px;">
+        <td align="center" style="padding:28px 12px 36px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
             <tr>
-              <td style="padding:22px 28px;border-bottom:1px solid ${EMAIL_COLORS.border};">
+              <td style="padding:0 4px 16px;">
                 ${logoMark()}
               </td>
             </tr>
+          </table>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background-color:${EMAIL_COLORS.card};border:1px solid ${EMAIL_COLORS.border};border-top:4px solid ${EMAIL_COLORS.brand};border-radius:8px;">
             <tr>
-              <td style="padding:28px;font-family:${FONT_STACK};font-size:15px;line-height:1.6;color:${EMAIL_COLORS.ink};">
+              <td style="padding:32px 28px 12px;font-family:${FONT_STACK};font-size:15px;line-height:1.6;color:${EMAIL_COLORS.ink};">
                 ${input.bodyHtml}
               </td>
             </tr>
+          </table>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;">
             <tr>
-              <td style="padding:16px 28px;border-top:1px solid ${EMAIL_COLORS.border};font-family:${FONT_STACK};font-size:12px;line-height:1.5;color:${EMAIL_COLORS.inkMuted};">
+              <td style="padding:16px 4px 0;font-family:${FONT_STACK};font-size:12px;line-height:1.5;color:${EMAIL_COLORS.inkMuted};">
                 ${footer}
               </td>
             </tr>
@@ -150,6 +194,6 @@ export function emailShell(input: {
 export function paragraph(html: string, opts?: { muted?: boolean; last?: boolean }): string {
   const color = opts?.muted ? EMAIL_COLORS.inkMuted : EMAIL_COLORS.ink;
   const size = opts?.muted ? "13px" : "15px";
-  const margin = opts?.last ? "0" : "0 0 16px";
+  const margin = opts?.last ? "0 0 20px" : "0 0 16px";
   return `<p style="margin:${margin};font-size:${size};line-height:1.6;color:${color};">${html}</p>`;
 }

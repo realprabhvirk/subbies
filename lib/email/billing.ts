@@ -2,7 +2,7 @@ import "server-only";
 
 import { getResend, FROM_ADDRESS } from "./resend";
 import type { SendResult } from "./onboarding";
-import { emailShell, emailButton, calloutBox, paragraph } from "./template";
+import { emailShell, emailButton, emailHeading, calloutBox, paragraph } from "./template";
 
 async function send(
   to: string,
@@ -49,6 +49,7 @@ export function sendTrialStartedEmail(input: {
   const html = emailShell({
     preheader: `Your ${input.trialDays}-day free trial has started. Nothing charged yet.`,
     bodyHtml: [
+      emailHeading("Your free trial has started", "Billing"),
       paragraph(
         `Your <strong>${input.planName}</strong> plan is set up and your <strong>${input.trialDays}-day free trial</strong> has started. Nothing has been charged.`,
       ),
@@ -75,6 +76,7 @@ export function sendSubscriptionStartedEmail(input: {
   const html = emailShell({
     preheader: `Your ${input.planName} plan is active. Thanks for subscribing.`,
     bodyHtml: [
+      emailHeading("Your plan is active", "Billing"),
       calloutBox(
         "approved",
         `Your <strong>${input.planName}</strong> plan is now active and your card has been charged <strong>A$${input.amount}</strong>.`,
@@ -96,6 +98,7 @@ export function sendPaymentFailedEmail(input: {
   const html = emailShell({
     preheader: "Update your card to keep your Subbies plan active.",
     bodyHtml: [
+      emailHeading("Your payment didn't go through", "Billing"),
       calloutBox("expired", "We couldn&rsquo;t process your latest Subbies payment."),
       paragraph(
         "Please update your card to keep your plan &mdash; we&rsquo;ll retry automatically over the next few days.",
@@ -124,6 +127,7 @@ export function sendTrialEndingEmail(input: {
   const html = emailShell({
     preheader: `Your free trial ends in ${days}. Here's what happens next.`,
     bodyHtml: [
+      emailHeading("Your trial ends soon", "Billing"),
       paragraph(
         `Your <strong>${input.planName}</strong> free trial ends in <strong>${days}</strong>.`,
       ),
@@ -148,6 +152,7 @@ export function sendTrialEndsTodayEmail(input: {
   const html = emailShell({
     preheader: "Your free trial ends today.",
     bodyHtml: [
+      emailHeading("Your trial ends today", "Billing"),
       paragraph(`Your <strong>${input.planName}</strong> free trial ends today.`),
       calloutBox(
         "attention",

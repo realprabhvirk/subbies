@@ -2,7 +2,7 @@ import "server-only";
 
 import { getResend, FROM_ADDRESS } from "./resend";
 import type { SendResult } from "./onboarding";
-import { emailShell, paragraph, escapeHtml } from "./template";
+import { emailShell, emailHeading, paragraph, escapeHtml } from "./template";
 
 export interface ContactEmailInput {
   name: string;
@@ -24,6 +24,7 @@ export async function sendContactEmail(
   const html = emailShell({
     preheader: `New contact form message from ${input.name}.`,
     bodyHtml: [
+      emailHeading("New contact form message", "Website"),
       paragraph(
         `<strong>From:</strong> ${escapeHtml(input.name)} &lt;${escapeHtml(input.email)}&gt;`,
       ),
