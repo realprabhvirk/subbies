@@ -93,10 +93,10 @@ export function DocumentTypesManager({
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-card border border-line bg-surface">
+        <div className="@container overflow-hidden rounded-card border border-line bg-surface">
           <div
             aria-hidden
-            className="hidden grid-cols-[minmax(0,1fr)_9rem_minmax(0,14rem)_5.5rem] items-center gap-6 border-b border-line-strong bg-surface-muted px-5 py-2.5 text-ink-muted md:grid"
+            className="hidden grid-cols-[minmax(0,1fr)_9rem_minmax(0,14rem)_5.5rem] items-center gap-6 border-b border-line-strong bg-surface-muted px-5 py-2.5 text-ink-muted @3xl:grid"
           >
             <span className="label-caps">Document</span>
             <span className="label-caps">Valid for</span>
@@ -106,11 +106,11 @@ export function DocumentTypesManager({
           <ul className="divide-y divide-line">
             {types.map((type) => (
               <li key={type.id} className="px-4 py-3.5 sm:px-5">
-                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 md:grid-cols-[minmax(0,1fr)_9rem_minmax(0,14rem)_5.5rem] md:gap-x-6">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 @3xl:grid-cols-[minmax(0,1fr)_9rem_minmax(0,14rem)_5.5rem] @3xl:gap-x-6">
                   <h2 className="truncate font-sans text-sm font-semibold stretch-normal">
                     {type.name}
                   </h2>
-                  <div className="col-start-2 row-start-1 flex justify-end gap-0.5 md:col-start-4">
+                  <div className="col-start-2 row-start-1 flex justify-end gap-0.5 @3xl:col-start-4">
                     <IconButton
                       onClick={() => setDialog({ mode: "edit", type })}
                       aria-label={`Edit ${type.name}`}
@@ -128,7 +128,7 @@ export function DocumentTypesManager({
                       <Trash2 className="h-4 w-4" strokeWidth={2} />
                     </IconButton>
                   </div>
-                  <dl className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs md:col-span-2 md:col-start-2 md:row-start-1 md:grid md:grid-cols-[9rem_minmax(0,14rem)] md:gap-x-6">
+                  <dl className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs @3xl:col-span-2 @3xl:col-start-2 @3xl:row-start-1 @3xl:grid @3xl:grid-cols-[9rem_minmax(0,14rem)] @3xl:gap-x-6">
                     <div>
                       <dt className="sr-only">Default validity</dt>
                       <dd className="text-ink">

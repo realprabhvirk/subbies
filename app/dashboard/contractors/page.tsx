@@ -170,17 +170,17 @@ export default async function ContractorsPage(
           }
         />
       ) : (
-        <div className="overflow-hidden rounded-card border border-line bg-surface">
+        <div className="@container overflow-hidden rounded-card border border-line bg-surface">
           {/* Column heads — visual only; every value in a row is
               self-describing for screen readers. */}
           <div
             aria-hidden
-            className="hidden grid-cols-[minmax(0,1fr)_8.5rem_11.5rem_7.5rem_11rem] items-center gap-6 border-b border-line-strong bg-surface-muted px-5 py-2.5 text-ink-muted lg:grid"
+            className="hidden items-center gap-5 @4xl:grid-cols-[minmax(0,1fr)_8rem_11rem_10.5rem] @5xl:grid-cols-[minmax(0,1fr)_8.5rem_11.5rem_7.5rem_11rem] @5xl:gap-6 border-b border-line-strong bg-surface-muted px-5 py-2.5 text-ink-muted @4xl:grid"
           >
             <span className="label-caps">Contractor</span>
             <span className="label-caps">Documents</span>
             <span className="label-caps">Status</span>
-            <span className="label-caps">Added</span>
+            <span className="label-caps hidden @5xl:block">Added</span>
             <span />
           </div>
           <ul className="divide-y divide-line">
@@ -193,7 +193,7 @@ export default async function ContractorsPage(
               return (
                 <li
                   key={c.id}
-                  className="group relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-4 py-4 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted/70 sm:px-5 lg:grid-cols-[minmax(0,1fr)_8.5rem_11.5rem_7.5rem_11rem] lg:gap-x-6"
+                  className="group relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-4 py-4 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted/70 sm:px-5 @4xl:grid-cols-[minmax(0,1fr)_8rem_11rem_10.5rem] @5xl:grid-cols-[minmax(0,1fr)_8.5rem_11.5rem_7.5rem_11rem] @4xl:gap-x-5 @5xl:gap-x-6"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <Avatar name={c.business_name} />
@@ -217,12 +217,12 @@ export default async function ContractorsPage(
                   {/* Mobile: chevron cue top-right. */}
                   <ChevronRight
                     aria-hidden
-                    className="h-5 w-5 text-ink-subtle transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5 group-hover:text-brand lg:hidden"
+                    className="h-5 w-5 text-ink-subtle transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5 group-hover:text-brand @4xl:hidden"
                     strokeWidth={2}
                   />
 
-                  <div className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-2 pl-12 lg:contents">
-                    <div className="flex items-center gap-2.5 lg:block">
+                  <div className="col-span-2 flex flex-wrap items-center gap-x-4 gap-y-2 pl-12 @4xl:contents">
+                    <div className="flex items-center gap-2.5 @4xl:block">
                       {p && p.total > 0 ? (
                         <>
                           <p className="font-mono text-xs text-ink">
@@ -231,7 +231,7 @@ export default async function ContractorsPage(
                           </p>
                           <div
                             aria-hidden
-                            className="h-1 w-16 overflow-hidden rounded-full bg-line lg:mt-1.5 lg:w-24"
+                            className="h-1 w-16 overflow-hidden rounded-full bg-line @4xl:mt-1.5 @4xl:w-24"
                           >
                             <div
                               className="h-full bg-approved"
@@ -246,15 +246,17 @@ export default async function ContractorsPage(
                     <div>
                       <StatusBadge kind="contractor" status={c.status} />
                     </div>
-                    <p className="font-mono text-xs text-ink-muted">
-                      <span className="lg:hidden">Added </span>
+                    {/* The date column only appears once there's room; until
+                        then it's in the stacked meta line (phones). */}
+                    <p className="font-mono text-xs text-ink-muted @4xl:hidden @5xl:block">
+                      <span className="@5xl:hidden">Added </span>
                       {dateFmt.format(new Date(c.created_at))}
                     </p>
-                    <div className="relative z-10 flex items-center justify-end gap-2 max-lg:ml-auto">
+                    <div className="relative z-10 flex items-center justify-end gap-2 @max-4xl:ml-auto">
                       {canResend && <ResendButton contractorId={c.id} />}
                       <ChevronRight
                         aria-hidden
-                        className="hidden h-5 w-5 shrink-0 text-ink-subtle transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5 group-hover:text-brand lg:block"
+                        className="hidden h-5 w-5 shrink-0 text-ink-subtle transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5 group-hover:text-brand @4xl:block"
                         strokeWidth={2}
                       />
                     </div>

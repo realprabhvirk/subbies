@@ -78,7 +78,7 @@ export function ProjectsManager({
           }
         />
       ) : (
-        <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
+        <ul className="@container divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
           {projects.map((p) => {
             const share =
               p.contractorCount > 0
@@ -87,7 +87,7 @@ export function ProjectsManager({
             return (
               <li
                 key={p.id}
-                className="group relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-4 py-4 transition-colors hover:bg-surface-muted/70 sm:px-5 md:grid-cols-[minmax(0,1fr)_17rem_8rem_auto] md:gap-x-6"
+                className="group relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-4 py-4 transition-colors hover:bg-surface-muted/70 sm:px-5 @3xl:grid-cols-[minmax(0,1fr)_17rem_8rem_auto] @3xl:gap-x-6"
               >
                 <div className="min-w-0">
                   <Link
@@ -108,7 +108,7 @@ export function ProjectsManager({
                   </p>
                 </div>
 
-                <div className="col-span-2 row-start-2 md:col-span-1 md:row-start-auto">
+                <div className="col-span-2 row-start-2 @3xl:col-span-1 @3xl:row-start-auto">
                   <p className="flex items-center gap-1.5 whitespace-nowrap text-xs">
                     <span className="font-mono text-ink">
                       {p.contractorCount}
@@ -117,13 +117,13 @@ export function ProjectsManager({
                       {p.contractorCount === 1 ? "contractor" : "contractors"}
                     </span>
                     {p.issueCount > 0 ? (
-                      <span className="ml-auto inline-flex items-center gap-1 font-semibold text-attention md:ml-2">
+                      <span className="ml-auto inline-flex items-center gap-1 font-semibold text-attention @3xl:ml-2">
                         <TriangleAlert className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
                         {p.issueCount} need attention
                       </span>
                     ) : (
                       p.contractorCount > 0 && (
-                        <span className="ml-auto inline-flex items-center gap-1 font-semibold text-approved md:ml-2">
+                        <span className="ml-auto inline-flex items-center gap-1 font-semibold text-approved @3xl:ml-2">
                           <CircleCheck className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
                           All compliant
                         </span>
@@ -138,12 +138,12 @@ export function ProjectsManager({
                   )}
                 </div>
 
-                <div className="hidden md:block">
+                <div className="hidden @3xl:block">
                   <StatusBadge kind="project" status={p.status} />
                 </div>
 
-                <div className="relative z-10 col-start-2 row-start-1 flex items-center gap-1 md:col-start-auto md:row-start-auto">
-                  <span className="md:hidden">
+                <div className="relative z-10 col-start-2 row-start-1 flex items-center gap-1 @3xl:col-start-auto @3xl:row-start-auto">
+                  <span className="@3xl:hidden">
                     <StatusBadge kind="project" status={p.status} size="sm" />
                   </span>
                   <IconButton
