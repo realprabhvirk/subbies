@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en" class="mona_sans_694b9935-module__GXzIqW__variable jetbrains_mono_5200a4c-module__ync41G__variable">
+<head>
+<meta charset="utf-8" />
+<title>Subbies brag</title>
+<!-- The real compiled Subbies stylesheet (Tailwind tokens, stamps, fonts). -->
+<link rel="stylesheet" href="_next/static/chunks/app.css" />
+<style>
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--color-canvas); }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--color-canvas); }
+  .ruled { position: absolute; inset: 0; opacity: .75;
+    background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 59px, var(--color-line) 59px, var(--color-line) 60px); }
+  .scene { position: absolute; inset: 0; }
+  .abs { position: absolute; }
+  .ui { transform-origin: top left; }
+  .cursor { position: absolute; width: 44px; height: 44px; z-index: 50; pointer-events: none; filter: drop-shadow(0 3px 6px oklch(17% .007 30 / .25)); }
+  .ripple { position: absolute; border-radius: 999px; border: 3px solid var(--color-brand); pointer-events: none; }
+  svg.i { width: 1em; height: 1em; display: inline-block; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2.25; stroke-linecap: round; stroke-linejoin: round; }
+  .big-h { font-family: var(--font-display); font-stretch: var(--font-stretch-display); font-weight: 700; letter-spacing: -0.03em; color: var(--color-ink); line-height: 1.02; }
+  .wide { font-stretch: var(--font-stretch-wide); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="ruled" id="ruled"></div>
+
+  <!-- ============ SCENE 1: HOOK ============ -->
+  <div class="scene" id="s1">
+    <div class="abs big-h" id="s1-l1" style="left:0;right:0;top:150px;text-align:center;font-size:92px;">Monday, 7am. On site.</div>
+
+    <div class="abs ui" id="s1-card" style="left:560px;top:330px;width:800px;">
+      <div class="rounded-card border border-line bg-surface shadow-lg" style="padding:40px 44px;">
+        <p class="label-caps text-ink-muted" style="font-size:16px;letter-spacing:.08em;">Certificate of currency</p>
+        <p class="font-display" style="font-size:44px;font-weight:700;margin-top:10px;letter-spacing:-0.02em;">Public liability insurance</p>
+        <div style="margin-top:28px;border-top:1px solid var(--color-line);">
+          <div style="display:flex;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--color-line);font-size:24px;">
+            <span class="text-ink-muted">Insured</span><span style="font-weight:600;">Redline Concreting</span></div>
+          <div style="display:flex;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--color-line);font-size:24px;">
+            <span class="text-ink-muted">Policy</span><span class="font-mono">PL-204418</span></div>
+          <div style="display:flex;justify-content:space-between;padding:16px 0;font-size:24px;">
+            <span class="text-ink-muted">Expiry</span><span class="font-mono" style="font-weight:500;">10 Oct 2026</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The solid EXPIRED stamp (same recipe as lib/status.ts), scaled up. -->
+    <div class="abs" id="s1-stamp" style="left:1060px;top:696px;transform-origin:center;">
+      <span class="inline-flex items-center whitespace-nowrap rounded-sm border font-semibold text-white bg-expired border-expired"
+            style="font-size:54px;gap:16px;padding:10px 26px;border-width:3px;box-shadow:0 12px 30px oklch(17% .007 30 / .25);">
+        <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Expired
+      </span>
+    </div>
+
+    <div class="abs big-h" id="s1-l2" style="left:0;right:0;top:880px;text-align:center;font-size:64px;font-weight:650;">
+      Their insurance <span class="text-expired">expired</span> last week.</div>
+  </div>
+
+  <!-- ============ SCENE 2: REVEAL ============ -->
+  <div class="scene" id="s2">
+    <div class="abs" id="s2-logo" style="left:0;right:0;top:250px;display:flex;justify-content:center;align-items:center;gap:22px;">
+      <img src="brand/subbies-icon.png" style="width:84px;height:84px;" alt="" />
+      <span class="font-display wide" style="font-size:58px;font-weight:700;letter-spacing:-0.02em;">Subbies</span>
+    </div>
+    <div class="abs big-h wide" id="s2-h" style="left:0;right:0;top:400px;text-align:center;font-size:120px;">Know who&rsquo;s cleared for site.</div>
+    <div class="abs" id="s2-stamps" style="left:0;right:0;top:660px;display:flex;justify-content:center;gap:28px;">
+      <span class="st inline-flex items-center whitespace-nowrap rounded-sm border font-semibold text-approved bg-approved-bg border-approved-line" style="font-size:34px;gap:12px;padding:8px 18px;border-width:2px;">
+        <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Approved</span>
+      <span class="st inline-flex items-center whitespace-nowrap rounded-sm border font-semibold text-review bg-review-bg border-review-line" style="font-size:34px;gap:12px;padding:8px 18px;border-width:2px;">
+        <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>Awaiting review</span>
+      <span class="st inline-flex items-center whitespace-nowrap rounded-sm border font-semibold text-attention bg-attention-bg border-attention-line" style="font-size:34px;gap:12px;padding:8px 18px;border-width:2px;">
+        <svg class="i" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Attention required</span>
+      <span class="st inline-flex items-center whitespace-nowrap rounded-sm border font-semibold text-white bg-expired border-expired" style="font-size:34px;gap:12px;padding:8px 18px;border-width:2px;">
+        <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Expired</span>
+    </div>
+  </div>
+
+  <!-- ============ SCENE 3: SEND ONE LINK ============ -->
+  <div class="scene" id="s3">
+    <div class="abs" id="s3-cap" style="left:150px;top:360px;width:680px;">
+      <p class="text-brand" style="font-family:var(--font-mono);font-size:24px;letter-spacing:.02em;">01 &mdash; Onboard</p>
+      <p class="big-h" style="font-size:84px;margin-top:22px;">Tick what you need. Send one link.</p>
+    </div>
+    <div class="abs ui" id="s3-ui" style="left:960px;top:120px;width:560px;transform:scale(1.36);">
+      <ol class="grid grid-cols-2 gap-2 text-sm" style="margin-bottom:16px;">
+        <li class="flex items-center gap-2.5 border-t-2 pt-3 border-brand text-ink"><span class="font-mono text-xs">01</span><span class="font-medium">Details</span></li>
+        <li class="flex items-center gap-2.5 border-t-2 pt-3 border-brand text-ink"><span class="font-mono text-xs">02</span><span class="font-semibold">Documents</span></li>
+      </ol>
+      <div class="space-y-4 rounded-card border border-line bg-surface p-5 sm:p-6">
+        <div>
+          <h2 class="text-lg">Documents to request</h2>
+          <p class="mt-1 text-sm text-ink-muted">The contractor will be asked to upload each of these.</p>
+        </div>
+        <div class="divide-y divide-line overflow-hidden rounded-md border border-line" id="s3-rows"></div>
+        <div class="flex items-center justify-between gap-2 border-t border-line pt-4">
+          <span class="pressable inline-flex items-center justify-center whitespace-nowrap rounded-md font-semibold bg-surface text-ink border border-line-strong h-11 px-4.5 text-sm">Back</span>
+          <span id="s3-send" class="pressable inline-flex items-center justify-center whitespace-nowrap rounded-md font-semibold bg-brand text-white border border-brand h-11 px-4.5 text-sm gap-2" style="transition:none;">Send onboarding request</span>
+        </div>
+      </div>
+      <div id="s3-alert" class="flex items-start gap-2.5 rounded-md border px-3.5 py-3 text-sm bg-approved-bg/70 text-approved border-approved-line" style="margin-top:14px;">
+        <svg class="i" viewBox="0 0 24 24" style="margin-top:2px;width:18px;height:18px;"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+        <span class="flex-1"><strong>Flowline Electrical</strong> was added and the onboarding request has been emailed.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCENE 4: PHONE UPLOAD ============ -->
+  <div class="scene" id="s4">
+    <div class="abs" id="s4-phone" style="left:330px;top:110px;">
+      <div style="width:470px;border-radius:56px;padding:14px;background:var(--color-warm-900);box-shadow:0 30px 80px oklch(17% .007 30 / .28);">
+        <div class="bg-canvas" style="border-radius:44px;overflow:hidden;height:830px;padding:34px 28px 0;">
+          <div class="flex items-center justify-between">
+            <span class="inline-flex items-center gap-2"><img src="brand/subbies-icon.png" style="width:26px;height:26px" alt=""/><span class="font-display wide" style="font-size:18px;font-weight:700;">Subbies</span></span>
+            <span class="flex items-center gap-1.5 text-xs font-medium text-ink-muted"><svg class="i" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Secure upload link</span>
+          </div>
+          <p class="label-caps text-brand" style="margin-top:34px;">Apex Build Group</p>
+          <p class="font-display" style="font-size:31px;line-height:1.1;font-weight:700;letter-spacing:-0.025em;margin-top:8px;">Documents for Flowline Electrical</p>
+          <div style="margin-top:22px;">
+            <div class="flex items-baseline justify-between text-sm"><p class="font-semibold text-ink" id="s4-count">0 of 2 submitted</p><p class="text-ink-muted" id="s4-togo">2 still to go</p></div>
+            <div class="flex gap-1" style="margin-top:8px;"><span id="s4-seg1" class="flex-1 rounded-full" style="height:6px;"></span><span id="s4-seg2" class="flex-1 rounded-full" style="height:6px;"></span></div>
+          </div>
+          <div id="s4-list" style="margin-top:22px;"></div>
+          <div id="s4-done" class="flex items-start gap-3 rounded-card border border-approved-line bg-approved-bg/60 p-4 text-approved" style="margin-top:12px;">
+            <svg class="i" viewBox="0 0 24 24" style="width:26px;height:26px;margin-top:2px;"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+            <div><p class="font-semibold">You&rsquo;re all done</p><p class="text-sm" style="margin-top:2px;">Everything requested has been submitted.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="abs" id="s4-cap" style="left:1020px;top:380px;width:760px;">
+      <p class="text-brand" style="font-family:var(--font-mono);font-size:24px;">02 &mdash; Collect</p>
+      <p class="big-h" style="font-size:84px;margin-top:22px;">They upload from their phone. No login.</p>
+    </div>
+  </div>
+
+  <!-- ============ SCENE 5: APPROVE + REMINDERS ============ -->
+  <div class="scene" id="s5">
+    <div class="abs" id="s5-cap" style="left:150px;top:380px;width:640px;">
+      <p class="text-brand" style="font-family:var(--font-mono);font-size:24px;">03 &mdash; Review</p>
+      <p class="big-h" style="font-size:84px;margin-top:22px;">You approve. Reminders do the chasing.</p>
+    </div>
+    <div class="abs ui" id="s5-doc" style="left:880px;top:120px;width:620px;transform:scale(1.45);">
+      <div class="rounded-card border border-line bg-surface shadow-md" style="padding:18px 20px;">
+        <div class="flex items-start justify-between gap-3">
+          <p class="font-semibold text-ink">Public liability insurance</p>
+          <div class="flex items-center gap-2" id="s5-stamps"></div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <span class="inline-flex min-h-9 items-center gap-2 rounded-md border border-line-strong bg-surface px-2.5">
+            <svg class="i text-ink-subtle" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+            <span class="font-mono text-xs text-ink">certificate-of-currency.pdf</span></span>
+        </div>
+        <div id="s5-bar" class="mt-4 flex flex-wrap items-end gap-3 rounded-md border border-review-line bg-review-bg/40 p-3 sm:p-4">
+          <p class="label-caps w-full text-review">Your review</p>
+          <div class="space-y-1.5"><p class="block text-xs font-semibold text-ink">Expiry date</p>
+            <span class="flex min-h-11 w-44 items-center rounded-md border border-field-line bg-surface px-3.5 font-mono text-sm">30/06/2027</span></div>
+          <span id="s5-approve" class="inline-flex items-center justify-center whitespace-nowrap rounded-md font-semibold bg-brand text-white border border-brand h-11 px-4.5 text-sm gap-2">
+            <svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M20 6 9 17l-5-5"/></svg>Approve</span>
+          <span class="inline-flex items-center justify-center whitespace-nowrap rounded-md font-semibold bg-surface text-ink border border-line-strong h-11 px-4.5 text-sm gap-2">
+            <svg class="i" viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>Reject</span>
+        </div>
+      </div>
+    </div>
+    <div class="abs ui" id="s5-rem" style="left:880px;top:450px;width:620px;transform:scale(1.45);">
+      <div class="overflow-hidden rounded-card border border-line bg-surface shadow-md">
+        <div class="flex items-center justify-between border-b border-line px-4 py-3">
+          <p class="label-caps flex items-center gap-1.5 text-ink-muted"><svg class="i" viewBox="0 0 24 24" style="width:14px;height:14px;"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M22 8c0-2.3-.8-4.3-2-6"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/><path d="M4 2C2.8 3.7 2 5.7 2 8"/></svg>Expiring in the next 30 days</p>
+        </div>
+        <ul class="divide-y divide-line" id="s5-rows"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCENE 6: OUTRO ============ -->
+  <div class="scene" id="s6" style="background:var(--color-sidebar-bg);">
+    <div class="abs" style="inset:0;opacity:.55;background-image:repeating-linear-gradient(to bottom, transparent 0, transparent 59px, var(--color-sidebar-border) 59px, var(--color-sidebar-border) 60px);"></div>
+    <div class="abs" id="s6-logo" style="left:200px;top:200px;display:flex;align-items:center;gap:20px;">
+      <img src="brand/subbies-icon-white.png" style="width:72px;height:72px;" alt=""/>
+      <span class="font-display wide" style="font-size:50px;font-weight:700;letter-spacing:-0.02em;color:var(--color-sidebar-ink);">Subbies</span>
+    </div>
+    <div class="abs big-h wide" id="s6-h" style="left:200px;top:320px;font-size:150px;width:1500px;color:var(--color-sidebar-ink);">Stop chasing paperwork.</div>
+    <div class="abs" id="s6-sub" style="left:200px;top:700px;font-size:40px;color:var(--color-sidebar-ink-muted);font-weight:500;">
+      Plans from <span style="color:var(--color-sidebar-ink);font-weight:650;">A$19 / month</span> &middot; 7 days free</div>
+    <div class="abs" id="s6-url" style="left:200px;top:790px;">
+      <span style="display:inline-flex;align-items:center;gap:14px;border:2px solid var(--color-sidebar-border);border-radius:8px;padding:14px 24px;font-family:var(--font-mono);font-size:32px;color:var(--color-sidebar-ink);">
+        subbies-hazel.vercel.app
+        <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+    </div>
+  </div>
+
+  <svg class="cursor" id="cursor" viewBox="0 0 24 24"><path d="M4 2.5 4 19.5 8.6 15.4 11.6 22 14.6 20.7 11.7 14.2 18 14.2Z" fill="#ffffff" stroke="var(--color-warm-900)" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  <div class="ripple" id="ripple"></div>
+</div>
+
+<script>
+/* ---------- helpers ---------- */
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+const easeOut = (x) => 1 - Math.pow(1 - x, 3);
+const easeInOut = (x) => (x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const backOut = (x) => { const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+function show(el, o, dy = 0, sc = 1, extra = "") {
+  el.style.opacity = o;
+  el.style.transform = `${extra} translateY(${dy}px) scale(${sc})`;
+}
+/** fade+rise in at a, out at b (out is quick fade+lift) */
+function inOut(el, t, a, b, { rise = 28, dur = .38, outDur = .22, base = "" } = {}) {
+  const i = easeOut(seg(t, a, a + dur)), o = seg(t, b - outDur, b);
+  show(el, i * (1 - o), (1 - i) * rise - o * 16, 1, base);
+}
+
+/* ---------- static DOM built from the real components ---------- */
+const ICON = {
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  ccheck: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  dashed: '<circle cx="12" cy="12" r="10" stroke-dasharray="3.2 3.1"/>',
+  upload: '<path d="M12 3v12"/><path d="m17 8-5-5-5 5"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>',
+  file: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  cal: '<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+};
+const svg = (k, s = 16, extra = "") => `<svg class="i ${extra}" viewBox="0 0 24 24" style="width:${s}px;height:${s}px">${ICON[k]}</svg>`;
+const STAMP = {
+  requested: ["text-neutral-status bg-neutral-status-bg border-neutral-status-line", "dashed", "Not uploaded"],
+  uploaded: ["text-review bg-review-bg border-review-line", "clock", "Awaiting review"],
+  approved: ["text-approved bg-approved-bg border-approved-line", "ccheck", "Approved"],
+};
+const stamp = (k, sm = false) => { const [c, ic, l] = STAMP[k];
+  return `<span class="inline-flex shrink-0 items-center whitespace-nowrap rounded-sm border font-semibold ${sm ? "h-6 gap-1 px-1.5 text-2xs" : "h-7 gap-1.5 px-2 text-xs"} ${c}">${svg(ic, sm ? 14 : 16)}${l}</span>`; };
+
+// Scene 3: the "Documents to request" checklist.
+const DOCS = [["Public liability insurance", 12], ["Workers' compensation", 12], ["White card", 60], ["QBCC licence", 12]];
+$("s3-rows").innerHTML = DOCS.map(([n, m], i) => `
+  <label class="flex min-h-14 items-start gap-3 px-4 py-3.5 text-sm" id="s3-row${i}">
+    <span id="s3-box${i}" class="mt-px flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-sm border border-field-line bg-surface" style="width:18px;height:18px"></span>
+    <span><span class="font-semibold">${n}</span><span class="mt-0.5 block text-xs text-ink-muted">Valid ${m} months</span></span>
+  </label>`).join("");
+
+// Scene 4: the upload docket items.
+const UP = [["Public liability insurance", "certificate-of-currency.pdf"], ["White card", "white-card-front.jpg"]];
+$("s4-list").innerHTML = UP.map(([n, f], i) => `
+  <div class="rounded-card border bg-surface border-line-strong" style="margin-bottom:12px" id="s4-item${i}">
+    <div class="flex items-start gap-3 p-4">
+      <span class="mt-0.5 font-mono text-xs text-ink-subtle">0${i + 1}</span>
+      <div class="min-w-0 flex-1"><div class="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
+        <p class="font-semibold text-ink">${n}</p><span id="s4-stamp${i}"></span></div></div>
+    </div>
+    <div class="space-y-2.5 border-t border-line p-4" id="s4-act${i}">
+      <div id="s4-pick${i}" class="flex w-full items-center justify-center gap-2 rounded-md border border-dashed font-semibold min-h-16 border-field-line bg-surface-muted/60 text-base text-ink">${svg("upload", 20)}Add a file or take a photo</div>
+      <div id="s4-staged${i}">
+        <div class="flex min-h-11 items-center justify-between gap-2 rounded-md border border-line bg-surface-muted pl-3 pr-1 text-sm">
+          <span class="flex min-w-0 items-center gap-2">${svg("file", 16, "text-ink-subtle")}<span class="truncate">${f}</span></span><span style="width:40px"></span></div>
+        <div id="s4-submit${i}" class="flex w-full items-center justify-center gap-2.5 rounded-md bg-brand text-white font-semibold h-13 text-base" style="margin-top:10px;height:52px"><span id="s4-sublabel${i}">Submit file</span></div>
+      </div>
+    </div>
+  </div>`).join("");
+
+// Scene 5: reminders list.
+const REM = [["Harbour Electrical Pty Ltd", "Public liability insurance", 3, "30d · 14d"], ["Southern Cross Scaffolding", "Workers' compensation", 12, "30d · 14d"], ["Summit Earthworks", "QBCC licence", 28, "30d"]];
+$("s5-rows").innerHTML = REM.map(([n, d, days, sent], i) => `
+  <li class="flex items-center gap-3 px-4 py-3" id="s5-row${i}">
+    <div class="min-w-0 flex-1"><p class="truncate text-sm font-semibold">${n}</p><p class="truncate text-xs text-ink-muted">${d}</p>
+      <p class="mt-1 flex items-center gap-1 text-2xs text-approved">${svg("check", 12)}Reminded at <span class="font-mono">${sent}</span></p></div>
+    <span class="shrink-0 rounded-sm border px-1.5 py-0.5 font-mono text-xs font-medium ${days <= 7 ? "border-attention-line bg-attention-bg text-attention" : "border-line-strong bg-surface-muted text-ink-muted"}">${days}d</span>
+  </li>`).join("");
+
+/* ---------- cursor path ---------- */
+function cursorAt(t, keys) { // keys: [time, x, y]
+  if (t <= keys[0][0]) return keys[0];
+  for (let i = 0; i < keys.length - 1; i++) {
+    const [ta, xa, ya] = keys[i], [tb, xb, yb] = keys[i + 1];
+    if (t <= tb) { const x = easeInOut(seg(t, ta, tb)); return [t, lerp(xa, xb, x), lerp(ya, yb, x)]; }
+  }
+  return keys[keys.length - 1];
+}
+function press(t, at) { // 0..1 press depth around time `at`
+  return t < at ? clamp(1 - (at - t) / .06) : clamp(1 - (t - at) / .14);
+}
+
+/* ---------- the timeline: every frame is a pure function of t ---------- */
+const T = { s1: [0, 3], s2: [3, 6], s3: [6, 10], s4: [10, 14], s5: [14, 18], s6: [18, 21] };
+function vis(id, t) { const [a, b] = T[id]; $(id).style.display = t >= a - .001 && t < b + .001 ? "block" : "none"; }
+
+window.render = function (t) {
+  for (const k in T) vis(k, t);
+  const cur = $("cursor"), rip = $("ripple");
+  cur.style.opacity = 0; rip.style.opacity = 0;
+  $("ruled").style.opacity = t < 18 ? .75 : 0;
+
+  /* ---- Scene 1: hook ---- */
+  if (t < 3.01) {
+    inOut($("s1-l1"), t, .08, 2.95);
+    const ci = easeOut(seg(t, .18, .6)), co = seg(t, 2.73, 2.95);
+    // camera shake on the stamp hit
+    const hit = seg(t, .9, 1.12), shake = (1 - hit) * (t >= .9 ? 1 : 0);
+    const sx = Math.sin(t * 160) * 7 * shake, sy = Math.cos(t * 130) * 5 * shake;
+    $("s1-card").style.opacity = ci * (1 - co);
+    $("s1-card").style.transform = `translate(${sx}px, ${(1 - ci) * 40 - co * 16 + sy}px)`;
+    const s = seg(t, .78, .92), sb = backOut(s);
+    const st = $("s1-stamp");
+    st.style.opacity = (t < .78 ? 0 : clamp(s * 3)) * (1 - co);
+    st.style.transform = `translate(${sx}px, ${sy - co * 16}px) rotate(${lerp(-18, -9, sb)}deg) scale(${lerp(1.9, 1, sb)})`;
+    inOut($("s1-l2"), t, 1.05, 2.95);
+  }
+
+  /* ---- Scene 2: reveal ---- */
+  if (t >= 2.99 && t < 6.01) {
+    inOut($("s2-logo"), t, 3.05, 5.95, { rise: 20 });
+    inOut($("s2-h"), t, 3.2, 5.95, { rise: 36, dur: .45 });
+    document.querySelectorAll("#s2-stamps .st").forEach((el, i) => {
+      const a = 3.75 + i * .13, x = backOut(seg(t, a, a + .3)), o = seg(t, 5.73, 5.95);
+      el.style.opacity = clamp(seg(t, a, a + .12)) * (1 - o);
+      el.style.transform = `translateY(${(1 - x) * 30 - o * 16}px) scale(${lerp(.85, 1, x)})`;
+    });
+  }
+
+  /* ---- Scene 3: send one link ---- */
+  if (t >= 5.99 && t < 10.01) {
+    inOut($("s3-cap"), t, 6.05, 9.95);
+    const ui = $("s3-ui"); const ui_i = easeOut(seg(t, 6.15, 6.6)), ui_o = seg(t, 9.73, 9.95);
+    ui.style.opacity = ui_i * (1 - ui_o);
+    ui.style.transform = `translate(${(1 - ui_i) * 60}px, ${-ui_o * 16}px) scale(1.36)`;
+    const ticks = [6.95, 7.3, 7.65];
+    for (let i = 0; i < 4; i++) {
+      const on = i < 3 && t >= ticks[i];
+      const box = $("s3-box" + i), row = $("s3-row" + i);
+      box.className = `mt-px flex shrink-0 items-center justify-center rounded-sm border ${on ? "border-brand bg-brand text-white" : "border-field-line bg-surface"}`;
+      box.innerHTML = on ? svg("check", 12) : "";
+      if (on) { const p = backOut(seg(t, ticks[i], ticks[i] + .2)); box.style.transform = `scale(${lerp(.6, 1, p)})`; } else box.style.transform = "";
+      row.style.background = on ? "color-mix(in oklch, var(--color-brand-tint) 60%, transparent)" : "transparent";
+    }
+    // cursor targets are read from the laid-out elements themselves
+    const C = (el) => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+    const bx = (i) => C($("s3-box" + i));
+    const [sendX, sendY] = C($("s3-send"));
+    const boxX = bx(0)[0], rowY = (i) => bx(i)[1];
+    const keys = [[6.55, 1700, 980], [6.9, boxX, rowY(0)], [7.25, boxX, rowY(1)], [7.6, boxX, rowY(2)], [8.05, sendX, sendY], [9.6, sendX + 40, sendY + 60]];
+    if (t >= 6.55 && t < 9.7) {
+      const [, x, y] = cursorAt(t, keys); cur.style.opacity = clamp(seg(t, 6.55, 6.75)) * (1 - seg(t, 9.4, 9.7));
+      cur.style.transform = `translate(${x - 8}px, ${y - 4}px) scale(${1 - .12 * press(t, 8.15)})`;
+    }
+    const pr = press(t, 8.15);
+    $("s3-send").style.transform = `scale(${1 - .04 * pr})`;
+    $("s3-send").style.background = pr > .3 ? "var(--color-brand-active)" : "";
+    const al = backOut(seg(t, 8.3, 8.62));
+    $("s3-alert").style.opacity = clamp(seg(t, 8.3, 8.45));
+    $("s3-alert").style.transform = `translateY(${(1 - al) * -18}px)`;
+    if (t >= 8.15 && t < 8.6) {
+      const r = seg(t, 8.15, 8.6); rip.style.opacity = (1 - r) * .7;
+      const d = 30 + r * 70; rip.style.width = rip.style.height = d + "px";
+      rip.style.transform = `translate(${sendX - d / 2}px, ${sendY - d / 2}px)`;
+    }
+  }
+
+  /* ---- Scene 4: phone upload ---- */
+  if (t >= 9.99 && t < 14.01) {
+    const ph = $("s4-phone"); const pi = easeOut(seg(t, 10.05, 10.5)), po = seg(t, 13.73, 13.95);
+    ph.style.opacity = pi * (1 - po); ph.style.transform = `translateY(${(1 - pi) * 80 - po * 16}px)`;
+    inOut($("s4-cap"), t, 10.2, 13.95);
+    // state machine per item: pick at p, submit at s, done at d
+    const ev = [{ p: 10.75, s: 11.25, d: 11.75 }, { p: 12.1, s: 12.5, d: 12.95 }];
+    let submitted = 0;
+    ev.forEach((e, i) => {
+      const state = t < e.p ? "idle" : t < e.s ? "staged" : t < e.d ? "uploading" : "done";
+      if (state === "done") submitted++;
+      $("s4-stamp" + i).innerHTML = stamp(state === "done" ? "uploaded" : "requested", true);
+      $("s4-pick" + i).style.display = state === "idle" ? "flex" : "none";
+      $("s4-staged" + i).style.display = state === "staged" || state === "uploading" ? "block" : "none";
+      $("s4-act" + i).style.display = state === "done" ? "none" : "block";
+      $("s4-sublabel" + i).textContent = state === "uploading" ? "Uploading 1 of 1…" : "Submit file";
+      $("s4-submit" + i).style.opacity = state === "uploading" ? .7 : 1;
+      const item = $("s4-item" + i);
+      item.className = `rounded-card border bg-surface ${state === "done" ? "border-line" : "border-line-strong"}`;
+      if (state === "done") { const p = backOut(seg(t, e.d, e.d + .28)); $("s4-stamp" + i).style.display = "inline-block"; $("s4-stamp" + i).style.transform = `scale(${lerp(.7, 1, p)})`; }
+      else $("s4-stamp" + i).style.transform = "";
+    });
+    $("s4-count").textContent = `${submitted} of 2 submitted`;
+    $("s4-togo").textContent = submitted < 2 ? `${2 - submitted} still to go` : "";
+    $("s4-seg1").style.background = submitted >= 1 ? "var(--color-review)" : "var(--color-line-strong)";
+    $("s4-seg2").style.background = submitted >= 2 ? "var(--color-review)" : "var(--color-line-strong)";
+    const dn = backOut(seg(t, 13.15, 13.45));
+    $("s4-done").style.display = t >= 13.15 ? "flex" : "none";
+    $("s4-done").style.opacity = clamp(seg(t, 13.15, 13.3));
+    $("s4-done").style.transform = `translateY(${(1 - dn) * 16}px)`;
+    // taps (finger ripples, no arrow cursor on a phone)
+    const taps = [[10.75, 0, "pick"], [11.25, 0, "sub"], [12.1, 1, "pick"], [12.5, 1, "sub"]];
+    for (const [at, i, kind] of taps) {
+      if (t >= at - .05 && t < at + .4) {
+        const el = kind === "pick" ? $("s4-pick" + i) : $("s4-submit" + i);
+        const ref = (kind === "pick" && t >= at) ? $("s4-staged" + i) : el;
+        const box = (ref.offsetParent ? ref : el).getBoundingClientRect();
+        const cx = box.left + box.width / 2, cy = box.top + Math.min(box.height, 60) / 2;
+        const r = seg(t, at - .05, at + .4); const d = 26 + r * 90;
+        rip.style.opacity = (1 - r) * .8; rip.style.width = rip.style.height = d + "px";
+        rip.style.transform = `translate(${cx - d / 2}px, ${cy - d / 2}px)`;
+      }
+    }
+  }
+
+  /* ---- Scene 5: approve + reminders ---- */
+  if (t >= 13.99 && t < 18.01) {
+    inOut($("s5-cap"), t, 14.05, 17.95);
+    const d = $("s5-doc"); const di = easeOut(seg(t, 14.12, 14.55)), dout = seg(t, 17.73, 17.95);
+    d.style.opacity = di * (1 - dout); d.style.transform = `translate(${(1 - di) * 60}px, ${-dout * 16}px) scale(1.45)`;
+    const approved = t >= 15.05;
+    $("s5-stamps").innerHTML = approved
+      ? `<span class="inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-sm border px-2 text-xs font-semibold border-line-strong bg-surface-muted text-ink-muted"><span>Expires</span><span class="font-mono text-ink">30 Jun 2027</span></span>${stamp("approved")}`
+      : stamp("uploaded");
+    if (approved) { const p = backOut(seg(t, 15.05, 15.33)); $("s5-stamps").lastElementChild.style.transform = `scale(${lerp(.7, 1, p)})`; }
+    const bar = $("s5-bar"); const bo = seg(t, 15.05, 15.3);
+    bar.style.display = bo >= 1 ? "none" : "flex"; bar.style.opacity = 1 - bo;
+    const ar = $("s5-approve").getBoundingClientRect(), ax = ar.left + ar.width / 2, ay = ar.top + ar.height / 2;
+    const keys = [[14.45, 1750, 1000], [14.95, ax, ay], [15.6, ax + 30, ay + 40]];
+    if (t >= 14.45 && t < 15.75) {
+      const [, x, y] = cursorAt(t, keys);
+      cur.style.opacity = clamp(seg(t, 14.45, 14.62)) * (1 - seg(t, 15.45, 15.75));
+      cur.style.transform = `translate(${x - 8}px, ${y - 4}px) scale(${1 - .12 * press(t, 14.98)})`;
+    }
+    $("s5-approve").style.transform = `scale(${1 - .04 * press(t, 14.98)})`;
+    const r = $("s5-rem"); const ri = easeOut(seg(t, 15.55, 16.0)), ro = seg(t, 17.73, 17.95);
+    r.style.opacity = ri * (1 - ro); r.style.transform = `translateY(${(1 - ri) * 50 - ro * 16}px) scale(1.45)`;
+    for (let i = 0; i < 3; i++) {
+      const a = 15.85 + i * .16, x = easeOut(seg(t, a, a + .3));
+      const row = $("s5-row" + i); row.style.opacity = x; row.style.transform = `translateX(${(1 - x) * 24}px)`;
+    }
+  }
+
+  /* ---- Scene 6: outro ---- */
+  if (t >= 17.99) {
+    const s6 = $("s6"); s6.style.opacity = easeOut(seg(t, 18.0, 18.3));
+    inOut($("s6-logo"), t, 18.15, 99, { rise: 18 });
+    inOut($("s6-h"), t, 18.3, 99, { rise: 40, dur: .5 });
+    inOut($("s6-sub"), t, 18.75, 99, { rise: 18 });
+    inOut($("s6-url"), t, 19.0, 99, { rise: 18 });
+  }
+};
+window.ready = document.fonts.ready.then(() => Promise.all([...document.images].map((i) => i.complete ? 1 : new Promise((r) => (i.onload = r)))));
+render(0);
+</script>
+</body>
+</html>
