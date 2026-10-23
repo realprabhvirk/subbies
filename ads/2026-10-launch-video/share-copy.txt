@@ -1,0 +1,5 @@
+Your subbies' insurance expires whether you check or not.
+
+Subbies sends one link, your contractors upload from their phone (no login), you approve, and reminders chase everything before it lapses. Plans from A$19/month, 7 days free.
+
+subbies-hazel.vercel.app
