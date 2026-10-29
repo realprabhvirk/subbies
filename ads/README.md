@@ -4,13 +4,13 @@ Marketing videos and share copy for Subbies. One folder per piece, named `YYYY-M
 
 | Folder | What |
 |---|---|
-| `2026-10-launch-video/` | 21s launch video (1920×1080, 30fps, original music). The poster frame is baked in as frame 0. |
+| `2026-10-launch-video/` | 21s launch video, landscape (1920×1080) and vertical for Reels/TikTok (1080×1920). 30fps, original music. The poster frame is baked in as frame 0 of each. |
 
 ## 2026-10-launch-video
 
-- `subbies-launch.mp4`: the video.
-- `subbies-launch-poster.jpg`: thumbnail / poster.
-- `share-copy.txt`: post caption.
+- `subbies-launch.mp4` + `subbies-launch-poster.jpg`: landscape (YouTube, LinkedIn, website).
+- `subbies-launch-vertical.mp4` + `subbies-launch-vertical-poster.jpg`: vertical (Reels, TikTok, Shorts). Same timing and music; key content stays clear of the app buttons and caption areas.
+- `share-copy.txt`: post caption. `share-copy-reels.txt`: shorter caption with hashtags.
 - `plan.md`: angle, storyboard and sound plan.
 - `source/`: everything needed to re-render.
 
@@ -33,4 +33,8 @@ ffmpeg -framerate 30 -i frames/f%04d.png -i audio.wav \
   subbies-launch.mp4
 ```
 
-`source/site/comp.html` is the whole animation: `window.render(t)` draws any moment in time. It uses a copy of the app's compiled CSS and fonts. If the app's design changes, copy the new CSS from `.next/static/chunks/` after a build.
+For the vertical version, render with `PAGE=comp-vertical.html W=1080 H=1920 node frames.cjs frames 630` and run the same ffmpeg command, writing to `subbies-launch-vertical.mp4`.
+
+If Playwright can't find a browser, set `CHROMIUM_PATH` to a Chromium binary.
+
+`source/site/comp.html` (landscape) and `comp-vertical.html` (vertical) are the whole animation: `window.render(t)` draws any moment in time. It uses a copy of the app's compiled CSS and fonts. If the app's design changes, copy the new CSS from `.next/static/chunks/` after a build.
