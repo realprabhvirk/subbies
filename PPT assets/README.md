@@ -5,7 +5,7 @@ All names on screen are fictional demo data.
 
 | Folder | What's in it |
 |---|---|
-| `video/` | `subbies-launch.mp4`: the 21s video (1920×1080, with music). `subbies-launch-poster.jpg`: its thumbnail. |
+| `video/` | `subbies-launch.mp4`: the 21s video (1920×1080, with music). `subbies-launch-vertical.mp4`: the same video in 1080×1920 for Reels and TikTok. Each has a `-poster.jpg` thumbnail. |
 | `audio/` | The original music and sound effects on their own. `.m4a` is small (use this in PowerPoint); `.wav` is the lossless master. |
 | `slides/` | Eight full-screen 1920×1080 frames, one per scene, in order. Use them as full-bleed slides. |
 | `cutouts/` | UI pieces on a **transparent background** at 2× resolution: the Expired stamp, the four status stamps, the logo, the certificate card, the onboarding checklist, the phone upload (in progress and done), the review card (awaiting and approved) and the "Expiring in the next 30 days" list. |
