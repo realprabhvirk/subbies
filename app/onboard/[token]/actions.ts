@@ -18,6 +18,8 @@ import {
 } from "@/lib/storage";
 import { canSubmitDocument, MAX_FILES_PER_SUBMISSION } from "@/lib/document-actions-logic";
 import { classifySubmissionError } from "@/lib/save-error-logic";
+import { TERMS_VERSION } from "@/lib/legal/terms";
+import { PRIVACY_VERSION } from "@/lib/legal/privacy";
 import type { DocumentStatus } from "@/lib/types";
 
 interface DocRow {
@@ -55,9 +57,11 @@ export async function requestDocumentUpload(
   token: string,
   contractorDocumentId: string,
   file: { name: string; type: string; size: number },
+  agreedToTerms: boolean,
 ): Promise<RequestUploadResult> {
   const resolved = await resolveOnboardingToken(token);
   if (!resolved) return { ok: false, error: "This upload link is no longer valid." };
+  if (!agreedToTerms) return { ok: false, error: AGREEMENT_REQUIRED_ERROR };
 
   const doc = await loadOwnedDocument(resolved.contractorId, contractorDocumentId);
   if (!doc) return { ok: false, error: "That document isn't part of this request." };
@@ -98,6 +102,9 @@ export async function requestDocumentUpload(
 
 export type SubmitStagedResult = { ok: boolean; error?: string };
 
+const AGREEMENT_REQUIRED_ERROR =
+  "Tick the box to agree to the Privacy Policy and Terms before uploading.";
+
 /**
  * Confirms a whole batch of already-uploaded files (their bytes are already
  * sitting in Storage via requestDocumentUpload + a direct browser upload —
@@ -114,9 +121,11 @@ export async function submitStagedDocuments(
   token: string,
   contractorDocumentId: string,
   files: { path: string; fileName: string }[],
+  agreedToTerms: boolean,
 ): Promise<SubmitStagedResult> {
   const resolved = await resolveOnboardingToken(token);
   if (!resolved) return { ok: false, error: "This upload link is no longer valid." };
+  if (!agreedToTerms) return { ok: false, error: AGREEMENT_REQUIRED_ERROR };
 
   if (files.length === 0) {
     return { ok: false, error: "Add at least one file before submitting." };
@@ -240,6 +249,27 @@ export async function submitStagedDocuments(
       { code: updateError.code, message: updateError.message, category: classified.category },
     );
     return { ok: false, error: classified.message };
+  }
+
+  // Record what the contractor agreed to (migration 0016). Deliberately a
+  // separate statement from the status update above: if this code is deployed
+  // before the migration has been run, the columns don't exist yet, and
+  // folding them into that update would fail every upload. The submission has
+  // already succeeded and the contractor did tick the box, so a failure here
+  // is logged loudly and never shown to them.
+  const { error: consentError } = await admin
+    .from("contractor_documents")
+    .update({
+      agreed_at: new Date().toISOString(),
+      agreed_terms_version: TERMS_VERSION,
+      agreed_privacy_version: PRIVACY_VERSION,
+    })
+    .eq("id", doc.id);
+  if (consentError) {
+    console.error(
+      "submitStagedDocuments: couldn't record the contractor's agreement — has migration 0016 been run?",
+      { code: consentError.code, message: consentError.message, documentId: doc.id },
+    );
   }
 
   await recomputeContractorStatus(admin, resolved.contractorId);

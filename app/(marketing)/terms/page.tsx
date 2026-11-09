@@ -102,6 +102,11 @@ export default function TermsPage() {
               <li>Give us accurate information and keep it up to date.</li>
               <li>Keep your password secure. You&rsquo;re responsible for what happens under your account.</li>
               <li>Tell us straight away if you think someone has accessed your account without permission.</li>
+              <li>
+                When you create an account you agree to these terms. We keep a
+                record of that agreement: the date and time, and the version of
+                the terms you agreed to.
+              </li>
             </UL>
           </section>
 
@@ -123,6 +128,13 @@ export default function TermsPage() {
                 You&rsquo;re responsible for telling your subcontractors how
                 their information is used, as your own privacy obligations
                 require.
+              </li>
+              <li>
+                Before a subcontractor can submit a document, they must tick a
+                box agreeing to our Privacy Policy and to the parts of these
+                terms that apply to them. We keep a record of that agreement
+                against the document: the date and time, and the versions they
+                agreed to.
               </li>
               <li>
                 How we handle personal information is set out in our{" "}
@@ -158,6 +170,14 @@ export default function TermsPage() {
                 advance through Stripe.
               </li>
               <li>
+                <strong className="text-ink">Free trial promotions:</strong>{" "}
+                free trial offers are subject to change. Currently, your first
+                subscription starts with a {TRIAL_DAYS}-day free trial, but we
+                may change the length of the trial, or end or vary any trial
+                offer or promotion, at any time. A trial that has already
+                started isn&rsquo;t affected.
+              </li>
+              <li>
                 <strong className="text-ink">Free trial:</strong> your first
                 subscription starts with a {TRIAL_DAYS}-day free trial. You
                 enter a card at signup and nothing is charged during the trial.
@@ -165,9 +185,10 @@ export default function TermsPage() {
                 plan price on day {TRIAL_DAYS}, and then every month.
               </li>
               <li>
-                A trial is available once per business. If your business or
-                email address has already had a trial, we may charge you from
-                the start of the subscription instead.
+                A trial is available once per business. If we suspect you&rsquo;ve
+                already claimed a free trial, we may use factors such as your IP
+                address, your email address and your card details (processed
+                through Stripe) to check, and we may refuse the free trial.
               </li>
               <li>
                 If a payment fails, Stripe may retry it, and we may limit your

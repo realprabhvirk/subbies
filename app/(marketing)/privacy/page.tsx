@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { PRIVACY_LAST_UPDATED } from "@/lib/legal/privacy";
 import { Section, Eyebrow } from "../_components/ui";
 
 export const metadata: Metadata = {
@@ -32,7 +33,7 @@ export default function PrivacyPage() {
         <h1 className="mt-5 text-4xl leading-[1.02] tracking-display sm:text-5xl">
           Privacy Policy
         </h1>
-        <p className="mt-4 font-mono text-xs text-ink-muted">Last updated: 30 September 2026</p>
+        <p className="mt-4 font-mono text-xs text-ink-muted">Last updated: {PRIVACY_LAST_UPDATED}</p>
 
         <div className="mt-10 space-y-10 border-t border-ink pt-10">
           <P>
@@ -79,6 +80,11 @@ export default function PrivacyPage() {
                 type, required document types
               </li>
               <li>
+                A record that you agreed to our Terms of Service and Privacy
+                Policy when you signed up: the date and time, and the version
+                you agreed to
+              </li>
+              <li>
                 Documents uploaded on your or your subcontractors&rsquo;
                 behalf (e.g. insurance certificates, licences, workers
                 compensation documents)
@@ -91,6 +97,13 @@ export default function PrivacyPage() {
             <UL>
               <li>Name and contact details as provided by the business that added them</li>
               <li>Documents uploaded through the secure, token-based upload link</li>
+              <li>
+                A record of your agreement each time you upload: before you can
+                submit a document you tick a box agreeing to this Privacy
+                Policy and the parts of our Terms of Service that apply to you.
+                We save the date and time and the version of each that you
+                agreed to, against the document you submitted
+              </li>
               <li>Subcontractors are not required to create an account, set a password, or log in</li>
             </UL>
 
@@ -118,6 +131,15 @@ export default function PrivacyPage() {
                 reminders, account notifications, billing receipts)
               </li>
               <li>Process subscription payments via Stripe</li>
+              <li>
+                Check whether a business has already claimed a free trial, using
+                email address, IP address and card details (processed through
+                Stripe), so we can refuse a second trial
+              </li>
+              <li>
+                Keep a record of who agreed to our Terms and Privacy Policy,
+                when, and which version, so we can show what was agreed
+              </li>
               <li>Maintain account security (login verification, password reset)</li>
               <li>Improve and maintain the platform</li>
             </UL>
@@ -189,8 +211,8 @@ export default function PrivacyPage() {
               <li>
                 <strong className="text-ink">If you delete your account</strong>, we
                 cancel your subscription and permanently delete your company
-                data, subcontractor records, and all uploaded documents from
-                Subbies.
+                data, subcontractor records, all uploaded documents, and the
+                records of agreement saved with them, from Subbies.
               </li>
               <li>
                 <strong className="text-ink">Exception 1, trial records:</strong> we
@@ -207,6 +229,17 @@ export default function PrivacyPage() {
                 Subbies account is deleted, as required by tax, financial and
                 anti-fraud laws. These records are held and governed by Stripe,
                 not Subbies, and we can&rsquo;t delete them on request.
+              </li>
+              <li>
+                <strong className="text-ink">Exception 3, account locking:</strong>{" "}
+                If your subscription ends, your account is locked, but locking
+                doesn&rsquo;t mean your data is deleted. Your company data,
+                subcontractor records and documents stay in place until you
+                delete your account. See Section 8 of our{" "}
+                <Link href="/terms" className="text-brand hover:underline">
+                  Terms of Service
+                </Link>
+                .
               </li>
             </UL>
           </section>
