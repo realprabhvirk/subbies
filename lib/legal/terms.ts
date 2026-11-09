@@ -6,7 +6,7 @@
  * account at signup (user metadata), so it's what lets you say later exactly
  * which terms a given customer agreed to.
  */
-export const TERMS_VERSION = "2026-09-30";
+export const TERMS_VERSION = "2026-11-09";
 
 /** Human-readable form of the same date, shown on the Terms page. */
-export const TERMS_LAST_UPDATED = "30 September 2026";
+export const TERMS_LAST_UPDATED = "9 November 2026";

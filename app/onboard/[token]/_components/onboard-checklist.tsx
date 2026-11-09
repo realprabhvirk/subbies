@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Upload, FileText, X, UploadCloud } from "lucide-react";
 
@@ -45,6 +46,8 @@ export function OnboardChecklist({
   const [states, setStates] = useState<Record<string, ItemState>>({});
   const [staged, setStaged] = useState<StagedByItem>({});
   const [openingFileId, setOpeningFileId] = useState<string | null>(null);
+  const [agreed, setAgreed] = useState(false);
+  const anyStageable = items.some((item) => canSubmitDocument(item.status));
 
   const setItemState = (id: string, state: ItemState) =>
     setStates((prev) => ({ ...prev, [id]: state }));
@@ -82,11 +85,12 @@ export function OnboardChecklist({
 
     for (const file of files) {
       const type = file.type || "";
-      const requested = await requestDocumentUpload(token, itemId, {
-        name: file.name,
-        type,
-        size: file.size,
-      });
+      const requested = await requestDocumentUpload(
+        token,
+        itemId,
+        { name: file.name, type, size: file.size },
+        agreed,
+      );
       if (!requested.ok) {
         setItemState(itemId, { phase: "error", message: requested.error });
         return;
@@ -113,7 +117,7 @@ export function OnboardChecklist({
       });
     }
 
-    const confirmed = await submitStagedDocuments(token, itemId, uploaded);
+    const confirmed = await submitStagedDocuments(token, itemId, uploaded, agreed);
     if (!confirmed.ok) {
       setItemState(itemId, {
         phase: "error",
@@ -137,119 +141,148 @@ export function OnboardChecklist({
   };
 
   return (
-    <ul className="mt-6 space-y-3">
-      {items.map((item) => {
-        const state = states[item.id] ?? { phase: "idle" };
-        const stagedFiles = staged[item.id] ?? [];
-        const canStage = canSubmitDocument(item.status);
-        const submitting = state.phase === "submitting";
+    <>
+      {anyStageable && (
+        <label
+          htmlFor="agree-terms"
+          className="mt-6 flex items-start gap-2.5 rounded-md border border-line bg-surface-muted/60 p-4 text-sm text-ink"
+        >
+          <input
+            id="agree-terms"
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-line-strong text-brand focus:ring-brand"
+          />
+          <span>
+            I agree to the whole{" "}
+            <Link href="/privacy" target="_blank" className="font-medium text-brand hover:underline">
+              Privacy Policy
+            </Link>
+            , and to any part of the{" "}
+            <Link href="/terms" target="_blank" className="font-medium text-brand hover:underline">
+              Terms of Service
+            </Link>{" "}
+            that applies to me.
+          </span>
+        </label>
+      )}
 
-        return (
-          <li key={item.id} className="rounded-md border border-line p-4">
-            <div className="flex items-start justify-between gap-3">
-              <span className="font-medium">{item.documentName}</span>
-              <StatusBadge kind="document" status={item.status} />
-            </div>
+      <ul className="mt-6 space-y-3">
+        {items.map((item) => {
+          const state = states[item.id] ?? { phase: "idle" };
+          const stagedFiles = staged[item.id] ?? [];
+          const canStage = canSubmitDocument(item.status);
+          const submitting = state.phase === "submitting";
 
-            {item.isReplacement && (
-              <p className="mt-2 text-sm text-ink-muted">
-                Updated copy requested. What you sent before stays valid until this one
-                is approved.
-              </p>
-            )}
-
-            {item.status === "rejected" && item.rejectionReason && (
-              <p className="mt-2 text-sm text-expired">
-                Not accepted: {item.rejectionReason}
-              </p>
-            )}
-
-            {item.files.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {item.files.map((file, i) => (
-                  <button
-                    key={file.id}
-                    type="button"
-                    onClick={() => viewFile(file.id)}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted"
-                  >
-                    {openingFileId === file.id ? (
-                      <Spinner className="h-4 w-4" />
-                    ) : (
-                      <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
-                    )}
-                    {file.fileName ?? (item.files.length > 1 ? `File ${i + 1}` : "View file")}
-                  </button>
-                ))}
+          return (
+            <li key={item.id} className="rounded-md border border-line p-4">
+              <div className="flex items-start justify-between gap-3">
+                <span className="font-medium">{item.documentName}</span>
+                <StatusBadge kind="document" status={item.status} />
               </div>
-            )}
 
-            {canStage && (
-              <div className="mt-3 space-y-2">
-                {stagedFiles.length > 0 && (
-                  <ul className="space-y-1.5">
-                    {stagedFiles.map((file, i) => (
-                      <li
-                        key={`${file.name}-${i}`}
-                        className="flex items-center justify-between gap-2 rounded-md bg-surface-muted px-3 py-1.5 text-sm"
-                      >
-                        <span className="flex min-w-0 items-center gap-1.5">
-                          <FileText
-                            className="h-4 w-4 shrink-0 text-ink-subtle"
-                            strokeWidth={2}
-                            aria-hidden
-                          />
-                          <span className="truncate">{file.name}</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeStagedFile(item.id, i)}
-                          disabled={submitting}
-                          aria-label={`Remove ${file.name}`}
-                          className="shrink-0 rounded-md p-1 text-ink-subtle transition-colors hover:bg-line-strong hover:text-ink disabled:opacity-60"
-                        >
-                          <X className="h-3.5 w-3.5" strokeWidth={2.5} />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+              {item.isReplacement && (
+                <p className="mt-2 text-sm text-ink-muted">
+                  Updated copy requested. What you sent before stays valid until this one
+                  is approved.
+                </p>
+              )}
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <FilePicker
-                    disabled={submitting}
-                    label={
-                      item.files.length > 0 || stagedFiles.length > 0
-                        ? "Add another file"
-                        : "Add file"
-                    }
-                    onPick={(files) => addFiles(item.id, files)}
-                  />
+              {item.status === "rejected" && item.rejectionReason && (
+                <p className="mt-2 text-sm text-expired">
+                  Not accepted: {item.rejectionReason}
+                </p>
+              )}
 
-                  {stagedFiles.length > 0 && (
-                    <Button
+              {item.files.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {item.files.map((file, i) => (
+                    <button
+                      key={file.id}
                       type="button"
-                      size="sm"
-                      onClick={() => submit(item.id)}
-                      pending={submitting}
+                      onClick={() => viewFile(file.id)}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-line-strong px-3 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted"
                     >
-                      <UploadCloud className="h-4 w-4" strokeWidth={2} aria-hidden />
-                      {state.phase === "submitting"
-                        ? `Uploading ${Math.min(state.doneCount + 1, state.total)} of ${state.total}…`
-                        : `Submit ${stagedFiles.length === 1 ? "file" : `${stagedFiles.length} files`}`}
-                    </Button>
-                  )}
+                      {openingFileId === file.id ? (
+                        <Spinner className="h-4 w-4" />
+                      ) : (
+                        <FileText className="h-4 w-4" strokeWidth={2} aria-hidden />
+                      )}
+                      {file.fileName ?? (item.files.length > 1 ? `File ${i + 1}` : "View file")}
+                    </button>
+                  ))}
                 </div>
-              </div>
-            )}
+              )}
 
-            {state.phase === "error" && (
-              <p className="mt-2 text-sm text-expired">{state.message}</p>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+              {canStage && (
+                <div className="mt-3 space-y-2">
+                  {stagedFiles.length > 0 && (
+                    <ul className="space-y-1.5">
+                      {stagedFiles.map((file, i) => (
+                        <li
+                          key={`${file.name}-${i}`}
+                          className="flex items-center justify-between gap-2 rounded-md bg-surface-muted px-3 py-1.5 text-sm"
+                        >
+                          <span className="flex min-w-0 items-center gap-1.5">
+                            <FileText
+                              className="h-4 w-4 shrink-0 text-ink-subtle"
+                              strokeWidth={2}
+                              aria-hidden
+                            />
+                            <span className="truncate">{file.name}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeStagedFile(item.id, i)}
+                            disabled={submitting}
+                            aria-label={`Remove ${file.name}`}
+                            className="shrink-0 rounded-md p-1 text-ink-subtle transition-colors hover:bg-line-strong hover:text-ink disabled:opacity-60"
+                          >
+                            <X className="h-3.5 w-3.5" strokeWidth={2.5} />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <FilePicker
+                      disabled={submitting || !agreed}
+                      label={
+                        item.files.length > 0 || stagedFiles.length > 0
+                          ? "Add another file"
+                          : "Add file"
+                      }
+                      onPick={(files) => addFiles(item.id, files)}
+                    />
+
+                    {stagedFiles.length > 0 && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => submit(item.id)}
+                        disabled={!agreed}
+                        pending={submitting}
+                      >
+                        <UploadCloud className="h-4 w-4" strokeWidth={2} aria-hidden />
+                        {state.phase === "submitting"
+                          ? `Uploading ${Math.min(state.doneCount + 1, state.total)} of ${state.total}…`
+                          : `Submit ${stagedFiles.length === 1 ? "file" : `${stagedFiles.length} files`}`}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {state.phase === "error" && (
+                <p className="mt-2 text-sm text-expired">{state.message}</p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </>
   );
 }
 

@@ -158,6 +158,14 @@ export default function TermsPage() {
                 advance through Stripe.
               </li>
               <li>
+                <strong className="text-ink">Free trial promotions:</strong>{" "}
+                free trial offers are subject to change. Currently, your first
+                subscription starts with a {TRIAL_DAYS}-day free trial, but we
+                may change the length of the trial, or end or vary any trial
+                offer or promotion, at any time. A trial that has already
+                started isn&rsquo;t affected.
+              </li>
+              <li>
                 <strong className="text-ink">Free trial:</strong> your first
                 subscription starts with a {TRIAL_DAYS}-day free trial. You
                 enter a card at signup and nothing is charged during the trial.
@@ -165,9 +173,10 @@ export default function TermsPage() {
                 plan price on day {TRIAL_DAYS}, and then every month.
               </li>
               <li>
-                A trial is available once per business. If your business or
-                email address has already had a trial, we may charge you from
-                the start of the subscription instead.
+                A trial is available once per business. If we suspect you&rsquo;ve
+                already claimed a free trial, we may use factors such as your IP
+                address, your email address and your card details (processed
+                through Stripe) to check, and we may refuse the free trial.
               </li>
               <li>
                 If a payment fails, Stripe may retry it, and we may limit your

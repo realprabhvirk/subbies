@@ -55,9 +55,11 @@ export async function requestDocumentUpload(
   token: string,
   contractorDocumentId: string,
   file: { name: string; type: string; size: number },
+  agreedToTerms: boolean,
 ): Promise<RequestUploadResult> {
   const resolved = await resolveOnboardingToken(token);
   if (!resolved) return { ok: false, error: "This upload link is no longer valid." };
+  if (!agreedToTerms) return { ok: false, error: AGREEMENT_REQUIRED_ERROR };
 
   const doc = await loadOwnedDocument(resolved.contractorId, contractorDocumentId);
   if (!doc) return { ok: false, error: "That document isn't part of this request." };
@@ -98,6 +100,9 @@ export async function requestDocumentUpload(
 
 export type SubmitStagedResult = { ok: boolean; error?: string };
 
+const AGREEMENT_REQUIRED_ERROR =
+  "Tick the box to agree to the Privacy Policy and Terms before uploading.";
+
 /**
  * Confirms a whole batch of already-uploaded files (their bytes are already
  * sitting in Storage via requestDocumentUpload + a direct browser upload —
@@ -114,9 +119,11 @@ export async function submitStagedDocuments(
   token: string,
   contractorDocumentId: string,
   files: { path: string; fileName: string }[],
+  agreedToTerms: boolean,
 ): Promise<SubmitStagedResult> {
   const resolved = await resolveOnboardingToken(token);
   if (!resolved) return { ok: false, error: "This upload link is no longer valid." };
+  if (!agreedToTerms) return { ok: false, error: AGREEMENT_REQUIRED_ERROR };
 
   if (files.length === 0) {
     return { ok: false, error: "Add at least one file before submitting." };

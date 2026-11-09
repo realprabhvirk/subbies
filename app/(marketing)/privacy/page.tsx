@@ -32,7 +32,7 @@ export default function PrivacyPage() {
         <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
           Privacy Policy
         </h1>
-        <p className="mt-3 text-sm text-ink-subtle">Last updated: 30 September 2026</p>
+        <p className="mt-3 text-sm text-ink-subtle">Last updated: 9 November 2026</p>
 
         <div className="mt-10 space-y-10 border-t border-line pt-10">
           <P>
@@ -118,6 +118,11 @@ export default function PrivacyPage() {
                 reminders, account notifications, billing receipts)
               </li>
               <li>Process subscription payments via Stripe</li>
+              <li>
+                Check whether a business has already claimed a free trial, using
+                email address, IP address and card details (processed through
+                Stripe), so we can refuse a second trial
+              </li>
               <li>Maintain account security (login verification, password reset)</li>
               <li>Improve and maintain the platform</li>
             </UL>
@@ -207,6 +212,17 @@ export default function PrivacyPage() {
                 Subbies account is deleted, as required by tax, financial and
                 anti-fraud laws. These records are held and governed by Stripe,
                 not Subbies, and we can&rsquo;t delete them on request.
+              </li>
+              <li>
+                <strong className="text-ink">Exception 3, account locking:</strong>{" "}
+                If your subscription ends, your account is locked, but locking
+                doesn&rsquo;t mean your data is deleted. Your company data,
+                subcontractor records and documents stay in place until you
+                delete your account. See Section 8 of our{" "}
+                <Link href="/terms" className="text-brand hover:underline">
+                  Terms of Service
+                </Link>
+                .
               </li>
             </UL>
           </section>
