@@ -264,7 +264,10 @@ export function BillingPanel({
           {(Object.keys(RESOURCE_LABEL) as LimitedResource[]).map((r, i) => {
             const limit = limits[r];
             const used = usage[r];
-            const atLimit = limit !== null && used >= limit;
+            // 0 means the plan doesn't include this, which isn't the same as
+            // having hit a cap.
+            const notIncluded = limit === 0;
+            const atLimit = limit !== null && limit > 0 && used >= limit;
             const tone: StatTone = atLimit ? "attention" : "neutral";
             const Icon = RESOURCE_ICON[r];
             return (
@@ -283,10 +286,14 @@ export function BillingPanel({
                   {/* A fraction against infinity ("1 / unlimited") reads
                       oddly, so an unlimited ceiling is a caption instead. */}
                   <span className="text-sm text-ink-muted">
-                    {limit === null ? "· no limit" : `/ ${limit}`}
+                    {limit === null
+                      ? "· no limit"
+                      : notIncluded
+                        ? "· not in your plan"
+                        : `/ ${limit}`}
                   </span>
                 </p>
-                {limit !== null && (
+                {limit !== null && !notIncluded && (
                   <div aria-hidden className="mt-3 h-1 overflow-hidden rounded-full bg-line">
                     <div
                       className={`h-full ${atLimit ? "bg-attention" : "bg-ink-muted"}`}

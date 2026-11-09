@@ -12,7 +12,7 @@
 export type PlanId = "starter" | "business" | "pro";
 
 export interface PlanLimits {
-  /** null = unlimited */
+  /** null = unlimited, 0 = not included in the plan */
   contractors: number | null;
   documentTypes: number | null;
   projects: number | null;
@@ -41,12 +41,12 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     priceIdEnv: "STRIPE_PRICE_STARTER",
     blurb: "For smaller operators bringing on a handful of contractors.",
     featured: false,
-    limits: { contractors: 5, documentTypes: 7, projects: 10 },
+    // Projects are not part of Starter (limit 0) — they start on Business.
+    limits: { contractors: 5, documentTypes: 7, projects: 0 },
     storageMarketing: 200,
     features: [
       "5 contractors",
       "7 document types",
-      "10 projects",
       "Secure upload links",
       "Review, approve & reject",
       "Expiry reminders",
@@ -59,12 +59,12 @@ export const PLANS: Record<PlanId, PlanConfig> = {
     priceIdEnv: "STRIPE_PRICE_BUSINESS",
     blurb: "For established builders running multiple jobs at once.",
     featured: true,
-    limits: { contractors: 25, documentTypes: 15, projects: null },
+    limits: { contractors: 25, documentTypes: 15, projects: 10 },
     storageMarketing: 750,
     features: [
       "25 contractors",
       "15 document types",
-      "Unlimited projects",
+      "10 projects",
       "Everything in Starter",
       "Compliance status per project",
     ],

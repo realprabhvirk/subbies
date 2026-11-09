@@ -187,8 +187,9 @@ export default function TermsPage() {
               <li>
                 A trial is available once per business. If we suspect you&rsquo;ve
                 already claimed a free trial, we may use factors such as your IP
-                address, your email address and your card details (processed
-                through Stripe) to check, and we may refuse the free trial.
+                address, your email address and your payment method (processed
+                through Stripe) to check, and we may refuse the free trial. We
+                may also revoke your free trial at any time if we suspect this.
               </li>
               <li>
                 If a payment fails, Stripe may retry it, and we may limit your

@@ -213,5 +213,10 @@ export function limitMessage(check: LimitCheck, label: string): string {
   if (check.accessLapsed) {
     return `Your Subbies access has ended. Choose a plan in Settings → Billing to keep adding ${label}.`;
   }
+  if (check.limit === 0) {
+    // Not a cap that's been hit — the plan simply doesn't include this.
+    const name = label.charAt(0).toUpperCase() + label.slice(1);
+    return `${name} aren't included in your plan. Upgrade your plan in Settings → Billing to use them.`;
+  }
   return `You've reached your ${check.limit} ${label} limit. Upgrade your plan in Settings → Billing to add more.`;
 }

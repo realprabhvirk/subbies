@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Check, Minus } from "lucide-react";
+import { Check, Minus, X } from "lucide-react";
 
 import { Section, Eyebrow, CtaBand } from "../_components/ui";
 import { ButtonLink } from "@/app/components/button";
@@ -13,6 +13,11 @@ export const metadata: Metadata = {
 
 const TIERS = PLAN_IDS.map((id) => PLANS[id]);
 
+/** A limit of 0 means the plan doesn't include the feature at all. */
+function isNotIncluded(v: number | null): boolean {
+  return v === 0;
+}
+
 function limitText(v: number | null): string {
   return v === null ? "Unlimited" : String(v);
 }
@@ -20,10 +25,16 @@ function limitText(v: number | null): string {
 const COMPARISON: {
   label: string;
   value: (p: (typeof TIERS)[number]) => string;
+  /** Renders a cross instead of the value when the plan doesn't include it. */
+  notIncluded?: (p: (typeof TIERS)[number]) => boolean;
 }[] = [
   { label: "Contractors", value: (p) => limitText(p.limits.contractors) },
   { label: "Document types", value: (p) => limitText(p.limits.documentTypes) },
-  { label: "Projects", value: (p) => limitText(p.limits.projects) },
+  {
+    label: "Projects",
+    value: (p) => limitText(p.limits.projects),
+    notIncluded: (p) => isNotIncluded(p.limits.projects),
+  },
   {
     label: "Document storage",
     value: (p) =>
@@ -31,13 +42,16 @@ const COMPARISON: {
   },
 ];
 
-const INCLUDED = [
-  "Contractor onboarding & secure upload links",
-  "Document review, approval & rejection",
-  "Compliance status tracking",
-  "Expiry reminders",
-  "Project assignment",
-  "Email notifications",
+const INCLUDED: {
+  label: string;
+  included?: (p: (typeof TIERS)[number]) => boolean;
+}[] = [
+  { label: "Contractor onboarding & secure upload links" },
+  { label: "Document review, approval & rejection" },
+  { label: "Compliance status tracking" },
+  { label: "Expiry reminders" },
+  { label: "Project assignment", included: (p) => !isNotIncluded(p.limits.projects) },
+  { label: "Email notifications" },
 ];
 
 export default function PricingPage() {
@@ -146,26 +160,53 @@ export default function PricingPage() {
                       key={t.id}
                       className={`px-5 py-3.5 ${/^\d+$/.test(row.value(t)) ? "font-mono text-xs" : "font-medium"} ${t.featured ? "bg-brand-tint/30" : ""}`}
                     >
-                      {row.value(t)}
+                      {row.notIncluded?.(t) ? (
+                        <>
+                          <X
+                            className="h-4 w-4 text-ink-subtle"
+                            strokeWidth={2.5}
+                            aria-hidden
+                          />
+                          <span className="sr-only">Not included</span>
+                        </>
+                      ) : (
+                        row.value(t)
+                      )}
                     </td>
                   ))}
                 </tr>
               ))}
               {INCLUDED.map((feature) => (
-                <tr key={feature}>
+                <tr key={feature.label}>
                   <th scope="row" className="px-5 py-3.5 text-left font-medium text-ink-muted">
-                    {feature}
+                    {feature.label}
                   </th>
-                  {TIERS.map((t) => (
-                    <td key={t.id} className={`px-5 py-3.5 ${t.featured ? "bg-brand-tint/30" : ""}`}>
-                      <Check
-                        className="h-4 w-4 text-approved"
-                        strokeWidth={2.5}
-                        aria-hidden
-                      />
-                      <span className="sr-only">Included</span>
-                    </td>
-                  ))}
+                  {TIERS.map((t) => {
+                    const included = feature.included ? feature.included(t) : true;
+                    return (
+                      <td key={t.id} className={`px-5 py-3.5 ${t.featured ? "bg-brand-tint/30" : ""}`}>
+                        {included ? (
+                          <>
+                            <Check
+                              className="h-4 w-4 text-approved"
+                              strokeWidth={2.5}
+                              aria-hidden
+                            />
+                            <span className="sr-only">Included</span>
+                          </>
+                        ) : (
+                          <>
+                            <X
+                              className="h-4 w-4 text-ink-subtle"
+                              strokeWidth={2.5}
+                              aria-hidden
+                            />
+                            <span className="sr-only">Not included</span>
+                          </>
+                        )}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>

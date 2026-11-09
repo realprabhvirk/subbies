@@ -133,8 +133,8 @@ export default function PrivacyPage() {
               <li>Process subscription payments via Stripe</li>
               <li>
                 Check whether a business has already claimed a free trial, using
-                email address, IP address and card details (processed through
-                Stripe), so we can refuse a second trial
+                email address, IP address and payment method (processed through
+                Stripe), so we can refuse or revoke a repeat trial
               </li>
               <li>
                 Keep a record of who agreed to our Terms and Privacy Policy,

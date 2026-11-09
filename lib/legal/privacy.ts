@@ -6,7 +6,7 @@
  * document a contractor submits (contractor_documents.agreed_privacy_version),
  * next to the terms version in lib/legal/terms.ts.
  */
-export const PRIVACY_VERSION = "2026-11-09";
+export const PRIVACY_VERSION = "2026-11-09.2";
 
 /** Human-readable form of the same date, shown on the Privacy Policy page. */
 export const PRIVACY_LAST_UPDATED = "9 November 2026";
