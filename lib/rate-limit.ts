@@ -3,6 +3,7 @@ import "server-only";
 import { headers } from "next/headers";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hashRateLimitKey, RATE_LIMIT_PURGE_AGE_SECONDS } from "@/lib/rate-limit-key";
 
 /**
  * Per-key rate limiting for the public, server-side endpoints (the contact
@@ -60,7 +61,8 @@ export async function checkRateLimit(rule: RateLimitRule, key: string): Promise<
     const admin = createAdminClient();
     const { data, error } = await admin.rpc("check_rate_limit", {
       p_bucket: rule.bucket,
-      p_key: key,
+      // Hashed (L5): raw keys are upload tokens and IP addresses.
+      p_key: hashRateLimitKey(rule.bucket, key),
       p_limit: rule.limit,
       p_window_seconds: rule.windowSeconds,
     });
@@ -76,6 +78,26 @@ export async function checkRateLimit(rule: RateLimitRule, key: string): Promise<
   } catch (err) {
     console.error("checkRateLimit: unexpected error, allowing", err);
     return true; // fail open
+  }
+}
+
+/**
+ * Deletes limiter rows older than a day (L5). Keys that never come back were
+ * otherwise kept forever. Run from the daily cron; never throws.
+ */
+export async function purgeRateLimitHits(): Promise<number | null> {
+  try {
+    const { data, error } = await createAdminClient().rpc("purge_rate_limit_hits", {
+      p_older_than_seconds: RATE_LIMIT_PURGE_AGE_SECONDS,
+    });
+    if (error) {
+      console.error("purgeRateLimitHits failed", { code: error.code, message: error.message });
+      return null;
+    }
+    return typeof data === "number" ? data : 0;
+  } catch (err) {
+    console.error("purgeRateLimitHits: unexpected error", err);
+    return null;
   }
 }
 

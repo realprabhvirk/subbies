@@ -219,6 +219,21 @@ function rpc(name: string, args: Record<string, unknown>): Result {
       table("contractor_tokens").push({ id: randomUUID(), contractor_id: contractor.id, token });
       return { data: [{ contractor_id: contractor.id, token }], error: null };
     }
+    case "check_rate_limit": {
+      const hits = table("rate_limit_hits");
+      const used = hits.filter((r) => r.bucket === args.p_bucket && r.key === args.p_key).length;
+      if (used >= Number(args.p_limit)) return { data: false, error: null };
+      hits.push({ bucket: args.p_bucket, key: args.p_key, created_ms: nowMs });
+      return { data: true, error: null };
+    }
+    case "purge_rate_limit_hits": {
+      const hits = table("rate_limit_hits");
+      const cutoff = nowMs - Number(args.p_older_than_seconds) * 1000;
+      const keep = hits.filter((r) => Number(r.created_ms) >= cutoff);
+      const removed = hits.length - keep.length;
+      hits.splice(0, hits.length, ...keep);
+      return { data: removed, error: null };
+    }
     case "claim_trial_fingerprint": {
       const ledger = table("trial_card_fingerprints");
       let row = ledger.find((r) => r.fingerprint === args.p_fingerprint);

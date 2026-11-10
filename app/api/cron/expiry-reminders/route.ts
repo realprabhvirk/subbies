@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { purgeRateLimitHits } from "@/lib/rate-limit";
 import { getCompanyOwnerEmail } from "@/lib/onboarding";
 import { getAppUrl } from "@/lib/app-url";
 import { recomputeContractorStatus } from "@/lib/contractor-status";
@@ -74,6 +75,12 @@ export async function GET(req: NextRequest) {
 
   const dryRun = new URL(req.url).searchParams.get("dry") === "1";
   const admin = createAdminClient();
+
+  // Daily housekeeping that rides on this cron (L5): old rate limiter rows.
+  if (!dryRun) {
+    const purged = await purgeRateLimitHits();
+    if (purged !== null) console.log(`expiry-reminders: purged ${purged} old rate limit rows`);
+  }
   // Today in Queensland (see compliance-today), so a 7am-AEST cron run that is
   // still "yesterday" in UTC evaluates against the right calendar date.
   const today = complianceToday();
