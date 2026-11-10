@@ -41,15 +41,15 @@ export function SectionCard({
       aria-labelledby={titleId}
       className={`min-w-0 overflow-hidden rounded-card border border-line bg-surface shadow-sm ${className}`}
     >
-      <header className="flex items-start justify-between gap-3 px-card pb-4 pt-card sm:px-6 sm:pt-6">
-        <div className="flex min-w-0 items-center gap-3.5">
+      <header className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1 px-card pb-4 pt-card sm:px-6 sm:pt-6">
+        <div className="flex min-w-[14rem] flex-1 items-center gap-3.5">
           {icon && <IconDisc icon={icon} tone={tone} size="md" />}
           <div className="min-w-0">
             <h2
               id={titleId}
               className="flex flex-wrap items-center gap-x-3 gap-y-1 text-card-title"
             >
-              <span className="truncate">{title}</span>
+              <span className="min-w-0 break-words">{title}</span>
               {count !== undefined && count > 0 && (
                 <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-expired px-2 font-mono text-2xs font-medium text-white">
                   {count}

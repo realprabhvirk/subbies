@@ -24,11 +24,12 @@ const CIRC = 2 * Math.PI * RADIUS;
 export function DonutChart({
   segments,
   centerLabel,
-  className = "",
+  className = "w-full max-w-60",
 }: {
   segments: DonutSegment[];
   /** The line under the total, e.g. "Total contractors". */
   centerLabel: string;
+  /** Replaces the default sizing (w-full max-w-60). */
   className?: string;
 }) {
   const total = segments.reduce((sum, s) => sum + s.value, 0);
@@ -42,7 +43,7 @@ export function DonutChart({
   const gap = visible.length > 1 ? 3 : 0;
 
   return (
-    <div className={`relative mx-auto aspect-square w-full max-w-60 ${className}`}>
+    <div className={`relative mx-auto aspect-square ${className}`}>
       <svg
         viewBox={`0 0 ${SIZE} ${SIZE}`}
         role="img"

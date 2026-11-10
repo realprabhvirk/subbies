@@ -6,26 +6,44 @@ import {
   CalendarClock,
   CircleX,
   ArrowRight,
-  ChevronRight,
   FileText,
   UserPlus,
   Inbox,
+  ListChecks,
+  TriangleAlert,
+  Clock,
+  ChartPie,
+  Zap,
+  History,
+  FolderKanban,
+  Settings,
+  Upload,
+  type LucideIcon,
 } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
 import { complianceTodayUtcMs } from "@/lib/time/compliance-today";
+import { bucketContractors, EXPIRING_WINDOW_DAYS } from "@/lib/dashboard-buckets";
+import { relativeTime } from "@/lib/relative-time";
 import { StatusBadge } from "@/app/components/status-badge";
-import { type StatTone } from "@/app/components/card";
 import { Alert } from "@/app/components/alert";
 import { ButtonLink } from "@/app/components/button";
 import { Avatar } from "@/app/components/avatar";
+import { PageHeader } from "@/app/components/page-header";
+import { SectionCard } from "@/app/components/section-card";
+import { StatTile } from "@/app/components/stat-tile";
+import { ListRow, RowList } from "@/app/components/list-row";
+import { ActionTile } from "@/app/components/action-tile";
+import { IconDisc, type DiscTone } from "@/app/components/icon-disc";
+import { DonutChart, DonutLegend, type DonutSegment } from "@/app/components/donut-chart";
 import { hasComplianceIssue } from "@/lib/projects";
 import type { ContractorStatus, DocumentStatus } from "@/lib/types";
+import { Greeting } from "./_components/greeting";
+import { HeaderPhotoBand } from "./_components/header-photo-band";
+import { loadNotifications } from "./_components/notifications-slot";
 
 export const metadata: Metadata = { title: "Dashboard" };
-
-const EXPIRING_WINDOW_DAYS = 30;
 
 interface ContractorRow {
   id: string;
@@ -45,9 +63,10 @@ export default async function DashboardPage() {
   if (!company) return null;
 
   const supabase = await createClient();
-  // The contractor list and the project rollup below are independent of each
-  // other, so they go out together rather than one after the other.
-  const [{ data: contractorData, error }, { data: projectRows }] =
+  // The contractor list, the project rollup and the recent activity are
+  // independent of each other, so they go out together. Activity reuses the
+  // bell's per-request cached notifications query: no extra round trip.
+  const [{ data: contractorData, error }, { data: projectRows }, { notifications }] =
     await Promise.all([
       supabase
         .from("contractors")
@@ -59,6 +78,7 @@ export default async function DashboardPage() {
         .select("id, project_contractors(removed_at, contractors(status))")
         .eq("company_id", company.id)
         .neq("status", "completed"),
+      loadNotifications(),
     ]);
 
   const contractors = (contractorData ?? []) as ContractorRow[];
@@ -96,88 +116,27 @@ export default async function DashboardPage() {
   }
 
   // UTC midnight of today's Queensland date, matched by the "...T00:00:00Z"
-  // expiry parse below, so buckets flip on the right calendar day.
+  // expiry parse in bucketContractors, so buckets flip on the right day.
   const today = complianceTodayUtcMs();
-  const windowEnd = today + EXPIRING_WINDOW_DAYS * 86_400_000;
+  const { expiredIds, expiringIds, approvedCount, pendingCount, exclusive } =
+    bucketContractors({ contractors, docs, todayMs: today });
 
-  const expiringContractorIds = new Set<string>();
-  const expiredContractorIds = new Set<string>();
-  for (const doc of docs) {
-    if (doc.status !== "approved" || !doc.expiry_date) continue;
-    const expiry = new Date(doc.expiry_date + "T00:00:00Z").getTime();
-    if (expiry < today) expiredContractorIds.add(doc.contractor_id);
-    else if (expiry <= windowEnd) expiringContractorIds.add(doc.contractor_id);
-  }
-  for (const c of contractors) {
-    if (c.status === "expired") expiredContractorIds.add(c.id);
-  }
-  // A contractor that's already expired shouldn't also count as expiring.
-  for (const id of expiredContractorIds) expiringContractorIds.delete(id);
-
-  const approvedCount = contractors.filter(
-    (c) => c.status === "approved" && !expiredContractorIds.has(c.id),
-  ).length;
-  const pendingCount = contractors.filter((c) =>
-    ["pending", "awaiting_review", "attention_required"].includes(c.status),
-  ).length;
-
-  // Share of the roster each figure represents, so a number reads against the
-  // total without needing a chart. Guarded: no contractors means no bar.
   const total = contractors.length;
   const shareOf = (n: number) => (total > 0 ? n / total : undefined);
-
-  const stats: {
-    label: string;
-    value: number;
-    icon: typeof CircleCheck;
-    tone: StatTone;
-    note?: string;
-    share?: number;
-  }[] = [
-    {
-      label: "Approved",
-      value: approvedCount,
-      icon: CircleCheck,
-      tone: "approved",
-      share: shareOf(approvedCount),
-    },
-    {
-      label: "Pending onboarding",
-      value: pendingCount,
-      icon: CircleDashed,
-      tone: "neutral",
-      share: shareOf(pendingCount),
-    },
-    {
-      label: "Expiring soon",
-      value: expiringContractorIds.size,
-      icon: CalendarClock,
-      tone: "attention",
-      note: `Within ${EXPIRING_WINDOW_DAYS} days`,
-      share: shareOf(expiringContractorIds.size),
-    },
-    {
-      label: "Expired",
-      value: expiredContractorIds.size,
-      icon: CircleX,
-      tone: "expired",
-      share: shareOf(expiredContractorIds.size),
-    },
-  ];
 
   const actionRequired = contractors.filter(
     (c) =>
       c.status === "awaiting_review" ||
       c.status === "attention_required" ||
       c.status === "expired" ||
-      expiredContractorIds.has(c.id),
+      expiredIds.has(c.id),
   );
 
   // --- Presentation only below this line: ordering and labels for display.
   // Nothing here changes a count or a status.
 
   const effectiveStatus = (c: ContractorRow): ContractorStatus =>
-    expiredContractorIds.has(c.id) ? "expired" : c.status;
+    expiredIds.has(c.id) ? "expired" : c.status;
 
   // Worst first: expired, then rejected documents, then reviews waiting.
   const URGENCY: Partial<Record<ContractorStatus, number>> = {
@@ -201,7 +160,7 @@ export default async function DashboardPage() {
   const soonest = new Map<string, number>();
   for (const doc of docs) {
     if (doc.status !== "approved" || !doc.expiry_date) continue;
-    if (!expiringContractorIds.has(doc.contractor_id)) continue;
+    if (!expiringIds.has(doc.contractor_id)) continue;
     const expiry = new Date(doc.expiry_date + "T00:00:00").getTime();
     if (expiry < today) continue;
     const prev = soonest.get(doc.contractor_id);
@@ -218,46 +177,66 @@ export default async function DashboardPage() {
   const todayLabel = new Intl.DateTimeFormat("en-AU", {
     weekday: "long",
     day: "numeric",
-    month: "long",
+    month: "short",
+    year: "numeric",
     timeZone: "Australia/Brisbane",
   }).format(new Date());
 
-  const [approvedStat, ...otherStats] = stats;
-  const approvedShare = total > 0 ? approvedCount / total : 0;
+  const segments: DonutSegment[] = [
+    { key: "approved", label: "Approved, not expiring", value: exclusive.approved, color: "var(--color-tile-approved-disc)" },
+    { key: "pending", label: "Pending onboarding", value: exclusive.pending, color: "var(--color-tile-pending-disc)" },
+    { key: "expiring", label: "Expiring soon", value: exclusive.expiring, color: "var(--color-tile-expiring-disc)" },
+    { key: "expired", label: "Expired", value: exclusive.expired, color: "var(--color-tile-expired-disc)" },
+  ];
+
+  const recent = notifications.slice(0, 5);
+
+  const QUEUE_DISC: Partial<Record<ContractorStatus, { tone: DiscTone; icon: LucideIcon }>> = {
+    expired: { tone: "expired", icon: CircleX },
+    attention_required: { tone: "expiring", icon: TriangleAlert },
+    awaiting_review: { tone: "pending", icon: Clock },
+  };
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 border-b border-line pb-6">
-        <div className="min-w-0">
-          <p className="label-caps text-ink-muted">{todayLabel}</p>
-          <h1 className="mt-2 text-2xl sm:text-3xl">{company.name}</h1>
-          <p className="mt-2 text-sm text-ink-muted">
-            {total === 0 ? (
-              "Your register is empty. Add a contractor to get started."
-            ) : (
-              <>
-                <span className="font-semibold text-ink">{total}</span>{" "}
-                {total === 1 ? "contractor" : "contractors"} on the register
-                {" · "}
-                {actionRequired.length === 0 ? (
-                  "nothing needs you right now"
-                ) : (
-                  <>
-                    <span className="font-semibold text-ink">
-                      {actionRequired.length}
-                    </span>{" "}
-                    {actionRequired.length === 1 ? "needs" : "need"} you
-                  </>
-                )}
-              </>
-            )}
-          </p>
-        </div>
-        <ButtonLink href="/dashboard/contractors/new" variant="secondary" size="sm">
-          <UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden />
-          Add contractor
-        </ButtonLink>
-      </header>
+      <PageHeader
+        size="hero"
+        eyebrow={todayLabel}
+        band={<HeaderPhotoBand />}
+        title={
+          <>
+            <Greeting />
+            <span className="mt-2 block text-card-title font-semibold text-ink-muted">
+              {company.name}
+            </span>
+          </>
+        }
+        description={
+          total === 0 ? (
+            "Your register is empty. Add a contractor to get started."
+          ) : (
+            <>
+              <span className="font-semibold text-ink">{total}</span>{" "}
+              {total === 1 ? "contractor" : "contractors"} on the register
+              {" · "}
+              {actionRequired.length === 0 ? (
+                "nothing needs you right now"
+              ) : (
+                <>
+                  <span className="font-semibold text-ink">{actionRequired.length}</span>{" "}
+                  {actionRequired.length === 1 ? "needs" : "need"} you
+                </>
+              )}
+            </>
+          )
+        }
+        actions={
+          <ButtonLink href="/dashboard/contractors/new">
+            <UserPlus className="h-5 w-5" strokeWidth={2} aria-hidden />
+            Add contractor
+          </ButtonLink>
+        }
+      />
 
       {error && (
         <Alert tone="error">
@@ -265,230 +244,227 @@ export default async function DashboardPage() {
         </Alert>
       )}
 
-      {contractors.length === 0 ? (
-        <GettingStarted />
-      ) : (
-        <>
-          {/* The figures row: one ruled panel, the compliant share leading,
-              then the three numbers that need watching. */}
-          <section
-            aria-label="Compliance summary"
-            className="grid grid-cols-2 overflow-hidden rounded-card border border-line bg-surface xl:grid-cols-[1.6fr_1fr_1fr_1fr]"
+      <section
+        aria-label="Compliance summary"
+        className="relative z-10 grid grid-cols-2 gap-4 xl:grid-cols-4"
+      >
+        <StatTile
+          tone="approved"
+          icon={CircleCheck}
+          label="Approved"
+          value={approvedCount}
+          caption={`of ${total} ${total === 1 ? "contractor" : "contractors"}`}
+          progress={shareOf(approvedCount)}
+          progressLabel={`${Math.round((shareOf(approvedCount) ?? 0) * 100)}% of contractors approved`}
+          href="/dashboard/contractors?status=approved"
+        />
+        <StatTile
+          tone="pending"
+          icon={CircleDashed}
+          label="Pending onboarding"
+          value={pendingCount}
+          caption="Still collecting documents"
+          href="/dashboard/contractors?status=pending"
+        />
+        <StatTile
+          tone="expiring"
+          icon={CalendarClock}
+          label="Expiring soon"
+          value={expiringIds.size}
+          caption={`Within ${EXPIRING_WINDOW_DAYS} days`}
+          href="/dashboard/contractors?status=expiring"
+        />
+        <StatTile
+          tone="expired"
+          icon={CircleX}
+          label="Expired"
+          value={expiredIds.size}
+          caption="Not cleared for site"
+          href="/dashboard/contractors?status=expired"
+        />
+      </section>
+
+      {projectsWithIssues > 0 && (
+        <Link href="/dashboard/projects" className="block rounded-md">
+          <Alert
+            tone="warning"
+            className="transition-colors duration-[var(--duration-fast)] hover:bg-attention-bg"
+            action={
+              <ArrowRight className="mt-0.5 h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
+            }
           >
-            <div className="col-span-2 border-b border-line p-5 sm:p-6 xl:col-span-1 xl:border-b-0 xl:border-r">
-              <p className="label-caps flex items-center gap-1.5 text-ink-muted">
-                <CircleCheck className="h-3.5 w-3.5 text-approved" strokeWidth={2.5} aria-hidden />
-                {approvedStat.label}
-              </p>
-              <p className="mt-4 flex items-baseline gap-2">
-                <span className="figure text-5xl text-ink">{approvedStat.value}</span>
-                <span className="text-sm text-ink-muted">of {total} contractors</span>
-              </p>
-              <div
-                className="mt-5 h-2 overflow-hidden rounded-sm bg-line"
-                role="img"
-                aria-label={`${Math.round(approvedShare * 100)}% of contractors approved`}
-              >
-                <div
-                  className="h-full bg-approved"
-                  style={{ width: `${Math.round(approvedShare * 100)}%` }}
-                />
-              </div>
-            </div>
-            {otherStats.map((stat, i) => {
-              const Icon = stat.icon;
-              return (
-                <div
-                  key={stat.label}
-                  className={[
-                    "min-w-0 p-5 sm:p-6",
-                    i === 1 ? "border-l border-line" : "",
-                    i === 2 ? "col-span-2 border-t border-line xl:col-span-1 xl:border-l xl:border-t-0" : "",
-                  ].join(" ")}
-                >
-                  <p className="label-caps flex items-center gap-1.5 text-ink-muted">
-                    <Icon
-                      className={`h-3.5 w-3.5 ${TONE_TEXT[stat.tone]}`}
-                      strokeWidth={2.5}
-                      aria-hidden
-                    />
-                    {stat.label}
-                  </p>
-                  <p
-                    className={`figure mt-4 text-3xl sm:text-4xl ${
-                      stat.value > 0 && stat.tone !== "neutral"
-                        ? TONE_TEXT[stat.tone]
-                        : "text-ink"
-                    }`}
-                  >
-                    {stat.value}
-                  </p>
-                  <p className="mt-2 text-xs text-ink-muted">
-                    {stat.note ?? (stat.tone === "expired" ? "Not cleared for site" : "Still collecting documents")}
-                  </p>
-                </div>
-              );
-            })}
-          </section>
+            {projectsWithIssues} {projectsWithIssues === 1 ? "project has" : "projects have"} a
+            contractor that isn&apos;t compliant
+          </Alert>
+        </Link>
+      )}
 
-          <div className="grid grid-cols-1 items-start gap-8 xl:grid-cols-[minmax(0,1fr)_22rem]">
-            {/* Needs you — the reason to open the app. */}
-            <section aria-labelledby="needs-you" className="min-w-0">
-              <div className="mb-3 flex items-end justify-between gap-3">
-                <div>
-                  <h2 id="needs-you" className="text-xl">
-                    Needs you
-                    {queue.length > 0 && (
-                      <span className="ml-2 align-middle font-mono text-sm font-medium text-ink-muted">
-                        {queue.length}
-                      </span>
-                    )}
-                  </h2>
-                  <p className="mt-0.5 text-sm text-ink-muted">
-                    Most urgent first.
-                  </p>
-                </div>
-                <Link
-                  href="/dashboard/contractors"
-                  className="inline-flex items-center gap-1 text-sm font-semibold text-brand hover:underline"
-                >
-                  All contractors
-                  <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-                </Link>
-              </div>
-
+      <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-6">
+          {total === 0 ? (
+            <GettingStarted />
+          ) : (
+            <SectionCard
+              id="needs-you"
+              icon={TriangleAlert}
+              tone="expired"
+              title="Needs you"
+              count={queue.length}
+              subtitle="Most urgent first."
+              action={{ href: "/dashboard/contractors", label: "All contractors" }}
+              flush
+            >
               {queue.length === 0 ? (
-                <div className="flex items-center gap-3 rounded-card border border-line bg-surface px-5 py-6">
-                  <CircleCheck className="h-6 w-6 shrink-0 text-approved" strokeWidth={2} aria-hidden />
-                  <div>
-                    <p className="font-semibold">Nothing needs you right now</p>
-                    <p className="text-sm text-ink-muted">
-                      No documents to review and nothing has expired.
-                    </p>
-                  </div>
+                <div className="flex flex-col items-center border-t border-line px-6 py-14 text-center">
+                  <IconDisc icon={CircleCheck} tone="approved" size="lg" />
+                  <p className="mt-5 font-display text-card-title font-semibold">Nothing needs you right now</p>
+                  <p className="mt-2 max-w-sm text-sm text-ink-muted">
+                    No documents to review and nothing has expired.
+                  </p>
                 </div>
               ) : (
-                <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
+                <RowList>
                   {queue.map((c) => {
                     const status = effectiveStatus(c);
+                    const disc = QUEUE_DISC[status];
                     return (
-                      <li key={c.id}>
-                        <Link
-                          href={`/dashboard/contractors/${c.id}`}
-                          className="group flex items-center gap-4 py-4 pl-4 pr-3 transition-colors duration-[var(--duration-fast)] hover:bg-surface-muted sm:pl-5"
-                        >
-                          <span
-                            aria-hidden
-                            className={`w-1 self-stretch rounded-full ${BAR[status] ?? "bg-line"}`}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate font-semibold text-ink">{c.business_name}</p>
-                            <p className="truncate text-sm text-ink-muted">
-                              {REASON[status]}
-                              {c.trade && (
-                                <span className="hidden sm:inline"> · {c.trade}</span>
-                              )}
-                            </p>
-                          </div>
-                          <StatusBadge kind="contractor" status={status} className="hidden sm:inline-flex" />
-                          <ChevronRight
-                            className="h-5 w-5 shrink-0 text-ink-subtle transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5 group-hover:text-ink"
-                            strokeWidth={2}
-                            aria-hidden
-                          />
-                        </Link>
-                      </li>
+                      <ListRow
+                        key={c.id}
+                        href={`/dashboard/contractors/${c.id}`}
+                        leading={
+                          disc ? <IconDisc icon={disc.icon} tone={disc.tone} size="sm" /> : undefined
+                        }
+                        title={c.business_name}
+                        meta={
+                          <>
+                            {REASON[status]}
+                            {c.trade && <span className="hidden sm:inline"> · {c.trade}</span>}
+                          </>
+                        }
+                        trailing={
+                          // Hidden on phones: the meta line and the disc
+                          // already say it, and the title needs the width.
+                          <span className="hidden sm:inline-flex">
+                            <StatusBadge kind="contractor" status={status} />
+                          </span>
+                        }
+                      />
                     );
                   })}
-                </ul>
+                </RowList>
               )}
-            </section>
+            </SectionCard>
+          )}
 
-            <aside className="min-w-0 space-y-6">
-              {projectsWithIssues > 0 && (
-                <Link href="/dashboard/projects" className="block rounded-md">
-                  <Alert
-                    tone="warning"
-                    className="transition-colors duration-[var(--duration-fast)] hover:bg-attention-bg"
-                    action={
-                      <ArrowRight
-                        className="mt-0.5 h-4 w-4 shrink-0"
-                        strokeWidth={2.25}
-                        aria-hidden
-                      />
-                    }
-                  >
-                    {projectsWithIssues}{" "}
-                    {projectsWithIssues === 1 ? "project has" : "projects have"} a
-                    contractor that isn&apos;t compliant
-                  </Alert>
-                </Link>
-              )}
+          <SectionCard id="quick-actions" icon={Zap} tone="brand" title="Quick actions">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <ActionTile href="/dashboard/contractors/new" icon={UserPlus} label="Add contractor" variant="primary" />
+              <ActionTile href="/dashboard/projects" icon={FolderKanban} label="Projects" />
+              <ActionTile href="/dashboard/document-types" icon={FileText} label="Document types" />
+              <ActionTile href="/dashboard/settings" icon={Settings} label="Settings" />
+            </div>
+          </SectionCard>
+        </div>
 
-              <section aria-labelledby="coming-up">
-                <h2 id="coming-up" className="text-base">
-                  Expiring in the next {EXPIRING_WINDOW_DAYS} days
-                </h2>
-                {comingUp.length === 0 ? (
-                  <p className="mt-2 text-sm text-ink-muted">
-                    Nothing is due to expire in the next {EXPIRING_WINDOW_DAYS} days.
-                  </p>
+        <div className="min-w-0 space-y-6">
+          <SectionCard id="overview" icon={ChartPie} tone="brand" title="Compliance overview">
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-6">
+              <DonutChart segments={segments} centerLabel="Total contractors" className="w-44 shrink-0" />
+              <div className="min-w-56 flex-1">
+                {total === 0 ? (
+                  <div>
+                    <p className="text-sm text-ink-muted">
+                      Add your first contractor and the picture fills in here.
+                    </p>
+                    <ButtonLink href="/dashboard/contractors/new" className="mt-4">
+                      <UserPlus className="h-5 w-5" strokeWidth={2} aria-hidden />
+                      Add contractor
+                    </ButtonLink>
+                  </div>
                 ) : (
-                  <ul className="mt-3 divide-y divide-line border-y border-line">
-                    {comingUp.map((c) => (
-                      <li key={c.id}>
-                        <Link
-                          href={`/dashboard/contractors/${c.id}`}
-                          className="group flex items-center gap-3 py-3 transition-colors hover:text-brand"
-                        >
-                          <Avatar name={c.business_name} size="sm" />
-                          <span className="min-w-0 flex-1 truncate text-sm font-semibold">
-                            {c.business_name}
-                          </span>
-                          <span
-                            className={`shrink-0 rounded-sm border px-1.5 py-0.5 font-mono text-2xs font-medium ${
-                              c.daysLeft <= 7
-                                ? "border-attention-line bg-attention-bg text-attention"
-                                : "border-line-strong bg-surface-muted text-ink-muted"
-                            }`}
-                          >
-                            {c.daysLeft === 0 ? "today" : `${c.daysLeft}d`}
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
+                  <>
+                    <DonutLegend segments={segments} />
+                    <p className="mt-4 text-xs text-ink-muted">
+                      Each contractor is counted once, by their most urgent status.
+                    </p>
+                  </>
                 )}
-              </section>
-            </aside>
-          </div>
-        </>
-      )}
+              </div>
+            </div>
+          </SectionCard>
+
+          {total > 0 && (
+            <SectionCard
+              id="coming-up"
+              icon={CalendarClock}
+              tone="expiring"
+              title={`Expiring in the next ${EXPIRING_WINDOW_DAYS} days`}
+              flush
+            >
+              {comingUp.length === 0 ? (
+                <p className="border-t border-line px-card py-6 text-sm text-ink-muted sm:px-6">
+                  Nothing is due to expire in the next {EXPIRING_WINDOW_DAYS} days.
+                </p>
+              ) : (
+                <RowList>
+                  {comingUp.map((c) => (
+                    <ListRow
+                      key={c.id}
+                      href={`/dashboard/contractors/${c.id}`}
+                      leading={<Avatar name={c.business_name} size="sm" />}
+                      title={c.business_name}
+                      trailing={
+                        <span
+                          className={`rounded-full border px-3 py-1 font-mono text-2xs font-medium ${
+                            c.daysLeft <= 7
+                              ? "border-attention-line bg-attention-bg text-attention"
+                              : "border-line-strong bg-surface-muted text-ink-muted"
+                          }`}
+                        >
+                          {c.daysLeft === 0 ? "today" : `${c.daysLeft}d`}
+                        </span>
+                      }
+                    />
+                  ))}
+                </RowList>
+              )}
+            </SectionCard>
+          )}
+
+          {recent.length > 0 && (
+            <SectionCard
+              id="recent-activity"
+              icon={History}
+              tone="pending"
+              title="Recent activity"
+              flush
+            >
+              <RowList>
+                {recent.map((n) => (
+                  <ListRow
+                    key={n.id}
+                    href={n.contractor_id ? `/dashboard/contractors/${n.contractor_id}` : undefined}
+                    leading={<IconDisc icon={Upload} tone="neutral" size="sm" />}
+                    title={n.message}
+                    meta={relativeTime(n.created_at)}
+                  />
+                ))}
+              </RowList>
+            </SectionCard>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-const TONE_TEXT: Record<StatTone, string> = {
-  neutral: "text-neutral-status",
-  approved: "text-approved",
-  review: "text-review",
-  attention: "text-attention",
-  expired: "text-expired",
-};
-
-const BAR: Partial<Record<ContractorStatus, string>> = {
-  expired: "bg-expired",
-  attention_required: "bg-attention",
-  awaiting_review: "bg-review",
-};
-
-/** First-run panel: the three real steps, each pointing at the real page. */
+/** First-run card: the three real steps, each pointing at the real page. */
 function GettingStarted() {
   const steps = [
     {
       icon: FileText,
       title: "Set your document checklist",
-      body: "Public liability, licences, workers' comp — whatever you need on file.",
+      body: "Public liability, licences, workers' comp. Whatever you need on file.",
       href: "/dashboard/document-types",
       cta: "Document types",
     },
@@ -508,35 +484,26 @@ function GettingStarted() {
     },
   ];
   return (
-    <section aria-labelledby="getting-started">
-      <h2 id="getting-started" className="text-xl">
-        Get set up in three steps
-      </h2>
-      <ol className="mt-4 grid overflow-hidden rounded-card border border-line bg-surface md:grid-cols-3">
-        {steps.map((step, i) => {
-          const Icon = step.icon;
-          return (
-            <li
-              key={step.title}
-              className={`flex flex-col p-5 sm:p-6 ${i > 0 ? "border-t border-line md:border-l md:border-t-0" : ""}`}
+    <SectionCard id="getting-started" icon={ListChecks} tone="brand" title="Get set up in three steps">
+      <ol className="grid gap-4 md:grid-cols-3">
+        {steps.map((step, i) => (
+          <li key={step.title} className="flex flex-col rounded-lg border border-line bg-surface-muted p-5">
+            <div className="flex items-center justify-between">
+              <span className="figure text-3xl text-line-strong">0{i + 1}</span>
+              <IconDisc icon={step.icon} tone="brand" size="sm" />
+            </div>
+            <p className="mt-5 text-sm font-semibold">{step.title}</p>
+            <p className="mt-1 flex-1 text-xs text-ink-muted">{step.body}</p>
+            <Link
+              href={step.href}
+              className="mt-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
             >
-              <div className="flex items-center justify-between">
-                <span className="figure text-3xl text-line-strong">0{i + 1}</span>
-                <Icon className="h-5 w-5 text-ink-subtle" strokeWidth={2} aria-hidden />
-              </div>
-              <p className="mt-5 font-semibold">{step.title}</p>
-              <p className="mt-1 flex-1 text-sm text-ink-muted">{step.body}</p>
-              <Link
-                href={step.href}
-                className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand hover:underline"
-              >
-                {step.cta}
-                <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-              </Link>
-            </li>
-          );
-        })}
+              {step.cta}
+              <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+            </Link>
+          </li>
+        ))}
       </ol>
-    </section>
+    </SectionCard>
   );
 }

@@ -53,19 +53,19 @@ export function StatTile({
   const share = progress === undefined ? undefined : Math.max(0, Math.min(1, progress));
   const body = (
     <>
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-3">
-          <IconDisc icon={icon} tone={tone} size="md" />
-          <p className="min-w-0 text-sm font-semibold leading-tight text-ink">{label}</p>
-        </div>
-        {href && (
-          <ArrowRight
-            className="h-5 w-5 shrink-0 text-ink transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5"
-            strokeWidth={2.25}
-            aria-hidden
-          />
-        )}
+      {/* Phone: disc over label (the tile is only ~165px wide). From sm up
+          they sit side by side. The arrow is pinned top right either way. */}
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:pr-8">
+        <IconDisc icon={icon} tone={tone} size="md" />
+        <p className="min-w-0 text-sm font-semibold leading-tight text-ink">{label}</p>
       </div>
+      {href && (
+        <ArrowRight
+          className="absolute right-4 top-4 h-5 w-5 text-ink transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5 sm:right-6 sm:top-6"
+          strokeWidth={2.25}
+          aria-hidden
+        />
+      )}
       <p className="figure mt-5 text-stat text-ink">{value}</p>
       {caption && <p className="mt-2 text-xs text-ink-muted">{caption}</p>}
       {share !== undefined && (
@@ -80,7 +80,7 @@ export function StatTile({
     </>
   );
 
-  const base = `block min-w-0 rounded-card p-card sm:p-6 ${SURFACE[tone]} ${className}`;
+  const base = `relative block min-w-0 rounded-card p-card sm:p-6 ${SURFACE[tone]} ${className}`;
   if (href) {
     return (
       <Link

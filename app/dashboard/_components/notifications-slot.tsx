@@ -17,7 +17,7 @@ import { NotificationsBell } from "./notifications-bell";
  * `cache` matters here: the shell renders the bell twice (mobile and desktop
  * headers), and without it that would be two identical round trips.
  */
-const loadNotifications = cache(
+export const loadNotifications = cache(
   async (): Promise<{ notifications: AppNotification[]; unreadCount: number }> => {
     const company = await getCompany();
     if (!company) return { notifications: [], unreadCount: 0 };
