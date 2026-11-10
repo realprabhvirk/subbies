@@ -42,6 +42,14 @@ export async function completeAccountSetup(
     .from("companies")
     .insert({ user_id: user.id, name });
 
+  // L3: companies.user_id is unique (migration 0020), so a double submit
+  // (two tabs, a double click) can't create a second company. The loser gets
+  // a unique violation, which means the company exists: that's success.
+  if (error?.code === "23505") {
+    revalidatePath("/dashboard", "layout");
+    return { ok: true };
+  }
+
   if (error) {
     console.error("completeAccountSetup: company insert failed", {
       code: error.code,
