@@ -6,6 +6,7 @@ import { Archive, FileText, Trash2 } from "lucide-react";
 
 import { ConfirmDialog } from "@/app/components/confirm-dialog";
 import { IconButton } from "@/app/components/icon-button";
+import { SectionCard } from "@/app/components/section-card";
 import { Spinner } from "@/app/components/spinner";
 import { getDocumentFileUrl } from "../actions";
 import { deleteDocument } from "../document-lifecycle-actions";
@@ -27,14 +28,16 @@ export interface HistoryItem {
  */
 export function DocumentHistory({ items }: { items: HistoryItem[] }) {
   return (
-    <section>
-      <h2 className="text-lg">Document history</h2>
-      <p className="mt-1 text-sm text-ink-muted">
-        Archived documents, kept as a record. They don&apos;t count toward compliance.
-      </p>
-
+    <SectionCard
+      id="document-history"
+      icon={Archive}
+      tone="neutral"
+      title="Document history"
+      subtitle="Archived documents, kept as a record. They don't count toward compliance."
+      flush={items.length > 0}
+    >
       {items.length === 0 ? (
-        <div className="mt-4 flex flex-col items-center rounded-card border border-dashed border-line-strong px-6 py-12 text-center">
+        <div className="flex flex-col items-center rounded-lg border border-dashed border-line-strong px-6 py-12 text-center">
           <Archive className="mb-4 h-7 w-7 text-ink-subtle" strokeWidth={1.75} aria-hidden />
           <p className="font-display text-lg font-semibold">Nothing archived yet</p>
           <p className="mt-1 max-w-sm text-sm text-ink-muted">
@@ -43,13 +46,13 @@ export function DocumentHistory({ items }: { items: HistoryItem[] }) {
           </p>
         </div>
       ) : (
-        <ul className="mt-4 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
+        <ul className="divide-y divide-line border-t border-line">
           {items.map((item) => (
             <HistoryRow key={item.id} item={item} />
           ))}
         </ul>
       )}
-    </section>
+    </SectionCard>
   );
 }
 
@@ -89,7 +92,7 @@ function HistoryRow({ item }: { item: HistoryItem }) {
   };
 
   return (
-    <li className="px-4 py-4 sm:px-5">
+    <li className="px-card py-4 sm:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold">{item.documentName}</p>
@@ -119,7 +122,7 @@ function HistoryRow({ item }: { item: HistoryItem }) {
               type="button"
               onClick={() => view(file.id)}
               disabled={pending}
-              className="pressable inline-flex min-h-9 max-w-full items-center gap-2 rounded-md border border-line-strong bg-surface px-2.5 text-left font-mono text-xs text-ink hover:border-field-line hover:bg-surface-muted disabled:opacity-60 pointer-coarse:min-h-11"
+              className="pressable inline-flex min-h-11 max-w-full items-center gap-2 rounded-md border border-line-strong bg-surface px-3.5 text-left font-mono text-xs text-ink hover:border-field-line hover:bg-surface-muted disabled:opacity-60"
             >
               {openingId === file.id ? (
                 <Spinner className="h-4 w-4" />

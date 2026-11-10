@@ -6,6 +6,7 @@ import { getEntitlement } from "@/lib/billing/entitlements";
 import { hasUsedTrial } from "@/lib/billing/trial-eligibility";
 import { PLANS, PLAN_IDS, TRIAL_DAYS } from "@/lib/billing/plans";
 import { Logo } from "@/app/components/logo";
+import { AuthShell } from "@/app/components/auth-shell";
 import { Alert } from "@/app/components/alert";
 import { SignOutButton } from "@/app/dashboard/_components/sign-out-button";
 import { PlanSelection } from "./_components/plan-selection";
@@ -41,7 +42,8 @@ export default async function OnboardingPage(
   }));
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-5 py-6 sm:px-8 sm:py-8">
+    <AuthShell wide>
+    <div className="mx-auto w-full max-w-5xl px-(--page-padding) py-6 sm:py-8">
       <div className="flex items-center justify-between">
         <Logo />
         <SignOutButton variant="inline" />
@@ -49,7 +51,7 @@ export default async function OnboardingPage(
 
       <div className="mt-14 max-w-2xl border-b border-line pb-8 sm:mt-20">
         <p className="label-caps text-ink-muted">Last step · Choose a plan</p>
-        <h1 className="mt-3 text-3xl sm:text-5xl">
+        <h1 className="mt-3 text-page-title">
           Welcome to Subbies, {company.name}
         </h1>
         <p className="mt-4 text-base text-ink-muted">
@@ -77,6 +79,7 @@ export default async function OnboardingPage(
           }
         />
       </div>
-    </main>
+    </div>
+    </AuthShell>
   );
 }

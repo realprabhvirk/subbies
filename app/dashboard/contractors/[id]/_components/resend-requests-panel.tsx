@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { Check, Minus, Send } from "lucide-react";
 
 import { Alert } from "@/app/components/alert";
+import { SectionCard } from "@/app/components/section-card";
 import { Button } from "@/app/components/button";
 import { resendDocumentRequests } from "../manage-actions";
 
@@ -83,23 +84,22 @@ export function ResendRequestsPanel({
   };
 
   return (
-    <section>
-      <h2 className="text-lg">Resend requests</h2>
-      <p className="mt-1 max-w-3xl text-sm text-ink-muted">
-        Email {contractorEmail} a link for the documents you tick. An approved
-        document stays valid: ticking it asks for an updated copy, and the current
-        one is only replaced once the new one is approved.
-      </p>
-
+    <SectionCard
+      id="resend-requests"
+      icon={Send}
+      tone="brand"
+      title="Resend requests"
+      subtitle={`Email ${contractorEmail} a link for the documents you tick. An approved document stays valid: ticking it asks for an updated copy, and the current one is only replaced once the new one is approved.`}
+    >
       {documents.length === 0 ? (
-        <p className="mt-4 rounded-md border border-dashed border-line-strong px-4 py-3 text-sm text-ink-muted">
+        <p className="rounded-md border border-dashed border-line-strong px-4 py-3 text-sm text-ink-muted">
           No documents have been requested from this contractor yet.
         </p>
       ) : (
         <>
-          <div className="mt-4 overflow-hidden rounded-card border border-line bg-surface">
+          <div className="overflow-hidden rounded-lg border border-line bg-surface">
             <label
-              className="flex min-h-12 cursor-pointer items-center gap-3 border-b border-line-strong bg-surface-muted px-4 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-brand sm:px-5"
+              className="flex min-h-14 cursor-pointer items-center gap-3 border-b border-line-strong bg-surface-muted px-4 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-brand sm:px-5"
             >
               <input
                 ref={allRef}
@@ -123,7 +123,7 @@ export function ResendRequestsPanel({
                 return (
                   <label
                     key={doc.id}
-                    className={`flex cursor-pointer items-start gap-3 px-4 py-3.5 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-brand sm:px-5 ${
+                    className={`flex min-h-14 cursor-pointer items-start gap-3 px-4 py-4 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-brand sm:px-5 ${
                       on ? "bg-brand-tint/60" : "hover:bg-surface-muted/70"
                     }`}
                   >
@@ -167,7 +167,7 @@ export function ResendRequestsPanel({
           </div>
         </>
       )}
-    </section>
+    </SectionCard>
   );
 }
 
@@ -175,15 +175,15 @@ export function ResendRequestsPanel({
 function Box({ state }: { state: "on" | "off" | "some" }) {
   return (
     <span
-      className={`mt-px flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-sm border transition-colors ${
+      className={`mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors ${
         state === "off"
           ? "border-field-line bg-surface"
           : "border-brand bg-brand text-white"
       }`}
       aria-hidden
     >
-      {state === "on" && <Check className="h-3 w-3" strokeWidth={3} />}
-      {state === "some" && <Minus className="h-3 w-3" strokeWidth={3} />}
+      {state === "on" && <Check className="h-4 w-4" strokeWidth={3} />}
+      {state === "some" && <Minus className="h-4 w-4" strokeWidth={3} />}
     </span>
   );
 }

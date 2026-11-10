@@ -2,11 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CreditCard, Users, FileText, FolderKanban } from "lucide-react";
+import { CreditCard, Users, FileText, FolderKanban, type LucideIcon } from "lucide-react";
 
 import { Alert } from "@/app/components/alert";
 import { Button } from "@/app/components/button";
-import { type StatTone } from "@/app/components/card";
+import { StatTile } from "@/app/components/stat-tile";
 import { PlanCards, type BillingPlan } from "@/app/components/plan-cards";
 import type { SubscriptionStatus } from "@/lib/types";
 import type { LimitedResource } from "@/lib/billing/plans";
@@ -34,7 +34,7 @@ const RESOURCE_LABEL: Record<LimitedResource, string> = {
   projects: "Projects",
 };
 
-const RESOURCE_ICON: Record<LimitedResource, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
+const RESOURCE_ICON: Record<LimitedResource, LucideIcon> = {
   contractors: Users,
   documentTypes: FileText,
   projects: FolderKanban,
@@ -257,54 +257,38 @@ export function BillingPanel({
       )}
 
       <section aria-labelledby="usage-heading">
-        <h3 id="usage-heading" className="label-caps text-ink-muted">
+        <h3 id="usage-heading" className="font-display text-card-title font-semibold">
           Usage
         </h3>
-        <div className="mt-3 grid overflow-hidden rounded-card border border-line bg-surface sm:grid-cols-3">
-          {(Object.keys(RESOURCE_LABEL) as LimitedResource[]).map((r, i) => {
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          {(Object.keys(RESOURCE_LABEL) as LimitedResource[]).map((r) => {
             const limit = limits[r];
             const used = usage[r];
             // 0 means the plan doesn't include this, which isn't the same as
             // having hit a cap.
             const notIncluded = limit === 0;
             const atLimit = limit !== null && limit > 0 && used >= limit;
-            const tone: StatTone = atLimit ? "attention" : "neutral";
-            const Icon = RESOURCE_ICON[r];
             return (
-              <div
+              <StatTile
                 key={r}
-                className={`p-5 sm:p-6 ${i > 0 ? "border-t border-line sm:border-l sm:border-t-0" : ""}`}
-              >
-                <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                  <Icon className="h-4 w-4 text-ink-subtle" strokeWidth={2} />
-                  {RESOURCE_LABEL[r]}
-                </p>
-                <p className="mt-3 flex items-baseline gap-1.5">
-                  <span className={`figure text-3xl ${tone === "attention" ? "text-attention" : "text-ink"}`}>
-                    {used}
-                  </span>
-                  {/* A fraction against infinity ("1 / unlimited") reads
-                      oddly, so an unlimited ceiling is a caption instead. */}
-                  <span className="text-sm text-ink-muted">
-                    {limit === null
-                      ? "· no limit"
+                tone={atLimit ? "expiring" : "pending"}
+                icon={RESOURCE_ICON[r]}
+                label={RESOURCE_LABEL[r]}
+                value={used}
+                // A fraction against infinity ("1 / unlimited") reads oddly,
+                // so an unlimited ceiling is a caption instead.
+                caption={
+                  atLimit
+                    ? `Limit reached (${used} of ${limit})`
+                    : limit === null
+                      ? "No limit on your plan"
                       : notIncluded
-                        ? "· not in your plan"
-                        : `/ ${limit}`}
-                  </span>
-                </p>
-                {limit !== null && !notIncluded && (
-                  <div aria-hidden className="mt-3 h-1 overflow-hidden rounded-full bg-line">
-                    <div
-                      className={`h-full ${atLimit ? "bg-attention" : "bg-ink-muted"}`}
-                      style={{ width: `${Math.round(Math.min(1, used / limit) * 100)}%` }}
-                    />
-                  </div>
-                )}
-                {atLimit && (
-                  <p className="mt-2 text-xs font-semibold text-attention">Limit reached</p>
-                )}
-              </div>
+                        ? "Not in your plan"
+                        : `of ${limit} on your plan`
+                }
+                progress={limit !== null && !notIncluded ? Math.min(1, used / limit) : undefined}
+                progressLabel={limit ? `${used} of ${limit} used` : undefined}
+              />
             );
           })}
         </div>

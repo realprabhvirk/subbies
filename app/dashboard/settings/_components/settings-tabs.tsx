@@ -5,6 +5,7 @@ import { FileText, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 import { Card } from "@/app/components/card";
+import { IconDisc } from "@/app/components/icon-disc";
 import { CompanyProfileForm } from "./company-profile-form";
 import { ChangePasswordForm } from "./change-password-form";
 import { DeleteAccountSection } from "./delete-account-section";
@@ -79,7 +80,7 @@ export function SettingsTabs({
 
   return (
     <>
-      <div className="-mx-4 flex gap-1 overflow-x-auto px-4 shadow-[inset_0_-1px_0_var(--color-line)] sm:mx-0 sm:px-0">
+      <div className="-mx-(--page-padding) flex gap-1 overflow-x-auto px-(--page-padding) shadow-[inset_0_-1px_0_var(--color-line)] sm:mx-0 sm:px-0">
         {TABS.map((t) => {
           const active = t.id === tab;
           return (
@@ -88,7 +89,7 @@ export function SettingsTabs({
               type="button"
               onClick={() => switchTab(t.id)}
               aria-current={active ? "page" : undefined}
-              className={`flex h-11 shrink-0 items-center border-b-2 px-3 text-sm transition-colors ${
+              className={`flex h-12 shrink-0 items-center border-b-[3px] px-4 text-sm transition-colors ${
                 active
                   ? "border-brand font-semibold text-ink"
                   : "border-transparent font-medium text-ink-muted hover:border-line-strong hover:text-ink"
@@ -104,12 +105,8 @@ export function SettingsTabs({
         <CompanyProfileForm company={company} />
 
         <Card className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <FileText
-              className="mt-0.5 h-5 w-5 text-ink-subtle"
-              strokeWidth={2}
-              aria-hidden
-            />
+          <div className="flex items-start gap-3.5">
+            <IconDisc icon={FileText} tone="brand" size="sm" />
             <div>
               <p className="text-sm font-semibold">Document types</p>
               <p className="text-sm text-ink-muted">

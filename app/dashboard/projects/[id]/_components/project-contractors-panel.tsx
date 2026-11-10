@@ -3,9 +3,12 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UserPlus, X } from "lucide-react";
+import { UserPlus, Users, X } from "lucide-react";
 
 import { StatusBadge } from "@/app/components/status-badge";
+import { SectionCard } from "@/app/components/section-card";
+import { ListRow, RowList } from "@/app/components/list-row";
+import { Avatar } from "@/app/components/avatar";
 import { Button } from "@/app/components/button";
 import { IconButton } from "@/app/components/icon-button";
 import { fieldClasses } from "@/app/components/input";
@@ -67,11 +70,10 @@ export function ProjectContractorsPanel({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-card border border-line bg-surface-muted/60 p-4 sm:p-5">
-        <h3 className="label-caps text-ink-muted">Assign a contractor</h3>
+    <div className="space-y-6">
+      <SectionCard id="assign" icon={UserPlus} tone="brand" title="Assign a contractor">
         {available.length === 0 ? (
-          <p className="mt-2 text-sm text-ink-muted">
+          <p className="text-sm text-ink-muted">
             Every contractor you have is already on this project.{" "}
             <Link
               href="/dashboard/contractors/new"
@@ -82,7 +84,7 @@ export function ProjectContractorsPanel({
             .
           </p>
         ) : (
-          <div className="mt-3 flex flex-wrap items-end gap-3">
+          <div className="flex flex-wrap items-end gap-4">
             <div className="min-w-[12rem] flex-1 space-y-1.5">
               <label htmlFor="assign-pick" className="block text-xs font-semibold text-ink">
                 Contractor
@@ -118,58 +120,57 @@ export function ProjectContractorsPanel({
             </div>
             <Button
               type="button"
-              size="sm"
               onClick={assign}
               disabled={!pick}
               pending={pending && !removingId}
             >
-              <UserPlus className="h-4 w-4" strokeWidth={2} aria-hidden />
+              <UserPlus className="h-5 w-5" strokeWidth={2} aria-hidden />
               Assign
             </Button>
           </div>
         )}
         {error && <p className="mt-3 text-sm font-medium text-expired">{error}</p>}
-      </div>
+      </SectionCard>
 
-      {assigned.length === 0 ? (
-        <p className="rounded-card border border-dashed border-line-strong px-card py-8 text-center text-sm text-ink-muted">
-          No contractors assigned to this project yet.
-        </p>
-      ) : (
-        <ul className="divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
-          {assigned.map((a) => (
-            <li
-              key={a.projectContractorId}
-              className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-5"
-            >
-              <div className="min-w-0">
-                <Link
-                  href={`/dashboard/contractors/${a.contractorId}`}
-                  className="font-semibold hover:text-brand hover:underline"
-                >
-                  {a.businessName}
-                </Link>
-                <p className="truncate text-sm text-ink-muted">
-                  {[a.roleOnProject ?? a.trade].filter(Boolean).join(" · ") ||
-                    "–"}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <StatusBadge kind="contractor" status={a.status} />
-                <IconButton
-                  tone="danger"
-                  onClick={() => remove(a.projectContractorId)}
-                  disabled={pending}
-                  pending={removingId === a.projectContractorId}
-                  aria-label={`Remove ${a.businessName} from this project`}
-                >
-                  <X className="h-4 w-4" strokeWidth={2} />
-                </IconButton>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
+      <SectionCard
+        id="on-project"
+        icon={Users}
+        tone="pending"
+        title="Contractors on this project"
+        subtitle="Check their compliance before they're on site."
+        flush={assigned.length > 0}
+      >
+        {assigned.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-line-strong px-card py-8 text-center text-sm text-ink-muted">
+            No contractors assigned to this project yet.
+          </p>
+        ) : (
+          <RowList>
+            {assigned.map((a) => (
+              <ListRow
+                key={a.projectContractorId}
+                href={`/dashboard/contractors/${a.contractorId}`}
+                leading={<Avatar name={a.businessName} />}
+                title={a.businessName}
+                meta={[a.roleOnProject ?? a.trade].filter(Boolean).join(" · ") || "–"}
+                footer={<StatusBadge kind="contractor" status={a.status} size="sm" />}
+                trailing={<StatusBadge kind="contractor" status={a.status} />}
+                actions={
+                  <IconButton
+                    tone="danger"
+                    onClick={() => remove(a.projectContractorId)}
+                    disabled={pending}
+                    pending={removingId === a.projectContractorId}
+                    aria-label={`Remove ${a.businessName} from this project`}
+                  >
+                    <X className="h-4 w-4" strokeWidth={2} />
+                  </IconButton>
+                }
+              />
+            ))}
+          </RowList>
+        )}
+      </SectionCard>
 
       {assigned.some((a) => hasComplianceIssue(a.status)) && (
         <p className="text-xs text-ink-muted">

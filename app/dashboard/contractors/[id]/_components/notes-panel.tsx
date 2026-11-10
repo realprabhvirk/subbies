@@ -7,6 +7,7 @@ import { StickyNote, Trash2 } from "lucide-react";
 import { Alert } from "@/app/components/alert";
 import { Button } from "@/app/components/button";
 import { ConfirmDialog } from "@/app/components/confirm-dialog";
+import { SectionCard } from "@/app/components/section-card";
 import { IconButton } from "@/app/components/icon-button";
 import { fieldClasses } from "@/app/components/input";
 import { MAX_NOTE_LENGTH, validateNoteBody } from "@/lib/contractor-notes-logic";
@@ -81,9 +82,9 @@ export function NotesPanel({
       <form
         onSubmit={add}
         noValidate
-        className="rounded-card border border-line bg-surface p-card sm:p-6"
+        className="rounded-card border border-line bg-surface p-card shadow-sm sm:p-6"
       >
-        <label htmlFor="note-body" className="text-base font-semibold">
+        <label htmlFor="note-body" className="font-display text-card-title font-semibold">
           Add a note
         </label>
         <p className="mt-0.5 text-sm text-ink-muted">
@@ -121,13 +122,15 @@ export function NotesPanel({
         </div>
       </form>
 
-      <section>
-        <h2 className="text-lg">
-          History{notes.length > 0 && <span className="ml-2 align-middle font-mono text-sm font-medium text-ink-muted">{notes.length}</span>}
-        </h2>
-
+      <SectionCard
+        id="note-history"
+        icon={StickyNote}
+        tone="neutral"
+        title="History"
+        flush={notes.length > 0}
+      >
         {notes.length === 0 ? (
-          <div className="mt-3 flex flex-col items-center rounded-card border border-dashed border-line-strong px-6 py-12 text-center">
+          <div className="flex flex-col items-center rounded-lg border border-dashed border-line-strong px-6 py-12 text-center">
             <StickyNote className="mb-4 h-7 w-7 text-ink-subtle" strokeWidth={1.75} aria-hidden />
             <p className="font-display text-lg font-semibold">No notes yet</p>
             <p className="mt-1 max-w-sm text-sm text-ink-muted">
@@ -135,9 +138,9 @@ export function NotesPanel({
             </p>
           </div>
         ) : (
-          <ul className="mt-3 divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
+          <ul className="divide-y divide-line border-t border-line">
             {notes.map((note) => (
-              <li key={note.id} className="flex items-start justify-between gap-3 px-4 py-4 sm:px-5">
+              <li key={note.id} className="flex items-start justify-between gap-3 px-card py-4 sm:px-6">
                 <div className="min-w-0">
                   <p className="whitespace-pre-wrap break-words text-sm">{note.body}</p>
                   <p className="mt-1.5 font-mono text-2xs text-ink-subtle">{note.createdLabel}</p>
@@ -157,7 +160,7 @@ export function NotesPanel({
             ))}
           </ul>
         )}
-      </section>
+      </SectionCard>
 
       {deleting && (
         <ConfirmDialog

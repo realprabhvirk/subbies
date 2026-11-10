@@ -24,24 +24,24 @@ export function ResendButton({ contractorId }: { contractorId: string }) {
   };
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <div className="flex flex-col items-start gap-1 md:items-end">
       <button
         type="button"
         onClick={handleClick}
         disabled={pending}
-        className="pressable inline-flex h-9 items-center whitespace-nowrap gap-1.5 rounded-md border border-line-strong bg-surface px-3 text-xs font-semibold text-ink-muted hover:border-field-line hover:text-ink disabled:opacity-60 pointer-coarse:h-11"
+        className="pressable inline-flex h-11 items-center whitespace-nowrap gap-2 rounded-md border border-line-strong bg-surface px-4 text-xs font-semibold text-ink-muted hover:border-field-line hover:text-ink disabled:opacity-60"
       >
         {pending ? (
-          <Spinner className="h-3.5 w-3.5" />
+          <Spinner className="h-4 w-4" />
         ) : (
-          <Send className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+          <Send className="h-4 w-4" strokeWidth={2} aria-hidden />
         )}
         {pending ? "Sending…" : "Resend request"}
       </button>
       {message && (
         <p
           role="status"
-          className={`max-w-48 text-right text-xs font-medium ${message.ok ? "text-approved" : "text-expired"}`}
+          className={`max-w-48 text-xs font-medium md:text-right ${message.ok ? "text-approved" : "text-expired"}`}
         >
           {message.text}
         </p>

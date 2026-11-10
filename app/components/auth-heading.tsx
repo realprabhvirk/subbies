@@ -13,8 +13,8 @@ export function AuthHeading({
 }) {
   return (
     <div className="mb-8">
-      <h1 className="text-3xl">{title}</h1>
-      {description && <p className="mt-2 text-sm text-ink-muted">{description}</p>}
+      <h1 className="text-page-title">{title}</h1>
+      {description && <p className="mt-3 text-base text-ink-muted">{description}</p>}
     </div>
   );
 }

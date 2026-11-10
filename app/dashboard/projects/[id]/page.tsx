@@ -167,20 +167,11 @@ export default async function ProjectDetailPage(
         </Alert>
       )}
 
-      <section>
-        <h2 className="text-lg">Contractors on this project</h2>
-        <p className="mt-1 text-sm text-ink-muted">
-          Assign the contractors working here and check their compliance before
-          they&apos;re on site.
-        </p>
-        <div className="mt-4">
-          <ProjectContractorsPanel
-            projectId={project.id}
-            assigned={assigned}
-            available={available}
-          />
-        </div>
-      </section>
+      <ProjectContractorsPanel
+        projectId={project.id}
+        assigned={assigned}
+        available={available}
+      />
     </div>
   );
 }

@@ -56,7 +56,7 @@ export function ProjectsManager({
             </ButtonLink>
           ) : (
             <Button type="button" onClick={openCreate}>
-              <Plus className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              <Plus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               New project
             </Button>
           )
@@ -72,13 +72,13 @@ export function ProjectsManager({
           description="Create a project, then assign the contractors working on it."
           action={
             <Button type="button" onClick={openCreate}>
-              <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+              <Plus className="h-5 w-5" strokeWidth={2} aria-hidden />
               New project
             </Button>
           }
         />
       ) : (
-        <ul className="@container divide-y divide-line overflow-hidden rounded-card border border-line bg-surface">
+        <ul className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {projects.map((p) => {
             const share =
               p.contractorCount > 0
@@ -87,83 +87,79 @@ export function ProjectsManager({
             return (
               <li
                 key={p.id}
-                className="group relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-4 py-4 transition-colors hover:bg-surface-muted/70 sm:px-5 @3xl:grid-cols-[minmax(0,1fr)_17rem_8rem_auto] @3xl:gap-x-6"
+                className="group relative flex flex-col rounded-card border border-line bg-surface p-card shadow-sm transition-[transform,box-shadow] duration-[var(--duration-base)] hover:shadow-md motion-safe:hover:-translate-y-0.5 sm:p-6"
               >
-                <div className="min-w-0">
-                  <Link
-                    href={`/dashboard/projects/${p.id}`}
-                    className="block truncate font-semibold text-ink after:absolute after:inset-0 group-hover:text-brand focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-brand"
-                  >
-                    {p.name}
-                  </Link>
-                  <p className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-ink-muted">
-                    {p.address ? (
-                      <>
-                        <MapPin className="h-3.5 w-3.5 shrink-0 text-ink-subtle" strokeWidth={2} aria-hidden />
-                        <span className="truncate">{p.address}</span>
-                      </>
-                    ) : (
-                      <span className="text-ink-subtle">No address</span>
-                    )}
-                  </p>
-                </div>
-
-                <div className="col-span-2 row-start-2 @3xl:col-span-1 @3xl:row-start-auto">
-                  <p className="flex items-center gap-1.5 whitespace-nowrap text-xs">
-                    <span className="font-mono text-ink">
-                      {p.contractorCount}
-                    </span>
-                    <span className="text-ink-muted">
-                      {p.contractorCount === 1 ? "contractor" : "contractors"}
-                    </span>
-                    {p.issueCount > 0 ? (
-                      <span className="ml-auto inline-flex items-center gap-1 font-semibold text-attention @3xl:ml-2">
-                        <TriangleAlert className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-                        {p.issueCount} need attention
-                      </span>
-                    ) : (
-                      p.contractorCount > 0 && (
-                        <span className="ml-auto inline-flex items-center gap-1 font-semibold text-approved @3xl:ml-2">
-                          <CircleCheck className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />
-                          All compliant
-                        </span>
-                      )
-                    )}
-                  </p>
-                  {p.contractorCount > 0 && (
-                    <div aria-hidden className="mt-1.5 flex h-1 overflow-hidden rounded-full bg-line">
-                      <div className="h-full bg-approved" style={{ width: `${Math.round(share * 100)}%` }} />
-                      <div className="h-full bg-attention" style={{ width: `${Math.round((1 - share) * 100)}%` }} />
-                    </div>
-                  )}
-                </div>
-
-                <div className="hidden @3xl:block">
+                <div className="flex items-start justify-between gap-3">
                   <StatusBadge kind="project" status={p.status} />
+                  <div className="relative z-10 -mr-2 -mt-2">
+                    <IconButton
+                      onClick={() =>
+                        setDialog({
+                          mode: "edit",
+                          project: {
+                            id: p.id,
+                            name: p.name,
+                            address: p.address,
+                            status: p.status,
+                            startDate: p.startDate,
+                            endDate: p.endDate,
+                          },
+                        })
+                      }
+                      aria-label={`Edit ${p.name}`}
+                    >
+                      <Pencil className="h-4 w-4" strokeWidth={2} />
+                    </IconButton>
+                  </div>
                 </div>
 
-                <div className="relative z-10 col-start-2 row-start-1 flex items-center gap-1 @3xl:col-start-auto @3xl:row-start-auto">
-                  <span className="@3xl:hidden">
-                    <StatusBadge kind="project" status={p.status} size="sm" />
-                  </span>
-                  <IconButton
-                    onClick={() =>
-                      setDialog({
-                        mode: "edit",
-                        project: {
-                          id: p.id,
-                          name: p.name,
-                          address: p.address,
-                          status: p.status,
-                          startDate: p.startDate,
-                          endDate: p.endDate,
-                        },
-                      })
-                    }
-                    aria-label={`Edit ${p.name}`}
-                  >
-                    <Pencil className="h-4 w-4" strokeWidth={2} />
-                  </IconButton>
+                {/* The name is the link, stretched over the whole card, so the
+                    card is one real anchor; the edit button sits above it. */}
+                <Link
+                  href={`/dashboard/projects/${p.id}`}
+                  className="mt-4 block font-display text-card-title font-semibold leading-tight text-ink after:absolute after:inset-0 after:rounded-card focus-visible:outline-none focus-visible:after:ring-[3px] focus-visible:after:ring-brand"
+                >
+                  <span className="line-clamp-2 break-words">{p.name}</span>
+                </Link>
+                <p className="mt-2 flex items-center gap-2 text-xs text-ink-muted">
+                  {p.address ? (
+                    <>
+                      <MapPin className="h-4 w-4 shrink-0 text-ink-subtle" strokeWidth={2} aria-hidden />
+                      <span className="line-clamp-2">{p.address}</span>
+                    </>
+                  ) : (
+                    <span className="text-ink-subtle">No address</span>
+                  )}
+                </p>
+
+                <div className="mt-auto pt-6">
+                  <div className="border-t border-line pt-4">
+                    <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                      <span className="font-mono text-sm font-medium text-ink">{p.contractorCount}</span>
+                      <span className="text-ink-muted">
+                        {p.contractorCount === 1 ? "contractor" : "contractors"}
+                      </span>
+                      {p.issueCount > 0 ? (
+                        <span className="ml-auto inline-flex items-center gap-1.5 font-semibold text-attention">
+                          <TriangleAlert className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                          {p.issueCount} need attention
+                        </span>
+                      ) : (
+                        p.contractorCount > 0 && (
+                          <span className="ml-auto inline-flex items-center gap-1.5 font-semibold text-approved">
+                            <CircleCheck className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+                            All compliant
+                          </span>
+                        )
+                      )}
+                    </p>
+                    {p.contractorCount > 0 && (
+                      <div aria-hidden className="mt-3 flex h-2 overflow-hidden rounded-full bg-line">
+                        <div className="h-full bg-tile-approved-disc" style={{ width: `${Math.round(share * 100)}%` }} />
+                        <div className="h-full bg-tile-expiring-disc" style={{ width: `${Math.round((1 - share) * 100)}%` }} />
+                      </div>
+                    )}
+                  </div>
                 </div>
               </li>
             );

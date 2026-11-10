@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Mail, Phone, Briefcase, Hash } from "lucide-react";
+import { Mail, Phone, Briefcase, Hash, FileCheck, History } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
 import { StatusBadge } from "@/app/components/status-badge";
 import { PageHeader } from "@/app/components/page-header";
+import { SectionCard } from "@/app/components/section-card";
 import { buildContractorActivity } from "@/lib/contractor-activity";
 import { groupFilesByDocument, type GroupedFile } from "@/lib/document-files-logic";
 import { formatAbn, isMissingColumnError } from "@/lib/contractor-details-logic";
@@ -365,7 +366,7 @@ export default async function ContractorDetailPage(
           wider. The bottom rule is an inset shadow, not a border, so the
           active tab's underline can sit on it without the -mb-px overhang
           that a scroll container would clip. */}
-      <div className="-mx-4 flex gap-1 overflow-x-auto px-4 shadow-[inset_0_-1px_0_var(--color-line)] sm:mx-0 sm:px-0">
+      <div className="-mx-(--page-padding) flex gap-1 overflow-x-auto px-(--page-padding) shadow-[inset_0_-1px_0_var(--color-line)] sm:mx-0 sm:px-0">
         {TABS.map((t) => {
           const active = t.id === tab;
           const count =
@@ -379,7 +380,7 @@ export default async function ContractorDetailPage(
               key={t.id}
               href={`/dashboard/contractors/${contractor.id}?tab=${t.id}`}
               aria-current={active ? "page" : undefined}
-              className={`flex h-11 shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-3 text-sm transition-colors ${
+              className={`flex h-12 shrink-0 items-center gap-2 whitespace-nowrap border-b-[3px] px-4 text-sm transition-colors ${
                 active
                   ? "border-brand font-semibold text-ink"
                   : "border-transparent font-medium text-ink-muted hover:border-line-strong hover:text-ink"
@@ -387,7 +388,7 @@ export default async function ContractorDetailPage(
             >
               {t.label}
               {count !== null && (
-                <span className="rounded-sm bg-surface-muted px-1.5 font-mono text-2xs text-ink-muted">
+                <span className="rounded-full bg-surface-muted px-2 font-mono text-2xs text-ink-muted">
                   {count}
                 </span>
               )}
@@ -397,27 +398,24 @@ export default async function ContractorDetailPage(
       </div>
 
       {tab === "documents" && (
-        <section className="space-y-10">
-          <div>
-            <p className="text-sm text-ink-muted">
-              Review each submitted document, set its expiry date, and approve
-              or reject it.
-            </p>
-            <div className="mt-4">
-              <DocumentReviewList documents={documents} />
-            </div>
-          </div>
-          <div>
-            <ResendRequestsPanel
-              contractorId={contractor.id}
-              contractorEmail={contractor.email}
-              documents={resendable}
-            />
-          </div>
-          <div>
-            <DocumentHistory items={history} />
-          </div>
-        </section>
+        <div className="space-y-6">
+          <SectionCard
+            id="documents"
+            icon={FileCheck}
+            tone="brand"
+            title="Documents"
+            subtitle="Review each submitted document, set its expiry date, and approve or reject it."
+            flush
+          >
+            <DocumentReviewList documents={documents} />
+          </SectionCard>
+          <ResendRequestsPanel
+            contractorId={contractor.id}
+            contractorEmail={contractor.email}
+            documents={resendable}
+          />
+          <DocumentHistory items={history} />
+        </div>
       )}
 
       {tab === "projects" && (
@@ -449,13 +447,16 @@ export default async function ContractorDetailPage(
       )}
 
       {tab === "activity" && (
-        <section>
-          <p className="mb-4 text-sm text-ink-muted">
-            Everything that&apos;s happened with this contractor, most recent
-            first.
-          </p>
+        <SectionCard
+          id="activity"
+          icon={History}
+          tone="pending"
+          title="Activity"
+          subtitle="Everything that's happened with this contractor, most recent first."
+          flush
+        >
           <ContractorActivity events={activity} />
-        </section>
+        </SectionCard>
       )}
     </div>
   );

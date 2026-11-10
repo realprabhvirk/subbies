@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2, FileText } from "lucide-react";
 import { fieldClasses } from "@/app/components/input";
 import { Button, ButtonLink } from "@/app/components/button";
 import { IconButton } from "@/app/components/icon-button";
+import { IconDisc } from "@/app/components/icon-disc";
 import { DialogFrame } from "@/app/components/dialog";
 import { EmptyState } from "@/app/components/empty-state";
 import { PageHeader } from "@/app/components/page-header";
@@ -65,7 +66,7 @@ export function DocumentTypesManager({
             </ButtonLink>
           ) : (
             <Button type="button" onClick={() => setDialog({ mode: "create" })}>
-              <Plus className="h-4 w-4" strokeWidth={2.25} aria-hidden />
+              <Plus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               Add document type
             </Button>
           )
@@ -87,16 +88,16 @@ export function DocumentTypesManager({
           description="Add the documents you need from contractors, for example Public Liability insurance, a trade licence, or a workers compensation certificate."
           action={
             <Button type="button" onClick={() => setDialog({ mode: "create" })}>
-              <Plus className="h-4 w-4" strokeWidth={2} aria-hidden />
+              <Plus className="h-5 w-5" strokeWidth={2} aria-hidden />
               Add document type
             </Button>
           }
         />
       ) : (
-        <div className="@container overflow-hidden rounded-card border border-line bg-surface">
+        <div className="@container overflow-hidden rounded-card border border-line bg-surface shadow-sm">
           <div
             aria-hidden
-            className="hidden grid-cols-[minmax(0,1fr)_9rem_minmax(0,14rem)_5.5rem] items-center gap-6 border-b border-line-strong bg-surface-muted px-5 py-2.5 text-ink-muted @3xl:grid"
+            className="hidden grid-cols-[minmax(0,1fr)_9rem_minmax(0,14rem)_5.5rem] items-center gap-6 border-b border-line-strong bg-surface-muted px-6 py-3 text-ink-muted @3xl:grid"
           >
             <span className="label-caps">Document</span>
             <span className="label-caps">Valid for</span>
@@ -105,11 +106,14 @@ export function DocumentTypesManager({
           </div>
           <ul className="divide-y divide-line">
             {types.map((type) => (
-              <li key={type.id} className="px-4 py-3.5 sm:px-5">
+              <li key={type.id} className="min-h-16 px-card py-3.5 sm:px-6">
                 <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-2 @3xl:grid-cols-[minmax(0,1fr)_9rem_minmax(0,14rem)_5.5rem] @3xl:gap-x-6">
-                  <h2 className="truncate font-sans text-sm font-semibold stretch-normal">
-                    {type.name}
-                  </h2>
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <IconDisc icon={FileText} tone="brand" size="sm" />
+                    <h2 className="truncate font-sans text-sm font-semibold stretch-normal">
+                      {type.name}
+                    </h2>
+                  </div>
                   <div className="col-start-2 row-start-1 flex justify-end gap-0.5 @3xl:col-start-4">
                     <IconButton
                       onClick={() => setDialog({ mode: "edit", type })}
@@ -145,7 +149,7 @@ export function DocumentTypesManager({
                           type.reminder_days.map((d) => (
                             <span
                               key={d}
-                              className="rounded-sm border border-line-strong bg-surface-muted px-1.5 py-0.5 font-mono text-2xs text-ink"
+                              className="rounded-full border border-line-strong bg-surface-muted px-2.5 py-0.5 font-mono text-2xs text-ink"
                             >
                               {d}d
                             </span>

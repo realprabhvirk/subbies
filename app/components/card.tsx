@@ -36,4 +36,3 @@ export function Card({
   );
 }
 
-export type StatTone = "neutral" | "approved" | "review" | "attention" | "expired";
