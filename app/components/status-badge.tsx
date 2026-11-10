@@ -20,13 +20,10 @@ type Props = (
 };
 
 /**
- * The status stamp — Subbies' signature mark.
- *
- * A squared stamp (4px radius, hairline border in the status' own line
- * colour) with an icon and a word, never colour alone. Expired is the one
- * stamp printed as a solid fill (see lib/status.ts), so it reads as
- * unmistakably different from "attention" even though the two status hues
- * are nearly identical in the locked palette.
+ * The status pill: a full-radius pill with a tinted background, dark text and
+ * an icon, never colour alone. Used for contractor, document and project
+ * status everywhere. (Called StatusBadge in the code; "StatusPill" in the
+ * design brief is this component.)
  */
 export function StatusBadge({ size = "md", className = "", ...props }: Props) {
   const meta =
@@ -39,12 +36,12 @@ export function StatusBadge({ size = "md", className = "", ...props }: Props) {
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-sm border font-semibold ${
-        size === "sm" ? "h-6 gap-1 px-1.5 text-2xs" : "h-7 gap-1.5 px-2 text-xs"
+      className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-full border font-semibold ${
+        size === "sm" ? "h-7 gap-1.5 px-2.5 text-2xs" : "h-8 gap-1.5 px-3 text-xs"
       } ${meta.className} ${className}`}
     >
       <Icon
-        className={size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4"}
+        className={size === "sm" ? "h-4 w-4" : "h-[1.125rem] w-[1.125rem]"}
         strokeWidth={2.25}
         aria-hidden
       />

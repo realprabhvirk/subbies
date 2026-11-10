@@ -19,7 +19,7 @@ import type {
 interface StatusMeta {
   label: string;
   icon: LucideIcon;
-  /** Tailwind classes for the stamp (text + background + border tokens). */
+  /** Tailwind classes for the pill (text + background + border tokens). */
   className: string;
 }
 
@@ -44,12 +44,12 @@ export const contractorStatusMeta: Record<ContractorStatus, StatusMeta> = {
     icon: TriangleAlert,
     className: "text-attention bg-attention-bg border-attention-line",
   },
-  // The one solid stamp: expired must never be mistaken for "attention",
-  // whose hue is almost identical.
+  // Pink pill with a red icon and word; "attention" is amber, so the two
+  // can't be confused even without the label.
   expired: {
     label: "Expired",
     icon: CircleX,
-    className: "text-white bg-expired border-expired",
+    className: "text-expired bg-expired-bg border-expired-line",
   },
 };
 

@@ -6,8 +6,7 @@ export function initialsOf(name: string): string {
 }
 
 /**
- * A squared initials tile (matching the stamp/chip corner language rather
- * than a generic circle). Decorative: the name is always printed beside it.
+ * An initials disc. Decorative: the name is always printed beside it.
  */
 export function Avatar({
   name,
@@ -27,8 +26,8 @@ export function Avatar({
   return (
     <span
       aria-hidden
-      className={`inline-flex shrink-0 items-center justify-center rounded-md font-display font-semibold ${
-        size === "sm" ? "h-7 w-7 text-2xs" : "h-9 w-9 text-xs"
+      className={`inline-flex shrink-0 items-center justify-center rounded-full font-display font-semibold ${
+        size === "sm" ? "h-9 w-9 text-2xs" : "h-11 w-11 text-xs"
       } ${tones[tone]}`}
     >
       {initialsOf(name)}

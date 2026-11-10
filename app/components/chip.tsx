@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 
 /**
- * A small removable tag — same squared shape as the status stamp but
+ * A small removable tag — a pill like the status pill but
  * neutral, since a day count or filter value isn't a compliance status.
  */
 export function Chip({
@@ -14,16 +14,16 @@ export function Chip({
   removeLabel?: string;
 }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-sm border border-line-strong bg-surface-muted px-2 py-0.5 text-xs font-medium text-ink">
+    <span className="inline-flex min-h-8 items-center gap-1.5 rounded-full border border-line-strong bg-surface-muted px-3 text-xs font-medium text-ink">
       {children}
       {onRemove && (
         <button
           type="button"
           onClick={onRemove}
           aria-label={removeLabel}
-          className="-mr-1 rounded-sm p-0.5 text-ink-muted transition-colors hover:bg-line-strong hover:text-ink"
+          className="relative -mr-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full text-ink-muted transition-colors before:absolute before:-inset-2 before:content-[''] hover:bg-line-strong hover:text-ink"
         >
-          <X className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+          <X className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />
         </button>
       )}
     </span>
