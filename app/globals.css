@@ -1,31 +1,33 @@
 @import "tailwindcss";
 
 /*
-  Subbies Design System (v3) — "the site register"
+  Subbies Design System (v4) - "premium pass"
   --------------------------------------------------------------------------
-  Calm warm paper, near-black ink, ruled hairlines, one steel-blue hand for
-  the things you do, and a dark navy rail for structure. Status is shown the
-  way a site office marks a register: a squared stamp with an icon and a word
-  (see app/components/status-badge.tsx), never colour alone.
+  Warm cream canvas, near-black ink, big type, soft 20px cards, tinted status
+  surfaces with a saturated icon disc, one steel-navy hand for the things you
+  do, and a dark navy rail for structure. Status is never colour alone: every
+  pill and tile carries an icon and a word.
 
-  THE PALETTE IS LOCKED. Every raw colour below (warm ramp, accent scale,
-  sidebar set, status hues) is unchanged from v2. v3 only re-points a few
-  SEMANTIC names at different existing palette values, for contrast:
-    ink-muted       warm-500 -> warm-600   (4.32:1 -> 6.95:1 on canvas)
-    ink-subtle      warm-400 -> warm-500   (2.8:1  -> 4.5:1 on surface)
-    neutral-status  warm-500 -> warm-600   (3.79:1 -> 6.1:1 on its bg)
-  and adds one mixed token (field-line) built from two existing greys. Any
-  new tint, border or overlay must be an opacity or color-mix() of these
-  tokens — never a new hex.
+  v4 changes (this file is the only place they live):
+    - canvas / surface re-pointed at warm cream (#FAF5EE / #FFFDFB)
+    - status colours darkened for AA text on their tinted backgrounds
+    - new tile-* tokens: the tinted stat-tile surface + its icon disc
+    - radii: pill / 14 buttons+inputs / 16 inner tiles / 20 cards / 24 dialogs
+    - type scale raised: body 17, secondary 15, eyebrow 13 (nothing under 12),
+      plus semantic sizes (card-title, page-title, hero, stat, nav) that
+      shrink on phones through the :root overrides below
+    - layout constants: 16.5rem rail, 4.5rem top bar, 80rem content width
 
-  Type: Mona Sans (variable, with a width axis) for everything — normal width
-  for reading, semi-expanded for headings and big numbers — plus JetBrains
+  Type: Mona Sans (variable, with a width axis) for everything - normal width
+  for reading, semi-expanded for headings and big numbers - plus JetBrains
   Mono for reference data (dates in tables, ABNs, file names). Loaded via
   next/font in app/layout.tsx; never @import a font here.
 
   The whole app is written against the semantic utility names (bg-surface,
-  text-ink, border-line, bg-brand, rounded-card, the status colours …), so
+  text-ink, border-line, bg-brand, rounded-card, the status colours ...), so
   the product reskins through these tokens rather than per-component edits.
+  Any new tint, border or overlay should be an opacity or color-mix() of
+  these tokens.
 */
 
 @theme {
@@ -72,9 +74,9 @@
   --color-sidebar-ink-subtle: oklch(50% 0.02 258);
 
   /* Neutrals — semantic */
-  --color-canvas: var(--color-warm-25);
-  --color-surface: var(--color-warm-0);
-  --color-surface-muted: var(--color-warm-50);
+  --color-canvas: #faf5ee;
+  --color-surface: #fffdfb;
+  --color-surface-muted: #f5efe6;
   --color-line: var(--color-warm-100);
   --color-line-strong: var(--color-warm-200);
   /* Form-field outline. line-strong is 1.4:1 against white, too faint for a
@@ -101,92 +103,120 @@
      status). Now that the brand is steel blue, attention is frozen to that
      original orange directly so "expiring soon" / rejected-document status
      stays exactly the amber it always was. */
-  --color-approved: oklch(50% 0.1 152);
-  --color-approved-bg: oklch(94% 0.038 152);
-  --color-approved-line: oklch(86% 0.055 152);
+  --color-approved: #1d6b35;
+  --color-approved-bg: #ddefe0;
+  --color-approved-line: #bfddc5;
 
   --color-review: oklch(50% 0.09 240);
   --color-review-bg: oklch(94% 0.032 240);
   --color-review-line: oklch(86% 0.05 240);
 
-  --color-attention: oklch(49% 0.15 33); /* was --color-accent-700 */
-  --color-attention-bg: oklch(96% 0.03 55); /* was --color-accent-50 */
-  --color-attention-line: oklch(87% 0.08 50); /* was --color-accent-200 */
+  --color-attention: #9a5b00;
+  --color-attention-bg: #fcebc8;
+  --color-attention-line: #f0d18f;
 
-  --color-expired: oklch(50% 0.15 25);
-  --color-expired-bg: oklch(94% 0.045 25);
-  --color-expired-line: oklch(86% 0.08 25);
+  --color-expired: #b42318;
+  --color-expired-bg: #fbe0dd;
+  --color-expired-line: #f2b8b1;
+
+  /* Tinted stat-tile surfaces (dashboard, settings usage): a soft tint with
+     one saturated disc for the icon. Numbers and labels on a tile stay
+     near-black; only the disc is saturated. */
+  --color-tile-approved: #e9f0e8;
+  --color-tile-approved-disc: #2e9e4f;
+  --color-tile-pending: #e6ecf4;
+  --color-tile-pending-disc: #4a6d93;
+  --color-tile-expiring: #fcebd3;
+  --color-tile-expiring-disc: #f2a71b;
+  --color-tile-expired: #f9dcdb;
+  --color-tile-expired-disc: #e5412d;
 
   --color-neutral-status: var(--color-warm-600); /* was warm-500: 3.79:1 on its bg, now 6.1:1 */
   --color-neutral-status-bg: var(--color-warm-100);
   --color-neutral-status-line: var(--color-warm-200);
 
-  /* Type scale. Body copy stays at 16px (text-sm) from the scale-up pass —
-     this product is read on site, in daylight, by people who aren't sitting
-     at a desk. What changes is how each size is set: tracking tightens as
-     size grows and leading tightens with it (see the h1–h4 rules and the
-     .tracking-display helpers below). */
-  --text-2xs: 0.75rem; /* 12px — caps labels, stamp counts */
-  --text-2xs--line-height: 1rem;
-  --text-xs: 0.875rem; /* 14px — meta, hints, stamps */
-  --text-xs--line-height: 1.25rem;
-  --text-sm: 1rem; /* 16px — body copy across the app */
-  --text-sm--line-height: 1.5rem;
-  --text-base: 1.125rem; /* 18px — lead paragraphs */
-  --text-base--line-height: 1.625rem;
-  --text-lg: 1.25rem; /* 20px — panel titles */
+  /* Type scale. v4 reads big: this product is used on site, in daylight, by
+     people who aren't at a desk. The numbered steps below are what existing
+     components use (text-sm IS the body size); the semantic sizes after them
+     are what new surfaces should reach for. */
+  --text-2xs: 0.8125rem; /* 13px - eyebrow labels, counts. Never smaller than 12. */
+  --text-2xs--line-height: 1.125rem;
+  --text-xs: 0.9375rem; /* 15px - secondary text, meta, hints */
+  --text-xs--line-height: 1.375rem;
+  --text-sm: 1.0625rem; /* 17px - body copy, buttons, list-row names */
+  --text-sm--line-height: 1.6rem;
+  --text-base: 1.1875rem; /* 19px - lead paragraphs */
+  --text-base--line-height: 1.7rem;
+  --text-lg: 1.375rem; /* 22px */
   --text-lg--line-height: 1.75rem;
   --text-xl: 1.5rem; /* 24px */
-  --text-xl--line-height: 1.875rem;
-  --text-2xl: 1.875rem; /* 30px — page titles */
+  --text-xl--line-height: 1.9rem;
+  --text-2xl: 1.875rem; /* 30px */
   --text-2xl--line-height: 2.25rem;
-  --text-3xl: 2.25rem; /* 36px — section heads, key figures */
-  --text-3xl--line-height: 2.5rem;
-  --text-4xl: 2.75rem; /* 44px */
-  --text-4xl--line-height: 1.08;
+  --text-3xl: 2.5rem; /* 40px - page titles */
+  --text-3xl--line-height: 1.1;
+  --text-4xl: 3rem; /* 48px */
+  --text-4xl--line-height: 1.06;
   --text-5xl: 3.5rem; /* 56px */
-  --text-5xl--line-height: 1.04;
-  --text-6xl: 4.25rem; /* 68px — marketing hero */
+  --text-5xl--line-height: 1.05;
+  --text-6xl: 4.25rem; /* 68px - marketing hero */
   --text-6xl--line-height: 1;
+
+  /* Semantic sizes. page-title, hero and stat get smaller on phones (see the
+     :root overrides below the theme block). */
+  --text-eyebrow: 0.8125rem; /* 13px uppercase, tracked */
+  --text-eyebrow--line-height: 1.125rem;
+  --text-nav: 1.125rem; /* 18px semibold */
+  --text-nav--line-height: 1.5rem;
+  --text-card-title: 1.75rem; /* 28px */
+  --text-card-title--line-height: 2.1rem;
+  --text-page-title: 2.5rem; /* 40px, 30px on phones */
+  --text-page-title--line-height: 1.1;
+  --text-hero: 3.5rem; /* 56px, 36px on phones */
+  --text-hero--line-height: 1.05;
+  --text-stat: 4rem; /* 64px, 44px on phones */
+  --text-stat--line-height: 1;
 
   /* Spacing — named, layout-level steps on top of Tailwind's 4px grid. */
   --spacing-section: 4.5rem;
-  --spacing-card: 1.25rem;
+  --spacing-card: 1.5rem;
 
   --container-sm: 28rem;
 
-  /* Radius — four steps, nothing in between.
-     sm 4  stamps, chips, small tags
-     md 6  buttons, inputs, menu items
-     card 8 panels, tables, cards
-     xl 12 dialogs, sheets */
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-card: 8px;
-  --radius-xl: 12px;
+  /* Radius.
+     sm   8  tiny tags, focus ring corners
+     md  14  buttons, inputs, menu items
+     lg  16  inner tiles (stat tiles, action tiles, rows)
+     card 20 cards and panels
+     xl  24  dialogs, sheets
+     full    status pills, avatars, chips */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --radius-card: 20px;
+  --radius-xl: 24px;
   --radius-full: 999px;
 
-  /* Shadows. Structure comes from hairline borders, not shadow; a resting
-     panel carries only a paper edge. Real elevation is reserved for things
-     that genuinely float (menus, popovers, dialogs). All warm-900 at low
-     opacity — no new colour. */
-  --shadow-sm: 0 1px 0 oklch(17% 0.007 30 / 0.04);
+  /* Shadows. Soft, large blur, low opacity (all warm-900). A resting card
+     carries a faint lift; real elevation is for things that float, and
+     --shadow-md is the hover lift for clickable cards only. */
+  --shadow-sm:
+    0 1px 2px oklch(17% 0.007 30 / 0.04), 0 6px 20px oklch(17% 0.007 30 / 0.05);
   --shadow-md:
-    0 1px 2px oklch(17% 0.007 30 / 0.06), 0 8px 24px oklch(17% 0.007 30 / 0.08);
+    0 2px 4px oklch(17% 0.007 30 / 0.05), 0 14px 36px oklch(17% 0.007 30 / 0.1);
   --shadow-lg:
-    0 2px 6px oklch(17% 0.007 30 / 0.06), 0 16px 40px oklch(17% 0.007 30 / 0.12);
+    0 4px 10px oklch(17% 0.007 30 / 0.06), 0 22px 48px oklch(17% 0.007 30 / 0.14);
   --shadow-xl:
-    0 4px 12px oklch(17% 0.007 30 / 0.08), 0 24px 64px oklch(17% 0.007 30 / 0.18);
+    0 6px 14px oklch(17% 0.007 30 / 0.08), 0 28px 64px oklch(17% 0.007 30 / 0.2);
 
   /* Motion. Short and decelerating: things respond on press and settle, they
      don't float. */
   --ease-out: cubic-bezier(0.2, 0, 0, 1);
   --ease-standard: cubic-bezier(0.3, 0, 0.2, 1);
 
-  --duration-fast: 120ms;
-  --duration-base: 180ms;
-  --duration-slow: 240ms;
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 250ms;
 }
 
 /*
@@ -195,9 +225,10 @@
   utility family for.
 */
 :root {
-  --sidebar-width: 15.5rem;
-  --header-height: 4rem;
-  --content-max-width: 76rem;
+  --sidebar-width: 16.5rem;
+  --header-height: 4.5rem;
+  --content-max-width: 80rem;
+  --page-padding: 1.25rem; /* 20px on phones, 32px from sm up */
 
   /* Width-axis settings for Mona Sans. Headings and figures are set
      semi-expanded — the sturdy, signage-like proportion that is the
@@ -206,9 +237,18 @@
   --font-stretch-wide: 118%;
 }
 
+@media (max-width: 39.99rem) {
+  :root {
+    --text-page-title: 1.875rem;
+    --text-hero: 2.25rem;
+    --text-stat: 2.75rem;
+  }
+}
+
 @media (min-width: 40rem) {
   :root {
     --spacing-section: 6.5rem;
+    --page-padding: 2rem;
   }
 }
 
@@ -264,9 +304,8 @@
 
   /* Visible, on-brand focus ring for keyboard users */
   :focus-visible {
-    outline: 2px solid var(--color-brand);
+    outline: 3px solid var(--color-brand);
     outline-offset: 2px;
-    border-radius: 4px;
   }
 
   /* On the navy rail the steel-blue ring disappears; use the light ink. */
@@ -280,7 +319,7 @@
   textarea:focus {
     outline: none;
     border-color: var(--color-brand);
-    box-shadow: 0 0 0 3px var(--color-accent-100);
+    box-shadow: 0 0 0 4px var(--color-accent-100);
   }
   input:focus-visible,
   select:focus-visible,
@@ -323,7 +362,7 @@
     letter-spacing: -0.03em;
   }
 
-  /* 12px caps label — section eyebrows, table heads. */
+  /* 13px caps label: section eyebrows, table heads. */
   .label-caps {
     font-size: var(--text-2xs);
     line-height: var(--text-2xs--line-height);

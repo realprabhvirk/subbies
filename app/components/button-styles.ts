@@ -28,13 +28,13 @@ const VARIANT: Record<ButtonVariant, string> = {
     "bg-surface text-expired border border-expired-line hover:bg-expired-bg hover:border-expired",
 };
 
-// Heights: sm 36px, md 44px, lg 52px. md and lg clear the 44px touch-target
-// guideline; md matches fieldClasses' input height so a button beside an
-// input lines up.
+// Heights: sm 40px, md 48px, lg 56px (chunky, easy to hit with a glove on).
+// md matches fieldClasses' input height so a button beside an input lines up.
+// Every size clears the 44px touch-target guideline.
 const SIZE: Record<ButtonSize, string> = {
-  sm: "h-9 px-3 text-xs gap-1.5",
-  md: "h-11 px-4.5 text-sm gap-2",
-  lg: "h-13 px-6 text-base gap-2.5",
+  sm: "h-10 px-4 text-xs gap-1.5",
+  md: "h-12 px-5 text-sm gap-2",
+  lg: "h-14 px-7 text-base gap-2.5",
 };
 
 const BASE =

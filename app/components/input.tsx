@@ -11,7 +11,7 @@ import { type InputHTMLAttributes } from "react";
  */
 
 export function fieldClasses(invalid = false, className = ""): string {
-  return `block w-full min-h-11 rounded-md border bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition-[border-color,box-shadow] duration-[var(--duration-fast)] placeholder:text-ink-subtle disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted ${
+  return `block w-full min-h-12 rounded-md border bg-surface px-4 py-3 text-sm text-ink outline-none transition-[border-color,box-shadow] duration-[var(--duration-fast)] placeholder:text-ink-subtle disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted ${
     invalid ? "border-expired" : "border-field-line hover:border-ink-subtle"
   } ${className}`;
 }
