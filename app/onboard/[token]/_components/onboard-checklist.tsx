@@ -15,7 +15,7 @@ import {
   UPLOAD_ACCEPT_ATTR,
   isAllowedMimeType,
 } from "@/lib/storage-constants";
-import { canSubmitDocument, validateStagedBatch } from "@/lib/document-actions-logic";
+import { canSubmitDocument, cleanFileName, validateStagedBatch } from "@/lib/document-actions-logic";
 import type { OnboardingChecklistItem } from "@/lib/onboarding";
 import {
   requestDocumentUpload,
@@ -120,7 +120,7 @@ export function OnboardChecklist({
         return;
       }
 
-      uploaded.push({ path: requested.path, fileName: file.name });
+      uploaded.push({ path: requested.path, fileName: cleanFileName(file.name) });
       setItemState(itemId, {
         phase: "submitting",
         doneCount: uploaded.length,

@@ -24,7 +24,11 @@ import {
   olderThan,
   unregisteredObjects,
 } from "@/lib/storage-cleanup-logic";
-import { canSubmitDocument, MAX_FILES_PER_SUBMISSION } from "@/lib/document-actions-logic";
+import {
+  canSubmitDocument,
+  MAX_FILES_PER_SUBMISSION,
+  validateSubmittedFiles,
+} from "@/lib/document-actions-logic";
 import { isPathOwnedByCompany } from "@/lib/storage-path-ownership";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { companyHasAccess } from "@/lib/billing/require-active";
@@ -251,6 +255,10 @@ export async function submitStagedDocuments(
   if (files.length > MAX_FILES_PER_SUBMISSION) {
     return { ok: false, error: `Submit up to ${MAX_FILES_PER_SUBMISSION} files at a time.` };
   }
+  // L4: names are stored and shown to the company, so they're held to a
+  // length and character rule; and no path may appear twice.
+  const filesCheck = validateSubmittedFiles(files);
+  if (!filesCheck.ok) return { ok: false, error: filesCheck.error };
 
   const doc = await loadOwnedDocument(resolved.contractorId, contractorDocumentId);
   if (!doc) return { ok: false, error: "That document isn't part of this request." };
@@ -291,6 +299,26 @@ export async function submitStagedDocuments(
 
   const admin = createAdminClient();
 
+  // L4: a path that's already registered (on this document or any other)
+  // can't be submitted again. Re-registering one would let the replace step
+  // below delete the very file being submitted, or point two documents at
+  // one object.
+  const { data: alreadyRegistered, error: registeredError } = await admin
+    .from("contractor_document_files")
+    .select("file_path")
+    .in("file_path", files.map((f) => f.path));
+  if (registeredError) {
+    const classified = classifySubmissionError(registeredError);
+    console.error("submitStagedDocuments: registered path check failed", {
+      code: registeredError.code,
+      category: classified.category,
+    });
+    return { ok: false, error: classified.message };
+  }
+  if ((alreadyRegistered ?? []).length > 0) {
+    return { ok: false, error: "One of those files was already submitted. Upload it again and resubmit." };
+  }
+
   // Replace whatever was there before.
   //
   // This select is the FIRST thing in this action to touch
@@ -320,7 +348,10 @@ export async function submitStagedDocuments(
   // Deleting with the service role would remove whatever they point at, so a
   // path outside this company's folder is never deleted (its row is still
   // cleared below, which just drops the reference).
+  const newBatch = new Set(files.map((f) => f.path));
   for (const old of existingFiles ?? []) {
+    // Never delete a file that's part of what is being submitted now.
+    if (newBatch.has(old.file_path)) continue;
     if (!isPathOwnedByCompany(old.file_path, resolved.companyId)) {
       console.error("submitStagedDocuments: refused to delete a file_path outside the company's folder", {
         documentId: doc.id,

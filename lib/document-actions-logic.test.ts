@@ -159,3 +159,33 @@ test("validateStagedBatch: exactly the ceiling is still fine", () => {
   }));
   assert.equal(validateStagedBatch(exactly, opts).ok, true);
 });
+
+// ---------------------------------------------------------------------------
+// L4: submitted file names and paths
+
+import { cleanFileName, isValidFileName, validateSubmittedFiles, MAX_FILE_NAME_LENGTH } from "./document-actions-logic.ts";
+
+test("L4: file names over 255 characters or with path separators are refused", () => {
+  assert.equal(isValidFileName("policy.pdf"), true);
+  assert.equal(isValidFileName("a".repeat(MAX_FILE_NAME_LENGTH)), true);
+  assert.equal(isValidFileName("a".repeat(MAX_FILE_NAME_LENGTH + 1)), false);
+  assert.equal(isValidFileName("../../etc/passwd"), false);
+  assert.equal(isValidFileName("c:\\fakepath\\x.pdf"), false);
+  assert.equal(isValidFileName("bad\u0000name.pdf"), false);
+  assert.equal(isValidFileName("   "), false);
+  assert.equal(isValidFileName(42), false);
+});
+
+test("L4 normal path: the browser cleans an odd real file name so it's accepted", () => {
+  const cleaned = cleanFileName("Q3/Q4 policy\u0007.pdf");
+  assert.equal(cleaned, "Q3-Q4 policy-.pdf");
+  assert.equal(isValidFileName(cleaned), true);
+  assert.equal(cleanFileName("x".repeat(400)).length, MAX_FILE_NAME_LENGTH);
+  assert.equal(isValidFileName(cleanFileName("///")), true);
+});
+
+test("L4: a batch with the same path twice is refused", () => {
+  assert.deepEqual(validateSubmittedFiles([{ path: "a", fileName: "a.pdf" }, { path: "b", fileName: "b.pdf" }]), { ok: true });
+  assert.equal(validateSubmittedFiles([{ path: "a", fileName: "a.pdf" }, { path: "a", fileName: "b.pdf" }]).ok, false);
+  assert.equal(validateSubmittedFiles([{ path: "a", fileName: "../a.pdf" }]).ok, false);
+});

@@ -217,3 +217,41 @@ test("M3: an upload after a rejection always notifies, even within the hour", as
   await submitOnce("fixed");
   assert.equal(ownerEmails.length, 2);
 });
+
+// ---------------------------------------------------------------------------
+// L4: submitted names and paths
+
+test("L4: re-submitting an already-registered path is refused and the file survives", async () => {
+  const s = seed("active");
+  const existing = `${PREFIX}/existing.pdf`;
+  storage.objects = [{ path: existing, createdAt: minutesAgo(90) }];
+  s.tables.contractor_document_files = [{ id: "f1", contractor_document_id: DOC, file_path: existing, file_name: "existing.pdf" }];
+  const r = await submitStagedDocuments("tok", DOC, [{ path: existing, fileName: "existing.pdf" }], true);
+  assert.equal(r.ok, false);
+  assert.match(r.error ?? "", /already submitted/);
+  assert.deepEqual(storage.deleted, []);
+  assert.equal(s.tables.contractor_document_files.length, 1);
+});
+
+test("L4: a file name with a path separator or over 255 characters is refused before anything changes", async () => {
+  seed("active");
+  const path = `${PREFIX}/new.pdf`;
+  storage.objects = [{ path, createdAt: minutesAgo(0) }];
+  for (const fileName of ["../../secret.pdf", "x".repeat(256)]) {
+    const r = await submitStagedDocuments("tok", DOC, [{ path, fileName }], true);
+    assert.equal(r.ok, false);
+  }
+  assert.deepEqual(storage.deleted, []);
+});
+
+test("L4 normal path: replacing earlier files deletes the old ones, never the new batch", async () => {
+  const s = seed("active");
+  const old = `${PREFIX}/old.pdf`;
+  const fresh = `${PREFIX}/fresh.pdf`;
+  storage.objects = [{ path: old, createdAt: minutesAgo(90) }, { path: fresh, createdAt: minutesAgo(0) }];
+  s.tables.contractor_document_files = [{ id: "f1", contractor_document_id: DOC, file_path: old, file_name: "old.pdf" }];
+  assert.deepEqual(await submitStagedDocuments("tok", DOC, [{ path: fresh, fileName: "fresh.pdf" }], true), { ok: true });
+  assert.ok(storage.deleted.includes(old));
+  assert.ok(!storage.deleted.includes(fresh));
+  assert.deepEqual(s.tables.contractor_document_files.map((f) => f.file_path), [fresh]);
+});

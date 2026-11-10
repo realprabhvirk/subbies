@@ -135,3 +135,43 @@ export function validateStagedBatch(
 }
 
 export { MAX_FILES_PER_SUBMISSION };
+
+export const MAX_FILE_NAME_LENGTH = 255;
+
+/**
+ * The display name the browser sends with each file, made safe to store:
+ * path separators and control characters become "-", and it's cut to
+ * MAX_FILE_NAME_LENGTH. Run in the browser before submitting, so a real
+ * file with an odd name is never refused by the server check below.
+ */
+export function cleanFileName(name: string): string {
+  const cleaned = name.replace(/[\\/\u0000-\u001f\u007f]/g, "-").trim();
+  return (cleaned || "document").slice(0, MAX_FILE_NAME_LENGTH);
+}
+
+/** True for a name cleanFileName would leave unchanged and that isn't empty. */
+export function isValidFileName(name: unknown): name is string {
+  return (
+    typeof name === "string" &&
+    name.trim().length > 0 &&
+    name.length <= MAX_FILE_NAME_LENGTH &&
+    !/[\\/\u0000-\u001f\u007f]/.test(name)
+  );
+}
+
+/**
+ * L4: the server-side checks on a submitted batch that don't need the
+ * database: every file has a sane name and no path appears twice.
+ */
+export function validateSubmittedFiles(
+  files: { path: unknown; fileName: unknown }[],
+): { ok: true } | { ok: false; error: string } {
+  if (files.some((f) => !isValidFileName(f.fileName))) {
+    return { ok: false, error: `File names must be ${MAX_FILE_NAME_LENGTH} characters or fewer, with no slashes.` };
+  }
+  const paths = files.map((f) => f.path);
+  if (new Set(paths).size !== paths.length) {
+    return { ok: false, error: "The same file was included twice. Try again." };
+  }
+  return { ok: true };
+}
