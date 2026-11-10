@@ -76,38 +76,48 @@ export async function requestDeletionCode(userId: string): Promise<RequestCodeRe
   return { ok: true, code };
 }
 
-/** Verifies a submitted code against the stored record and counts the attempt either way. */
+/**
+ * Verifies a submitted code, using up one attempt first.
+ *
+ * M4: this used to read the attempt count, compare, then write count + 1, so
+ * 50 guesses sent at once all read the same count and all got checked. Now
+ * consume_deletion_code_attempt (migration 0020) takes the attempt and returns
+ * the code in one UPDATE ... RETURNING: once MAX_ATTEMPTS are used, every
+ * further guess gets nothing to compare against, however many arrive at once.
+ * Fails closed: this gates deleting an account.
+ */
 export async function verifyDeletionCode(
   userId: string,
   submittedCode: string,
 ): Promise<DeletionCodeCheck> {
   const admin = createAdminClient();
 
-  const { data } = await admin
-    .from("account_deletion_codes")
-    .select("code_hash, expires_at, attempts")
-    .eq("user_id", userId)
+  const { data, error } = await admin
+    .rpc("consume_deletion_code_attempt", { p_user_id: userId, p_max_attempts: MAX_ATTEMPTS })
     .maybeSingle<{ code_hash: string; expires_at: string; attempts: number }>();
 
-  const record: DeletionCodeRecord | null = data
-    ? { codeHash: data.code_hash, expiresAt: data.expires_at, attempts: data.attempts }
-    : null;
-
-  const result = evaluateDeletionCode(record, submittedCode);
-
-  // Bump the attempt count regardless of outcome, so a wrong guess moves the
-  // code closer to locked-out. The row is deleted immediately after a
-  // successful deletion anyway (cascade off the auth user), so bumping it on
-  // a correct guess is only a safety net for the case where verification
-  // succeeds but the caller doesn't follow through with the deletion.
-  if (record) {
-    await admin
-      .from("account_deletion_codes")
-      .update({ attempts: record.attempts + 1 })
-      .eq("user_id", userId);
+  if (error) {
+    console.error("verifyDeletionCode: couldn't take an attempt", { code: error.code, message: error.message });
+    return { ok: false, reason: "too_many_attempts" };
   }
 
-  return result;
+  if (!data) {
+    // No attempt was taken: either there's no code, or it's used up.
+    const { data: existing } = await admin
+      .from("account_deletion_codes")
+      .select("attempts")
+      .eq("user_id", userId)
+      .maybeSingle<{ attempts: number }>();
+    return { ok: false, reason: existing ? "too_many_attempts" : "no_code" };
+  }
+
+  // `attempts` already includes this one; the check wants the count before it.
+  const record: DeletionCodeRecord = {
+    codeHash: data.code_hash,
+    expiresAt: data.expires_at,
+    attempts: data.attempts - 1,
+  };
+  return evaluateDeletionCode(record, submittedCode);
 }
 
 /** Best-effort cleanup. Also happens automatically via cascade once the auth user is deleted. */

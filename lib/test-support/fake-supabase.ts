@@ -203,6 +203,14 @@ function rpc(name: string, args: Record<string, unknown>): Result {
       table("contractor_tokens").push({ id: randomUUID(), contractor_id: contractor.id, token });
       return { data: [{ contractor_id: contractor.id, token }], error: null };
     }
+    case "consume_deletion_code_attempt": {
+      const row = table("account_deletion_codes").find(
+        (r) => r.user_id === args.p_user_id && Number(r.attempts) < Number(args.p_max_attempts),
+      );
+      if (!row) return { data: [], error: null };
+      row.attempts = Number(row.attempts) + 1;
+      return { data: [{ code_hash: row.code_hash, expires_at: row.expires_at, attempts: row.attempts }], error: null };
+    }
     default:
       return { data: null, error: { code: "42883", message: `fake: no rpc ${name}` } };
   }
