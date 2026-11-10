@@ -83,14 +83,34 @@ export async function syncSubscription(
   } else {
     const { data: byCustomer } = await admin
       .from("subscriptions")
-      .select("company_id, status, onboarding_completed_at")
+      .select("company_id, status, onboarding_completed_at, stripe_subscription_id")
       .eq("stripe_customer_id", customerId)
       .maybeSingle<{
         company_id: string;
         status: SubscriptionStatus;
         onboarding_completed_at: string | null;
+        stripe_subscription_id: string | null;
       }>();
     if (byCustomer) {
+      // An ended subscription must never overwrite a different, newer one
+      // on the company's row (an old one's late event, say).
+      if (
+        byCustomer.stripe_subscription_id &&
+        byCustomer.stripe_subscription_id !== sub.id &&
+        !PAID_STATUSES.includes(status)
+      ) {
+        console.error("syncSubscription: ignored an ended subscription that isn't the company's current one", {
+          companyId: byCustomer.company_id,
+        });
+        return {
+          companyId: byCustomer.company_id,
+          prevStatus: byCustomer.status,
+          newStatus: byCustomer.status,
+          plan,
+          customerId,
+          trialEnd: toIso(sub.trial_end),
+        };
+      }
       companyId = byCustomer.company_id;
       prevStatus = byCustomer.status;
       onboardingCompletedAt = byCustomer.onboarding_completed_at;
@@ -264,4 +284,31 @@ export async function markSubscriptionCanceled(
     .maybeSingle<{ company_id: string }>();
 
   return { companyId: data?.company_id ?? null };
+}
+
+/**
+ * Syncs a subscription from Stripe's CURRENT state, not from an event's copy
+ * of it (M5). Stripe doesn't deliver webhooks in order, so an old
+ * "subscription updated: active" can arrive after "deleted"; syncing the
+ * event body would switch a cancelled company back on. Retrieving the
+ * subscription first means every event, early or late, writes the same truth.
+ *
+ * A subscription Stripe no longer has is marked cancelled. Any other Stripe
+ * error is thrown, so the webhook answers 500 and Stripe retries.
+ */
+export async function syncSubscriptionFromStripe(
+  stripe: Stripe,
+  subscriptionId: string,
+): Promise<SyncResult | null> {
+  let current: Stripe.Subscription;
+  try {
+    current = await stripe.subscriptions.retrieve(subscriptionId);
+  } catch (err) {
+    if ((err as { code?: string }).code === "resource_missing") {
+      await markSubscriptionCanceled(subscriptionId);
+      return null;
+    }
+    throw err;
+  }
+  return syncSubscription(current);
 }

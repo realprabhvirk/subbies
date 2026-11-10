@@ -68,7 +68,8 @@ function table(name: string): Row[] {
 
 class Query implements PromiseLike<Result> {
   private filters: ((r: Row) => boolean)[] = [];
-  private op: "select" | "insert" | "update" | "delete" = "select";
+  private op: "select" | "insert" | "update" | "delete" | "upsert" = "select";
+  private conflictKey = "id";
   private payload: Row | Row[] | null = null;
   private head = false;
   private wantCount = false;
@@ -85,6 +86,12 @@ class Query implements PromiseLike<Result> {
   }
   insert(p: Row | Row[]) { this.op = "insert"; this.payload = p; return this; }
   update(p: Row) { this.op = "update"; this.payload = p; return this; }
+  upsert(p: Row | Row[], opts?: { onConflict?: string }) {
+    this.op = "upsert";
+    this.payload = p;
+    this.conflictKey = opts?.onConflict ?? "id";
+    return this;
+  }
   delete() { this.op = "delete"; return this; }
   eq(c: string, v: unknown) { this.filters.push((r) => r[c] === v); return this; }
   neq(c: string, v: unknown) { this.filters.push((r) => r[c] !== v); return this; }
@@ -123,6 +130,15 @@ class Query implements PromiseLike<Result> {
       const list = ([] as Row[]).concat(this.payload as Row | Row[]).map((r) => ({ id: randomUUID(), ...r }));
       rows.push(...list);
       return { data: list, error: null };
+    }
+    if (this.op === "upsert") {
+      const out: Row[] = [];
+      for (const r of ([] as Row[]).concat(this.payload as Row | Row[])) {
+        const hit = rows.find((x) => x[this.conflictKey] === r[this.conflictKey]);
+        if (hit) { Object.assign(hit, r); out.push(hit); }
+        else { const row = { id: randomUUID(), ...r }; rows.push(row); out.push(row); }
+      }
+      return { data: out.map((r) => structuredClone(r)), error: null };
     }
     if (this.op === "update") {
       const hit = rows.filter(match);

@@ -4,7 +4,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/billing/stripe";
 import {
   syncSubscription,
-  markSubscriptionCanceled,
+  syncSubscriptionFromStripe,
   getCompanyIdByCustomer,
   cancelOrphanedCustomerSubscriptions,
   type SyncResult,
@@ -115,19 +115,16 @@ export async function POST(req: NextRequest) {
         break;
       }
 
-      case "customer.subscription.created": {
-        const sub = event.data.object as Stripe.Subscription;
-        const result = await syncSubscription(sub);
-        // checkout.session.completed usually gets here first; both paths are
-        // guarded by prevStatus so the email is sent at most once.
-        await sendActivationEmail(result);
-        break;
-      }
-
+      // Every subscription event re-reads the subscription from Stripe
+      // (syncSubscriptionFromStripe), so a late, out-of-order event can't
+      // write stale state. See M5 in the security audit.
+      case "customer.subscription.created":
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
-        const result = await syncSubscription(sub);
-        await sendActivationEmail(result);
+        const result = await syncSubscriptionFromStripe(stripe, sub.id);
+        // checkout.session.completed usually gets here first; both paths are
+        // guarded by prevStatus so the email is sent at most once.
+        if (result) await sendActivationEmail(result);
         break;
       }
 
@@ -136,8 +133,8 @@ export async function POST(req: NextRequest) {
       // the backstop; both write the same idempotency stamp so only one sends.
       case "customer.subscription.trial_will_end": {
         const sub = event.data.object as Stripe.Subscription;
-        const result = await syncSubscription(sub);
-        if (result.companyId && result.plan && result.newStatus === "trialing") {
+        const result = await syncSubscriptionFromStripe(stripe, sub.id);
+        if (result?.companyId && result.plan && result.newStatus === "trialing") {
           const claimed = await markTrialReminderSent(result.companyId, "day5");
           if (claimed) {
             const email = await getCompanyOwnerEmail(result.companyId);
@@ -168,7 +165,7 @@ export async function POST(req: NextRequest) {
 
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
-        await markSubscriptionCanceled(sub.id);
+        await syncSubscriptionFromStripe(stripe, sub.id);
         break;
       }
 
