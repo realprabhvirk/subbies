@@ -20,13 +20,6 @@ export { shouldSkipTrial, emailUsedTrialFromLookup };
  * company row is gone too, so that check alone would let the same person
  * sign up again under the same email and get a second free trial. This
  * table is keyed on the email instead, and survives the deletion.
- *
- * Interacts with the pvirk0@outlook.com testing exemption in
- * lib/auth/normalize-email.ts exactly as intended: pvirk0+1@outlook.com and
- * pvirk0+2@outlook.com normalize to two different strings there, so deleting
- * one has no effect on the other's trial eligibility here either — each is a
- * fully independent test identity, which is the whole reason that exemption
- * exists.
  */
 
 /** Has this email already consumed a trial under a now-deleted account? */
