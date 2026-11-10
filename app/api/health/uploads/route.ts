@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { hasCronSecret } from "@/lib/security/secret-compare";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,8 +67,8 @@ function describePresence(value: string | undefined): string {
 }
 
 export async function GET(req: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
+  // Constant-time compare (L6); an unset CRON_SECRET never matches.
+  if (!hasCronSecret(req.headers.get("authorization"))) {
     return new Response("Unauthorized", { status: 401 });
   }
 
