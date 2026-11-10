@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getAppUrl } from "@/lib/app-url";
@@ -228,6 +230,28 @@ export async function disableUploadLink(contractorId: string): Promise<boolean> 
       code: error.code,
       message: error.message,
     });
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Gives a contractor a brand new upload link: a fresh token, valid for the
+ * usual period. The old link stops working at once (M2). Used when the
+ * contractor's email changes, so a link sent to the old address is dead, and
+ * by the "Revoke link" button. Nothing is emailed: the new link goes out with
+ * the next request the company sends.
+ */
+export async function rotateUploadLink(contractorId: string): Promise<boolean> {
+  // Service role, as in refreshTokenExpiry: the caller has proven ownership.
+  const { data, error } = await createAdminClient()
+    .from("contractor_tokens")
+    .update({ token: randomUUID(), expires_at: tokenExpiryFrom() })
+    .eq("contractor_id", contractorId)
+    .select("contractor_id");
+
+  if (error || !data || data.length === 0) {
+    console.error("rotateUploadLink failed", { contractorId, code: error?.code, found: data?.length ?? 0 });
     return false;
   }
   return true;

@@ -9,6 +9,7 @@ import { deleteContractorFiles } from "@/lib/storage";
 import {
   sendRequestToContractor,
   disableUploadLink,
+  rotateUploadLink,
 } from "@/lib/contractors/request-email";
 import {
   formatAbn,
@@ -66,6 +67,17 @@ export async function updateContractorDetails(
   if (!validation.ok) return { ok: false, fieldErrors: validation.fieldErrors };
 
   const supabase = await createClient();
+
+  // The email on file before this save: if it changes, the link that was sent
+  // to the old address has to stop working (M2).
+  const { data: before } = await supabase
+    .from("contractors")
+    .select("email")
+    .eq("id", contractorId)
+    .eq("company_id", company.id)
+    .maybeSingle<{ email: string }>();
+  if (!before) return { ok: false, error: "Couldn't find that contractor." };
+
   const { data, error } = await supabase
     .from("contractors")
     .update(validation.data)
@@ -90,6 +102,12 @@ export async function updateContractorDetails(
     return { ok: false, error: "Couldn't find that contractor." };
   }
 
+  const emailChanged = before.email.trim().toLowerCase() !== validation.data.email.trim().toLowerCase();
+  if (emailChanged && !(await rotateUploadLink(contractorId))) {
+    // The details are saved; the old link just couldn't be switched off.
+    console.error("updateContractorDetails: email changed but the old link is still live", { contractorId });
+  }
+
   revalidateContractor(contractorId);
   return {
     ok: true,
@@ -101,6 +119,36 @@ export async function updateContractorDetails(
       abn: formatAbn(validation.data.abn),
     },
   };
+}
+
+// --- revoke link ------------------------------------------------------------
+
+/**
+ * Switches off the contractor's current upload link by giving them a new one
+ * (M2). Use it when a link has gone to the wrong person or been shared. The
+ * new link isn't emailed here: it goes out with the next request.
+ */
+export async function revokeUploadLink(
+  contractorId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+
+  const supabase = await createClient();
+  const { data: contractor } = await supabase
+    .from("contractors")
+    .select("id")
+    .eq("id", contractorId)
+    .eq("company_id", access.company.id)
+    .maybeSingle<{ id: string }>();
+  if (!contractor) return { ok: false, error: "Couldn't find that contractor." };
+
+  if (!(await rotateUploadLink(contractor.id))) {
+    return { ok: false, error: "Couldn't revoke the link. Try again." };
+  }
+
+  revalidateContractor(contractor.id);
+  return { ok: true };
 }
 
 // --- delete -----------------------------------------------------------------

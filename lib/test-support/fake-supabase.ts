@@ -123,7 +123,9 @@ class Query implements PromiseLike<Result> {
     }
     let hit = rows.filter(match);
     if (this.window) hit = hit.slice(this.window[0], this.window[1] + 1);
-    return { data: this.head ? null : hit, error: null, count: this.wantCount ? hit.length : null };
+    // Copies, like a real response: later writes don't change what was read.
+    const copies = hit.map((r) => structuredClone(r));
+    return { data: this.head ? null : copies, error: null, count: this.wantCount ? hit.length : null };
   }
 
   async maybeSingle(): Promise<Result> {

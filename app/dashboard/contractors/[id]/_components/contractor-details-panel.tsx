@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { TriangleAlert } from "lucide-react";
+import { Link2Off, TriangleAlert } from "lucide-react";
 
 import { Alert } from "@/app/components/alert";
 import { Button } from "@/app/components/button";
@@ -14,7 +14,7 @@ import {
   type ContractorDetailsFieldErrors,
   type ContractorDetailsInput,
 } from "@/lib/contractor-details-logic";
-import { deleteContractor, updateContractorDetails } from "../manage-actions";
+import { deleteContractor, revokeUploadLink, updateContractorDetails } from "../manage-actions";
 
 export interface DeletionCounts {
   /** Every document row, archived and pending replacements included. */
@@ -48,6 +48,8 @@ export function ContractorDetailsPanel({
   const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingRevoke, setConfirmingRevoke] = useState(false);
+  const [revoked, setRevoked] = useState(false);
 
   const dirty = detailsChanged(form, saved);
 
@@ -211,6 +213,37 @@ export function ContractorDetailsPanel({
         </div>
       </form>
 
+      <div className="rounded-card border border-line bg-surface p-card sm:p-6">
+        <div className="flex items-start gap-3">
+          <Link2Off
+            className="mt-0.5 h-5 w-5 shrink-0 text-ink-muted"
+            strokeWidth={2}
+            aria-hidden
+          />
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold">Upload link</h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              If the link went to the wrong person or was shared, revoke it. The
+              current link stops working straight away, and a new one goes out
+              with the next request you send.
+            </p>
+            {revoked && (
+              <Alert tone="success" className="mt-3">
+                Link revoked. Send a request to give {saved.businessName} their new link.
+              </Alert>
+            )}
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setConfirmingRevoke(true)}
+              className="mt-4"
+            >
+              Revoke link
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-card border border-expired-line bg-surface p-card sm:p-6">
         <div className="flex items-start gap-3">
           <TriangleAlert
@@ -236,6 +269,18 @@ export function ContractorDetailsPanel({
         </div>
       </div>
 
+      {confirmingRevoke && (
+        <RevokeDialog
+          contractorId={contractorId}
+          name={saved.businessName}
+          onDone={() => {
+            setConfirmingRevoke(false);
+            setRevoked(true);
+          }}
+          onClose={() => setConfirmingRevoke(false)}
+        />
+      )}
+
       {confirmingDelete && (
         <DeleteDialog
           contractorId={contractorId}
@@ -245,6 +290,52 @@ export function ContractorDetailsPanel({
         />
       )}
     </div>
+  );
+}
+
+function RevokeDialog({
+  contractorId,
+  name,
+  onDone,
+  onClose,
+}: {
+  contractorId: string;
+  name: string;
+  onDone: () => void;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const confirm = () => {
+    setError(null);
+    startTransition(async () => {
+      const result = await revokeUploadLink(contractorId);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      onDone();
+      router.refresh();
+    });
+  };
+
+  return (
+    <ConfirmDialog
+      title={`Revoke ${name}'s upload link?`}
+      confirmLabel="Revoke link"
+      pendingLabel="Revoking…"
+      pending={pending}
+      error={error}
+      onConfirm={confirm}
+      onClose={onClose}
+    >
+      <p>
+        The link {name} has now will stop working. Nothing is emailed yet: their new
+        link goes out with the next request you send.
+      </p>
+    </ConfirmDialog>
   );
 }
 
