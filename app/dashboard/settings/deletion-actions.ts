@@ -98,11 +98,11 @@ export interface ConfirmDeletionState {
  *   1. Stripe cancellation — has to actually succeed (or already be gone)
  *      before anything else moves. The one step that can't be undone from
  *      our side if it's skipped.
- *   2. Wipe stored documents — independent of Stripe and of the ledger, so
- *      it runs here rather than being tangled into either's success/failure.
- *   3. Record the trial ledger, then delete the auth user — kept adjacent
+ *   2. Record the trial ledger, then 3. delete the auth user: kept adjacent
  *      and paired with a rollback, since these are the two steps closest to
  *      "point of no return."
+ *   4. Wipe stored documents last (L7), so a failed delete never leaves a
+ *      live account with its files already gone.
  */
 export async function confirmAccountDeletion(
   code: string,
@@ -175,23 +175,7 @@ export async function confirmAccountDeletion(
     }
   }
 
-  // 2. Wipe stored documents. Nothing in Postgres cascades these — Storage's
-  //    objects table has no FK relationship to public.companies at all — so
-  //    this is the one part of deletion that has to happen in code rather
-  //    than fall out of deleting the auth user. Best-effort: a failed batch
-  //    is logged for manual cleanup rather than blocking the rest of the
-  //    deletion (see deleteAllCompanyDocuments for why).
-  if (company) {
-    const storageResult = await deleteAllCompanyDocuments(company.id);
-    if (storageResult.failedPaths.length > 0) {
-      console.error(
-        "confirmAccountDeletion: some stored documents were not removed — needs manual cleanup",
-        { companyId: company.id, failedPaths: storageResult.failedPaths },
-      );
-    }
-  }
-
-  // 3. Record the trial ledger before touching the auth user. If step 4
+  // 2. Record the trial ledger before touching the auth user. If step 4
   //    fails, this one insert is rolled back below (best-effort) — there is
   //    no way to roll back step 1's Stripe cancellation, which is exactly
   //    why that one runs first and is allowed to hard-stop the whole flow
@@ -204,7 +188,7 @@ export async function confirmAccountDeletion(
     return { ok: false, error: "Something went wrong. Try again, or contact support." };
   }
 
-  // 4. Delete the auth user. This cascades (0008 + 0010 migrations) to the
+  // 3. Delete the auth user. This cascades (0008 + 0010 migrations) to the
   //    company row and everything under it — document types, contractors,
   //    contractor tokens, documents, projects, subscriptions, notifications
   //    — and to auth.sessions, which is what actually invalidates every
@@ -213,7 +197,7 @@ export async function confirmAccountDeletion(
   const { error: deleteError } = await admin.auth.admin.deleteUser(user.id);
   if (deleteError) {
     console.error("confirmAccountDeletion: deleteUser failed", deleteError);
-    // Best-effort undo of step 3 so this email isn't wrongly flagged as
+    // Best-effort undo of step 2 so this email isn't wrongly flagged as
     // trial-used for an account that, from the user's side, still exists.
     // Billing is already cancelled at this point and that part doesn't get
     // undone — the safe direction on failure is "not billed, not deleted"
@@ -222,8 +206,25 @@ export async function confirmAccountDeletion(
     return {
       ok: false,
       error:
-        "Your subscription was cancelled but we couldn't finish deleting your account. Contact support — you won't be charged again.",
+        "Your subscription was cancelled but we couldn't finish deleting your account. Contact support. You won't be charged again.",
     };
+  }
+
+  // 4. Wipe stored documents, only now that the account is really gone (L7).
+  //    This used to run before the auth user was deleted, so a failed
+  //    deleteUser left a live account whose files had already been
+  //    destroyed. Nothing in Postgres cascades Storage objects (storage has
+  //    no FK to public.companies), so this has to happen in code. Best-effort:
+  //    anything left behind is logged, and is unregistered once the rows
+  //    have cascaded away, so the orphan upload sweep removes it.
+  if (company) {
+    const storageResult = await deleteAllCompanyDocuments(company.id);
+    if (storageResult.failedPaths.length > 0) {
+      console.error(
+        "confirmAccountDeletion: some stored documents were not removed, the orphan sweep will catch them",
+        { companyId: company.id, failed: storageResult.failedPaths.length },
+      );
+    }
   }
 
   return { ok: true };
