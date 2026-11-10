@@ -17,6 +17,7 @@ import {
   deleteObject,
 } from "@/lib/storage";
 import { canSubmitDocument, MAX_FILES_PER_SUBMISSION } from "@/lib/document-actions-logic";
+import { isPathOwnedByCompany } from "@/lib/storage-path-ownership";
 import { classifySubmissionError } from "@/lib/save-error-logic";
 import { TERMS_VERSION } from "@/lib/legal/terms";
 import { PRIVACY_VERSION } from "@/lib/legal/privacy";
@@ -148,7 +149,14 @@ export async function submitStagedDocuments(
   // submission (2 of 3 files registered) would be a confusing thing for the
   // contractor to land back on and re-attempt.
   for (const f of files) {
-    if (!f.path.startsWith(expectedPrefix)) {
+    // These paths come from the browser. startsWith alone would let
+    // "<prefix>../../<other company>/x" through, so the shared ownership check
+    // (which rejects traversal and encoding tricks) runs as well.
+    if (
+      typeof f.path !== "string" ||
+      !f.path.startsWith(expectedPrefix) ||
+      !isPathOwnedByCompany(f.path, resolved.companyId)
+    ) {
       return { ok: false, error: "Upload path mismatch. Try again." };
     }
     const info = await getObjectInfo(f.path);
@@ -191,7 +199,18 @@ export async function submitStagedDocuments(
     return { ok: false, error: classified.message };
   }
 
+  // These paths come from the database, which the owning company can write.
+  // Deleting with the service role would remove whatever they point at, so a
+  // path outside this company's folder is never deleted (its row is still
+  // cleared below, which just drops the reference).
   for (const old of existingFiles ?? []) {
+    if (!isPathOwnedByCompany(old.file_path, resolved.companyId)) {
+      console.error("submitStagedDocuments: refused to delete a file_path outside the company's folder", {
+        documentId: doc.id,
+        companyId: resolved.companyId,
+      });
+      continue;
+    }
     await deleteObject(old.file_path);
   }
   if (existingFiles && existingFiles.length > 0) {
@@ -329,6 +348,18 @@ export async function getSubmittedFileUrl(
     file.contractor_documents?.contractor_id !== resolved.contractorId ||
     file.contractor_documents?.archived_at
   ) {
+    return { ok: false, error: "No file to view." };
+  }
+
+  // The row belonging to this contractor doesn't make the path safe: the
+  // company that owns the contractor can write any file_path it likes on its
+  // own rows, and the signing below uses the service role. Only a path inside
+  // that company's own folder is signed.
+  if (!isPathOwnedByCompany(file.file_path, resolved.companyId)) {
+    console.error("getSubmittedFileUrl: refused a file_path outside the company's folder", {
+      fileId,
+      companyId: resolved.companyId,
+    });
     return { ok: false, error: "No file to view." };
   }
 
