@@ -251,7 +251,7 @@ export async function submitStagedDocuments(
     return { ok: false, error: classified.message };
   }
 
-  // Record what the contractor agreed to (migration 0016). Deliberately a
+  // Record what the contractor agreed to (migration 0019). Deliberately a
   // separate statement from the status update above: if this code is deployed
   // before the migration has been run, the columns don't exist yet, and
   // folding them into that update would fail every upload. The submission has
@@ -267,7 +267,7 @@ export async function submitStagedDocuments(
     .eq("id", doc.id);
   if (consentError) {
     console.error(
-      "submitStagedDocuments: couldn't record the contractor's agreement — has migration 0016 been run?",
+      "submitStagedDocuments: couldn't record the contractor's agreement — has migration 0019 been run?",
       { code: consentError.code, message: consentError.message, documentId: doc.id },
     );
   }

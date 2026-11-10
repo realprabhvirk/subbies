@@ -1,6 +1,9 @@
 -- Subbies — record what a contractor agreed to when they uploaded
 -- ---------------------------------------------------------------------------
--- Run in the Supabase SQL editor after 0015. Safe to run more than once.
+-- Run in the Supabase SQL editor. Independent of 0016 to 0018 (different table
+-- columns, no shared objects), so it can be run before or after them. Safe to
+-- run more than once. (Renumbered from 0016 so it doesn't collide with the
+-- file-path ownership migration, which keeps 0016.)
 --
 -- The upload page now makes the contractor tick a box agreeing to the Privacy
 -- Policy and the applicable parts of the Terms before they can submit. This
