@@ -19,13 +19,13 @@ const ROWS: { name: string; trade: string; docs: string; status: ContractorStatu
 export function ProductPreview({ compact = false }: { compact?: boolean }) {
   return (
     <div className="overflow-hidden rounded-card border border-line bg-surface text-left shadow-lg">
-      <div className="flex items-center justify-between border-b border-line px-4 py-3">
-        <p className="label-caps text-ink-muted">Apex Build Group / Dashboard</p>
+      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
+        <p className="label-caps min-w-0 truncate text-ink-muted">Apex Build Group / Dashboard</p>
         <span className="font-mono text-2xs text-ink-subtle">Example</span>
       </div>
 
       {!compact && (
-        <div className="grid grid-cols-[1.4fr_1fr_1fr] border-b border-line">
+        <div className="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] border-b border-line">
           <div className="border-r border-line px-4 py-3.5">
             <p className="label-caps flex items-center gap-1 text-ink-muted">
               <CircleCheck className="h-3 w-3 text-approved" strokeWidth={2.5} aria-hidden />

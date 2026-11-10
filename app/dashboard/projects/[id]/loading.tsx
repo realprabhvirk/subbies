@@ -1,21 +1,16 @@
 import { Skeleton } from "@/app/components/skeleton";
+import { CardRowsSkeleton, HeaderSkeleton } from "../../_skeleton-parts";
 
+/** Back link, title + actions, meta line, the assign card, the contractors card. */
 export default function Loading() {
   return (
-    <div className="space-y-8" aria-busy="true" aria-label="Loading">
-      <div className="space-y-3">
-        <Skeleton className="h-4 w-24" />
-        <div className="flex items-center justify-between gap-3">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-9 w-28" />
-        </div>
-        <Skeleton className="h-4 w-52" />
+    <div className="space-y-6" aria-busy="true" aria-label="Loading">
+      <div>
+        <HeaderSkeleton back />
+        <Skeleton className="mt-5 h-5 w-80 max-w-full" />
       </div>
-      <Skeleton className="h-24 rounded-card" />
-      <div className="space-y-3">
-        <Skeleton className="h-5 w-56" />
-        <Skeleton className="h-40 rounded-card" />
-      </div>
+      <Skeleton className="h-36 rounded-card" />
+      <CardRowsSkeleton rows={3} />
     </div>
   );
 }

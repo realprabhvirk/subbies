@@ -83,7 +83,7 @@ export function NewContractorForm({
             <li
               key={label}
               aria-current={current ? "step" : undefined}
-              className={`flex items-center gap-2.5 border-t-2 pt-3 ${
+              className={`flex items-center gap-2.5 border-t-[3px] pt-3 ${
                 current || done ? "border-brand text-ink" : "border-line-strong text-ink-muted"
               }`}
             >
@@ -96,7 +96,7 @@ export function NewContractorForm({
 
       {/* Step 1 — kept mounted so its values submit with the form */}
       <div
-        className={`space-y-4 rounded-card border border-line bg-surface p-5 sm:p-6 ${
+        className={`space-y-5 rounded-card border border-line bg-surface p-card shadow-sm sm:p-6 ${
           step === 1 ? "" : "hidden"
         }`}
       >
@@ -179,25 +179,25 @@ export function NewContractorForm({
 
       {/* Step 2 */}
       <div
-        className={`space-y-4 rounded-card border border-line bg-surface p-5 sm:p-6 ${
+        className={`space-y-5 rounded-card border border-line bg-surface p-card shadow-sm sm:p-6 ${
           step === 2 ? "" : "hidden"
         }`}
       >
         <div>
-          <h2 className="text-lg">Documents to request</h2>
+          <h2 className="text-card-title">Documents to request</h2>
           <p className="mt-1 text-sm text-ink-muted">
             The contractor will be asked to upload each of these.
           </p>
         </div>
 
-        <fieldset className="divide-y divide-line overflow-hidden rounded-md border border-line">
+        <fieldset className="divide-y divide-line overflow-hidden rounded-lg border border-line">
           <legend className="sr-only">Select required documents</legend>
           {documentTypes.map((dt) => {
             const isOn = selected.has(dt.id);
             return (
               <label
                 key={dt.id}
-                className={`flex min-h-14 cursor-pointer items-start gap-3 px-4 py-3.5 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-brand ${
+                className={`flex min-h-16 cursor-pointer items-start gap-3.5 px-4 py-4 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:-outline-offset-2 has-[:focus-visible]:outline-brand ${
                   isOn ? "bg-brand-tint/60" : "hover:bg-surface-muted/70"
                 }`}
               >
@@ -210,12 +210,12 @@ export function NewContractorForm({
                   className="sr-only"
                 />
                 <span
-                  className={`mt-px flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-sm border transition-colors ${
+                  className={`mt-px flex h-6 w-6 shrink-0 items-center justify-center rounded-md border transition-colors ${
                     isOn ? "border-brand bg-brand text-white" : "border-field-line bg-surface"
                   }`}
                   aria-hidden
                 >
-                  {isOn && <Check className="h-3 w-3" strokeWidth={3} />}
+                  {isOn && <Check className="h-4 w-4" strokeWidth={3} />}
                 </span>
                 <span>
                   <span className="font-semibold">{dt.name}</span>

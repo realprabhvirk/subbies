@@ -34,7 +34,7 @@ export function Alert({
   const { cls, icon: Icon } = TONE[tone];
   return (
     <div
-      className={`flex items-start gap-2.5 rounded-md border px-3.5 py-3 text-sm ${cls} ${className}`}
+      className={`flex items-start gap-2.5 rounded-md border px-4 py-3.5 text-sm ${cls} ${className}`}
     >
       <Icon className="mt-0.5 h-4.5 w-4.5 shrink-0" strokeWidth={2.25} aria-hidden />
       <span className="flex-1 [&_a]:font-semibold">{children}</span>

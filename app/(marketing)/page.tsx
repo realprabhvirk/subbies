@@ -101,7 +101,7 @@ export default function LandingPage() {
               "repeating-linear-gradient(to bottom, transparent 0, transparent 39px, var(--color-line) 39px, var(--color-line) 40px)",
           }}
         />
-        <Section className="grid items-center gap-12 pb-16 pt-14 sm:pb-24 sm:pt-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-14 lg:pb-32 lg:pt-24">
+        <Section className="grid grid-cols-[minmax(0,1fr)] items-center gap-12 pb-16 pt-14 sm:pb-24 sm:pt-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-14 lg:pb-32 lg:pt-24">
           <div>
             <Eyebrow>Contractor onboarding &amp; compliance</Eyebrow>
             <h1 className="mt-5 text-[2.6rem] leading-[0.98] tracking-display sm:text-6xl xl:text-[4.25rem]">
@@ -175,7 +175,7 @@ export default function LandingPage() {
 
       {/* The problem — named plainly, in two columns: the claim, the cost. */}
       <Section className="py-section">
-        <Reveal className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+        <Reveal className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
           <SectionHead
             index="01"
             label="The problem"
@@ -252,7 +252,7 @@ export default function LandingPage() {
         <div className="mt-14 divide-y divide-line border-y border-line">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title}>
-              <div className="grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-2 lg:gap-16">
+              <div className="grid grid-cols-[minmax(0,1fr)] items-center gap-10 py-12 sm:py-16 lg:grid-cols-2 lg:gap-16">
                 <div className={i % 2 === 1 ? "lg:order-2" : ""}>
                   <Eyebrow className="text-brand">{f.label}</Eyebrow>
                   <h3 className="mt-3 text-2xl leading-tight tracking-display sm:text-4xl">
@@ -280,7 +280,7 @@ export default function LandingPage() {
       {/* Why Subbies exists — an honest founder note, not a testimonial. */}
       <div className="border-t border-line bg-surface">
         <Section className="py-section">
-          <Reveal className="grid items-center gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
+          <Reveal className="grid grid-cols-[minmax(0,1fr)] items-center gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
             <Image
               src="/marketing/trust-crew.webp"
               alt="Two site supervisors reviewing rebar layout on a job site"

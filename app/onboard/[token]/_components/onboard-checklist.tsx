@@ -160,14 +160,14 @@ export function OnboardChecklist({
       {anyStageable && (
         <label
           htmlFor="agree-terms"
-          className="mt-6 flex items-start gap-3 rounded-card border border-line-strong bg-surface p-4 text-sm text-ink sm:p-5"
+          className="mt-6 flex min-h-14 items-start gap-3.5 rounded-card border border-line-strong bg-surface p-card text-sm text-ink sm:p-6"
         >
           <input
             id="agree-terms"
             type="checkbox"
             checked={agreed}
             onChange={(e) => setAgreed(e.target.checked)}
-            className="mt-0.5 h-5 w-5 shrink-0 rounded border-line-strong text-brand focus:ring-brand"
+            className="mt-0.5 h-6 w-6 shrink-0 rounded-md border-line-strong text-brand focus:ring-brand"
           />
           <span>
             I agree to the whole{" "}
@@ -290,7 +290,7 @@ export function OnboardChecklist({
                             onClick={() => removeStagedFile(item.id, i)}
                             disabled={submitting}
                             aria-label={`Remove ${file.name}`}
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-line-strong hover:text-ink disabled:opacity-60"
+                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink-muted transition-colors hover:bg-line-strong hover:text-ink disabled:opacity-60"
                           >
                             <X className="h-4 w-4" strokeWidth={2.25} />
                           </button>
@@ -371,11 +371,11 @@ function FilePicker({
         onClick={() => inputRef.current?.click()}
         className={`pressable flex w-full items-center justify-center gap-2 rounded-md border border-dashed font-semibold disabled:cursor-not-allowed disabled:opacity-55 ${
           prominent
-            ? "min-h-16 border-field-line bg-surface-muted/60 text-base text-ink hover:border-brand hover:bg-brand-tint/50 hover:text-brand"
+            ? "min-h-20 border-field-line bg-surface-muted/60 text-base text-ink hover:border-brand hover:bg-brand-tint/50 hover:text-brand"
             : "min-h-12 border-line-strong text-sm text-ink-muted hover:border-field-line hover:text-ink"
         }`}
       >
-        <Upload className={prominent ? "h-5 w-5" : "h-4 w-4"} strokeWidth={2} aria-hidden />
+        <Upload className={prominent ? "h-6 w-6" : "h-5 w-5"} strokeWidth={2} aria-hidden />
         {label}
       </button>
       <input

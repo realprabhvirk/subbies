@@ -60,7 +60,7 @@ export function DialogFrame({
         />
         <div className="flex shrink-0 items-start justify-between gap-3 px-5 pb-1 pt-4 sm:px-6 sm:pt-5">
           <div className="min-w-0">
-            <h2 id={titleId} className="text-lg font-semibold">
+            <h2 id={titleId} className="text-xl font-semibold">
               {title}
             </h2>
             {description && (
