@@ -15,7 +15,15 @@ import {
   createSignedDownload,
   getObjectInfo,
   deleteObject,
+  deleteObjects,
+  listObjectsUnder,
 } from "@/lib/storage";
+import {
+  MAX_PENDING_UPLOADS_PER_DOCUMENT,
+  STALE_PENDING_UPLOAD_MS,
+  olderThan,
+  unregisteredObjects,
+} from "@/lib/storage-cleanup-logic";
 import { canSubmitDocument, MAX_FILES_PER_SUBMISSION } from "@/lib/document-actions-logic";
 import { isPathOwnedByCompany } from "@/lib/storage-path-ownership";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
@@ -30,6 +38,7 @@ interface DocRow {
   contractor_id: string;
   status: DocumentStatus;
   archived_at: string | null;
+  file_url: string | null;
   document_types: { name: string } | null;
 }
 
@@ -40,7 +49,7 @@ async function loadOwnedDocument(
   const admin = createAdminClient();
   const { data } = await admin
     .from("contractor_documents")
-    .select("id, contractor_id, status, archived_at, document_types(name)")
+    .select("id, contractor_id, status, archived_at, file_url, document_types(name)")
     .eq("id", contractorDocumentId)
     .maybeSingle<DocRow>();
 
@@ -91,6 +100,10 @@ export async function requestDocumentUpload(
     return { ok: false, error: "That file is over the 15 MB limit." };
   }
 
+  if (!(await hasRoomForAnotherUpload(resolved.companyId, resolved.contractorId, doc))) {
+    return { ok: false, error: TOO_MANY_PENDING_ERROR };
+  }
+
   const path = buildDocumentPath({
     companyId: resolved.companyId,
     contractorId: resolved.contractorId,
@@ -113,6 +126,60 @@ export async function requestDocumentUpload(
 }
 
 export type SubmitStagedResult = { ok: boolean; error?: string };
+
+const TOO_MANY_PENDING_ERROR =
+  "There are too many unfinished uploads for this document. Wait 10 minutes, then try again.";
+
+/** The paths a document's database rows point at: its files, plus the legacy file_url. */
+async function registeredPathsFor(doc: DocRow): Promise<string[] | null> {
+  const { data, error } = await createAdminClient()
+    .from("contractor_document_files")
+    .select("file_path")
+    .eq("contractor_document_id", doc.id);
+  if (error) {
+    console.error("registeredPathsFor: lookup failed", { code: error.code });
+    return null;
+  }
+  return [...(data ?? []).map((r) => r.file_path as string), ...(doc.file_url ? [doc.file_url] : [])];
+}
+
+/**
+ * M1: a signed upload URL used to be issued for every request, so one link
+ * could fill the bucket with files that were never submitted. Now at most
+ * MAX_PENDING_UPLOADS_PER_DOCUMENT unsubmitted files may sit under a
+ * document. Leftovers from a failed attempt (older than a few minutes) are
+ * cleared first, so a genuine retry isn't blocked.
+ *
+ * Fails open (logged) when Storage or the database can't be read: a broken
+ * listing must not stop a contractor sending their documents.
+ */
+async function hasRoomForAnotherUpload(
+  companyId: string,
+  contractorId: string,
+  doc: DocRow,
+): Promise<boolean> {
+  const prefix = `${companyId}/${contractorId}/${doc.id}`;
+  const [objects, registered] = await Promise.all([listObjectsUnder(prefix), registeredPathsFor(doc)]);
+  if (!objects || !registered) {
+    console.error("hasRoomForAnotherUpload: couldn't count pending uploads, allowing", { documentId: doc.id });
+    return true;
+  }
+
+  let pending = unregisteredObjects(objects, registered);
+  if (pending.length < MAX_PENDING_UPLOADS_PER_DOCUMENT) return true;
+
+  const stale = olderThan(pending, Date.now(), STALE_PENDING_UPLOAD_MS);
+  if (stale.length > 0) {
+    const removed = await deleteObjects(
+      stale.map((o) => o.path),
+      { documentId: doc.id, reason: "stale pending uploads" },
+    );
+    const failed = new Set(removed.failedPaths);
+    const gone = new Set(stale.map((o) => o.path).filter((p) => !failed.has(p)));
+    pending = pending.filter((o) => !gone.has(o.path));
+  }
+  return pending.length < MAX_PENDING_UPLOADS_PER_DOCUMENT;
+}
 
 const LINK_INACTIVE_ERROR =
   "This upload link isn't active right now. Please contact the company that sent it.";
@@ -310,6 +377,17 @@ export async function submitStagedDocuments(
       "submitStagedDocuments: couldn't record the contractor's agreement — has migration 0019 been run?",
       { code: consentError.code, message: consentError.message, documentId: doc.id },
     );
+  }
+
+  // Clear leftovers from earlier failed attempts at this document. The new
+  // batch and anything a row points at are never touched.
+  const leftovers = await listObjectsUnder(expectedPrefix.slice(0, -1));
+  if (leftovers) {
+    const keep = [...files.map((f) => f.path), ...(doc.file_url ? [doc.file_url] : [])];
+    const stray = unregisteredObjects(leftovers, keep).map((o) => o.path);
+    if (stray.length > 0) {
+      await deleteObjects(stray, { documentId: doc.id, reason: "leftover uploads after submit" });
+    }
   }
 
   await recomputeContractorStatus(admin, resolved.contractorId);

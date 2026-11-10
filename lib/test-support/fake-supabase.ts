@@ -92,6 +92,13 @@ class Query implements PromiseLike<Result> {
   in(c: string, vs: unknown[]) { this.filters.push((r) => vs.includes(r[c])); return this; }
   gt(c: string, v: string) { this.filters.push((r) => String(r[c]) > v); return this; }
   lt(c: string, v: string) { this.filters.push((r) => String(r[c]) < v); return this; }
+  not(c: string, op: string, v: unknown) {
+    if (op === "is") this.filters.push((r) => (r[c] ?? null) !== v);
+    else this.filters.push((r) => r[c] !== v);
+    return this;
+  }
+  private window: [number, number] | null = null;
+  range(from: number, to: number) { this.window = [from, to]; return this; }
   order() { return this; }
   limit() { return this; }
 
@@ -114,7 +121,8 @@ class Query implements PromiseLike<Result> {
       rows.splice(0, rows.length, ...keep);
       return { data: null, error: null, count: gone };
     }
-    const hit = rows.filter(match);
+    let hit = rows.filter(match);
+    if (this.window) hit = hit.slice(this.window[0], this.window[1] + 1);
     return { data: this.head ? null : hit, error: null, count: this.wantCount ? hit.length : null };
   }
 

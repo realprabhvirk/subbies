@@ -41,6 +41,8 @@ installServerModuleStubs({
     export function createSignedUpload(){ return { data: null, error: null }; }
     export function getObjectInfo(){ return null; }
     export function deleteObject(){}
+    export async function deleteObjects(){ return { deletedCount: 0, failedPaths: [] }; }
+    export async function listObjectsUnder(){ return []; }
     export const MAX_UPLOAD_BYTES = 999; export function isAllowedMimeType(){ return true; }
     export function buildDocumentPath(){ return ""; }
   `,

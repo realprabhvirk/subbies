@@ -20,6 +20,10 @@ const DOC = "dccdcb9d-42b2-4f57-80f9-884e3ffba4e0";
 const signed: string[] = [];
 (globalThis as Record<string, unknown>).__signedUploads = signed;
 
+type Obj = { path: string; createdAt: string | null };
+const storage = { objects: [] as Obj[], deleted: [] as string[], listFails: false };
+(globalThis as Record<string, unknown>).__storage = storage;
+
 installServerModuleStubs({
   "server-only": ``,
   react: `export function cache(fn){ return fn; }`,
@@ -39,17 +43,25 @@ installServerModuleStubs({
     export async function checkRateLimit(){ return true; }
   `,
   "@/lib/storage": `
+    const st = () => globalThis.__storage;
     export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
     export function isAllowedMimeType(t){ return t === "application/pdf"; }
     export function buildDocumentPath(p){ return p.companyId + "/" + p.contractorId + "/" + p.contractorDocumentId + "/file.pdf"; }
     export async function createSignedUpload(path){ globalThis.__signedUploads.push(path); return { data: { path, signedUrl: "https://signed/" + path, token: "up" }, error: null }; }
     export async function createSignedDownload(){ return { data: null, error: null }; }
-    export async function getObjectInfo(){ return null; }
-    export async function deleteObject(){}
+    export async function getObjectInfo(path){ return st().objects.some((o) => o.path === path) ? { size: 10, mimetype: "application/pdf" } : null; }
+    export async function deleteObject(path){ st().deleted.push(path); st().objects = st().objects.filter((o) => o.path !== path); }
+    export async function deleteObjects(paths){ for (const p of paths) { st().deleted.push(p); } st().objects = st().objects.filter((o) => !paths.includes(o.path)); return { deletedCount: paths.length, failedPaths: [] }; }
+    export async function listObjectsUnder(prefix){ if (st().listFails) return null; return st().objects.filter((o) => o.path.startsWith(prefix + "/")); }
   `,
 });
 
 const { requestDocumentUpload, submitStagedDocuments } = await import("../../app/onboard/[token]/actions.ts");
+
+const PREFIX = `${A}/${K}/${DOC}`;
+const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
+const pending = (n: number, ageMinutes: number, tag = "p") =>
+  Array.from({ length: n }, (_, i) => ({ path: `${PREFIX}/${tag}${i}.pdf`, createdAt: minutesAgo(ageMinutes) }));
 
 const FILE = { name: "policy.pdf", type: "application/pdf", size: 1000 };
 
@@ -60,6 +72,9 @@ function seed(status: string | null) {
     { id: DOC, contractor_id: K, status: "requested", archived_at: null, document_types: { name: "Public liability" } },
   ];
   signed.length = 0;
+  storage.objects = [];
+  storage.deleted = [];
+  storage.listFails = false;
   return s;
 }
 
@@ -85,3 +100,72 @@ for (const status of ["active", "trialing", "past_due"]) {
     assert.deepEqual(signed, [`${A}/${K}/${DOC}/file.pdf`]);
   });
 }
+
+// ---------------------------------------------------------------------------
+// M1: unsubmitted uploads per document
+
+test("M1: with 9 unsubmitted files under the document, one more upload is allowed", async () => {
+  seed("active");
+  storage.objects = pending(9, 1);
+  const r = await requestDocumentUpload("tok", DOC, FILE, true);
+  assert.equal(r.ok, true);
+});
+
+test("M1: with 10 fresh unsubmitted files, the 11th is refused and no URL is issued", async () => {
+  seed("active");
+  storage.objects = pending(10, 1);
+  const r = await requestDocumentUpload("tok", DOC, FILE, true);
+  assert.equal(r.ok, false);
+  assert.match((r as { error: string }).error, /too many unfinished uploads/i);
+  assert.equal(signed.length, 0);
+  assert.equal(storage.deleted.length, 0, "fresh files from an upload in progress are never cleared");
+});
+
+test("M1: submitted files don't count toward the limit", async () => {
+  const s = seed("active");
+  storage.objects = pending(10, 1, "done");
+  s.tables.contractor_document_files = storage.objects.map((o) => ({ contractor_document_id: DOC, file_path: o.path }));
+  assert.equal((await requestDocumentUpload("tok", DOC, FILE, true)).ok, true);
+});
+
+test("M1: leftovers from a failed attempt are cleared so a retry isn't blocked", async () => {
+  seed("active");
+  storage.objects = [...pending(8, 30, "stale"), ...pending(2, 1, "fresh")];
+  const r = await requestDocumentUpload("tok", DOC, FILE, true);
+  assert.equal(r.ok, true);
+  assert.equal(storage.deleted.length, 8);
+  assert.ok(storage.deleted.every((p) => p.includes("/stale")), "only the stale ones were removed");
+});
+
+test("M1: a broken storage listing fails open rather than blocking the contractor", async () => {
+  seed("active");
+  storage.listFails = true;
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    assert.equal((await requestDocumentUpload("tok", DOC, FILE, true)).ok, true);
+  } finally {
+    console.error = originalError;
+  }
+});
+
+test("normal path: submitting registers the batch and clears leftovers, never the new files", async () => {
+  const s = seed("active");
+  const batch = [
+    { path: `${PREFIX}/new-1.pdf`, fileName: "policy page 1.pdf" },
+    { path: `${PREFIX}/new-2.pdf`, fileName: "policy page 2.pdf" },
+  ];
+  storage.objects = [
+    ...batch.map((b) => ({ path: b.path, createdAt: minutesAgo(1) })),
+    ...pending(3, 40, "abandoned"),
+  ];
+  const r = await submitStagedDocuments("tok", DOC, batch, true);
+  assert.deepEqual(r, { ok: true });
+  assert.deepEqual(
+    s.tables.contractor_document_files.map((f) => f.file_path).sort(),
+    batch.map((b) => b.path).sort(),
+  );
+  assert.equal(s.tables.contractor_documents[0].status, "uploaded");
+  for (const b of batch) assert.ok(!storage.deleted.includes(b.path), `${b.path} must survive`);
+  assert.equal(storage.deleted.filter((p) => p.includes("/abandoned")).length, 3);
+});

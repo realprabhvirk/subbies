@@ -2,7 +2,13 @@ import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CONTRACTOR_DOCS_BUCKET } from "@/lib/storage-constants";
-import { collectAllPaths, batchPaths, type StorageLister } from "@/lib/storage-cleanup-logic";
+import {
+  collectAllPaths,
+  collectAllObjects,
+  batchPaths,
+  type StorageLister,
+  type StoredObject,
+} from "@/lib/storage-cleanup-logic";
 import {
   isPathOwnedByCompany,
   isValidCompanyId,
@@ -253,4 +259,60 @@ export async function deleteContractorFiles(
   contractorId: string,
 ): Promise<DeleteContractorFilesResult> {
   return deleteFilesUnderPrefix(companyId, `${companyId}/${contractorId}`);
+}
+
+const LIST_PAGE_SIZE = 1000;
+
+/**
+ * A lister that follows Storage's pagination (one list() call returns at most
+ * LIST_PAGE_SIZE entries). `strict` throws on an error instead of returning
+ * it, for callers where "couldn't look" must not read as "nothing there".
+ */
+function pagedLister(bucket: DocumentsBucket, strict: boolean): StorageLister {
+  return {
+    list: async (prefix) => {
+      const all: NonNullable<Awaited<ReturnType<DocumentsBucket["list"]>>["data"]> = [];
+      for (let offset = 0; ; offset += LIST_PAGE_SIZE) {
+        const { data, error } = await bucket.list(prefix, { limit: LIST_PAGE_SIZE, offset });
+        if (error) {
+          if (strict) throw error;
+          return { data: null, error };
+        }
+        all.push(...(data ?? []));
+        if (!data || data.length < LIST_PAGE_SIZE) break;
+      }
+      return { data: all, error: null };
+    },
+  };
+}
+
+/**
+ * Every file under one folder (e.g. one document's uploads), with its stored
+ * time. null when the listing fails, so the caller can tell "empty" from
+ * "couldn't look".
+ */
+export async function listObjectsUnder(prefix: string): Promise<StoredObject[] | null> {
+  const bucket = createAdminClient().storage.from(CONTRACTOR_DOCS_BUCKET);
+  try {
+    return await collectAllObjects(pagedLister(bucket, true), prefix);
+  } catch (error) {
+    console.error("listObjectsUnder: listing failed", { error });
+    return null;
+  }
+}
+
+/** Every file in the documents bucket. Throws if any listing fails. */
+export async function listAllDocumentObjects(): Promise<StoredObject[]> {
+  const bucket = createAdminClient().storage.from(CONTRACTOR_DOCS_BUCKET);
+  return collectAllObjects(pagedLister(bucket, true), "");
+}
+
+/** Removes the given files in batches; reports what Storage refused. */
+export async function deleteObjects(
+  paths: string[],
+  context: Record<string, unknown> = {},
+): Promise<DeleteCompanyDocumentsResult> {
+  if (paths.length === 0) return { deletedCount: 0, failedPaths: [] };
+  const bucket = createAdminClient().storage.from(CONTRACTOR_DOCS_BUCKET);
+  return removeInBatches(bucket, paths, context);
 }

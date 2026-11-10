@@ -102,3 +102,49 @@ test("batchPaths with a batch size larger than the input returns one batch", () 
 test("batchPaths on an empty list returns no batches", () => {
   assert.deepEqual(batchPaths([], 100), []);
 });
+
+// ---------------------------------------------------------------------------
+// M1: pending uploads and the orphan sweep
+
+import {
+  collectAllObjects,
+  unregisteredObjects,
+  olderThan,
+  orphanObjects,
+  ORPHAN_MIN_AGE_MS,
+} from "./storage-cleanup-logic.ts";
+
+const NOW = Date.parse("2026-11-10T12:00:00Z");
+const hoursAgo = (h: number) => new Date(NOW - h * 3600_000).toISOString();
+
+test("collectAllObjects walks the whole bucket from an empty prefix and keeps stored times", async () => {
+  const lister = fakeLister({
+    "": [{ name: "company-1", id: null }],
+    "company-1": [{ name: "file.pdf", id: "o1", created_at: hoursAgo(30) }],
+  });
+  assert.deepEqual(await collectAllObjects(lister, ""), [{ path: "company-1/file.pdf", createdAt: hoursAgo(30) }]);
+});
+
+test("unregisteredObjects drops anything a row points at, ignoring null rows", () => {
+  const objs = [{ path: "a", createdAt: null }, { path: "b", createdAt: null }];
+  assert.deepEqual(unregisteredObjects(objs, ["a", null, undefined]), [{ path: "b", createdAt: null }]);
+});
+
+test("olderThan keeps files with no or unreadable stored time out of the old set", () => {
+  const objs = [
+    { path: "old", createdAt: hoursAgo(25) },
+    { path: "new", createdAt: hoursAgo(1) },
+    { path: "unknown", createdAt: null },
+    { path: "garbage", createdAt: "not a date" },
+  ];
+  assert.deepEqual(olderThan(objs, NOW, ORPHAN_MIN_AGE_MS).map((o) => o.path), ["old"]);
+});
+
+test("orphanObjects: only unregistered files older than 24 hours", () => {
+  const objs = [
+    { path: "registered-old", createdAt: hoursAgo(48) },
+    { path: "orphan-old", createdAt: hoursAgo(48) },
+    { path: "orphan-recent", createdAt: hoursAgo(23) },
+  ];
+  assert.deepEqual(orphanObjects(objs, ["registered-old"], NOW).map((o) => o.path), ["orphan-old"]);
+});
