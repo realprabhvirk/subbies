@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { getCompany, getUser } from "@/lib/supabase/dal";
+import { requireActiveCompany } from "@/lib/billing/require-active";
 import {
   formatNoteTimestamp,
   validateNoteBody,
@@ -37,9 +37,11 @@ export async function addContractorNote(
   contractorId: string,
   body: string,
 ): Promise<{ ok: true; note: NoteView } | { ok: false; error: string }> {
-  const company = await getCompany();
-  const user = await getUser();
-  if (!company || !user) return { ok: false, error: SESSION_EXPIRED };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
+  const user = access.user;
+  if (!user) return { ok: false, error: SESSION_EXPIRED };
   if (typeof contractorId !== "string" || !contractorId) {
     return { ok: false, error: "Couldn't find that contractor." };
   }
@@ -90,8 +92,9 @@ export async function addContractorNote(
 export async function deleteContractorNote(
   noteId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: SESSION_EXPIRED };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
   if (typeof noteId !== "string" || !noteId) {
     return { ok: false, error: "Couldn't find that note." };
   }

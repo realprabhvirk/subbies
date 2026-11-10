@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { getCompany } from "@/lib/supabase/dal";
+import { requireActiveCompany } from "@/lib/billing/require-active";
 import { canAddProject, limitMessage } from "@/lib/billing/entitlements";
+import { rpcErrorMessage, subbiesRpcCode } from "@/lib/db/rpc-errors";
 import type { ProjectStatus } from "@/lib/types";
 
 const STATUSES: ProjectStatus[] = ["active", "on_hold", "completed"];
@@ -68,8 +69,9 @@ export async function createProject(
   _prev: ProjectFormState | null,
   formData: FormData,
 ): Promise<ProjectFormState> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
 
   const limitCheck = await canAddProject(company.id);
   if (!limitCheck.allowed) {
@@ -80,13 +82,19 @@ export async function createProject(
   if (state) return state;
 
   const supabase = await createClient();
-  const { error } = await supabase.from("projects").insert({
-    company_id: company.id,
-    ...data!,
+  // create_project (migration 0020) re-checks access and the plan limit
+  // under a lock; direct inserts are refused once Part B runs.
+  const { error } = await supabase.rpc("create_project", {
+    p_name: data!.name,
+    p_address: data!.address,
+    p_status: data!.status,
+    p_start_date: data!.start_date,
+    p_end_date: data!.end_date,
   });
 
   if (error) {
-    console.error("createProject failed", error);
+    if (subbiesRpcCode(error)) return { ok: false, error: rpcErrorMessage(error, "projects") };
+    console.error("createProject failed", { code: error.code, message: error.message });
     return { ok: false, error: "Couldn't create the project. Try again." };
   }
 
@@ -99,8 +107,9 @@ export async function updateProject(
   _prev: ProjectFormState | null,
   formData: FormData,
 ): Promise<ProjectFormState> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
 
   const id = String(formData.get("id") ?? "");
   if (!id) return { ok: false, error: "Missing project reference." };
@@ -131,8 +140,9 @@ export async function assignContractor(
   contractorId: string,
   role: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
 
   const supabase = await createClient();
 
@@ -144,10 +154,13 @@ export async function assignContractor(
 
   if (!project || !contractor) return { ok: false, error: "Couldn't find that project or contractor." };
 
-  const { error } = await supabase.from("project_contractors").insert({
-    project_id: projectId,
-    contractor_id: contractorId,
-    role_on_project: role.trim() || null,
+  const trimmedRole = role.trim();
+  if (trimmedRole.length > 120) return { ok: false, error: "Keep the role under 120 characters." };
+
+  const { error } = await supabase.rpc("assign_project_contractor", {
+    p_project_id: projectId,
+    p_contractor_id: contractorId,
+    p_role: trimmedRole || null,
   });
 
   if (error) {
@@ -155,6 +168,7 @@ export async function assignContractor(
     if (error.code === "23505") {
       return { ok: false, error: "That contractor is already on this project." };
     }
+    if (subbiesRpcCode(error)) return { ok: false, error: rpcErrorMessage(error, "assignment") };
     console.error("assignContractor failed", error);
     return { ok: false, error: "Couldn't assign the contractor. Try again." };
   }
@@ -169,8 +183,9 @@ export async function assignContractor(
 export async function removeContractor(
   projectContractorId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
 
   const supabase = await createClient();
 

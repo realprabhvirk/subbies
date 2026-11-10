@@ -1,0 +1,223 @@
+/**
+ * An in-memory stand-in for Supabase (tables + the migration 0020 RPCs) and
+ * Resend, shared between a test file and the stubbed modules it installs.
+ *
+ * Stubs re-export it by file URL (see `fakeModuleSource`), so the test and
+ * the code under test talk to the same instance. Not a test file itself.
+ *
+ * The RPCs mirror the SQL in supabase/migrations/0020_security_audit_fixes.sql
+ * closely enough to drive the TypeScript paths; the SQL itself is proven by
+ * supabase/tests/0020_security_audit_fixes.sql against real Postgres.
+ */
+import { pathToFileURL, fileURLToPath } from "node:url";
+import { randomUUID } from "node:crypto";
+
+type Row = Record<string, unknown>;
+type Result = { data: unknown; error: { code?: string; message: string } | null; count?: number | null };
+
+export interface SentEmail {
+  from?: string;
+  to: string | string[];
+  subject: string;
+  text?: string;
+  html?: string;
+}
+
+export interface FakeState {
+  tables: Record<string, Row[]>;
+  sent: SentEmail[];
+  company: { id: string; name: string; user_id?: string } | null;
+  user: { id: string; email: string | null } | null;
+  /** Wall clock the RPCs use, so a test can move time forward. */
+  now: () => number;
+  /** Force an RPC to return a database error (fail-open paths). */
+  rpcErrors: Record<string, string>;
+}
+
+const g = globalThis as unknown as { __fakeSupabase?: FakeState };
+
+export function fake(): FakeState {
+  g.__fakeSupabase ??= {
+    tables: {},
+    sent: [],
+    company: null,
+    user: null,
+    now: () => Date.now(),
+    rpcErrors: {},
+  };
+  return g.__fakeSupabase;
+}
+
+export function resetFake(seed: Partial<FakeState> = {}): FakeState {
+  const s = fake();
+  s.tables = {};
+  s.sent = [];
+  s.company = null;
+  s.user = null;
+  s.now = () => Date.now();
+  s.rpcErrors = {};
+  Object.assign(s, seed);
+  return s;
+}
+
+function table(name: string): Row[] {
+  const s = fake();
+  s.tables[name] ??= [];
+  return s.tables[name];
+}
+
+class Query implements PromiseLike<Result> {
+  private filters: ((r: Row) => boolean)[] = [];
+  private op: "select" | "insert" | "update" | "delete" = "select";
+  private payload: Row | Row[] | null = null;
+  private head = false;
+  private wantCount = false;
+
+  private name: string;
+  constructor(name: string) { this.name = name; }
+
+  select(_cols?: string, opts?: { count?: string; head?: boolean }) {
+    if (this.op === "select") {
+      this.wantCount = Boolean(opts?.count);
+      this.head = Boolean(opts?.head);
+    }
+    return this;
+  }
+  insert(p: Row | Row[]) { this.op = "insert"; this.payload = p; return this; }
+  update(p: Row) { this.op = "update"; this.payload = p; return this; }
+  delete() { this.op = "delete"; return this; }
+  eq(c: string, v: unknown) { this.filters.push((r) => r[c] === v); return this; }
+  neq(c: string, v: unknown) { this.filters.push((r) => r[c] !== v); return this; }
+  is(c: string, v: unknown) { this.filters.push((r) => (r[c] ?? null) === v); return this; }
+  in(c: string, vs: unknown[]) { this.filters.push((r) => vs.includes(r[c])); return this; }
+  gt(c: string, v: string) { this.filters.push((r) => String(r[c]) > v); return this; }
+  lt(c: string, v: string) { this.filters.push((r) => String(r[c]) < v); return this; }
+  order() { return this; }
+  limit() { return this; }
+
+  private exec(): Result {
+    const rows = table(this.name);
+    const match = (r: Row) => this.filters.every((f) => f(r));
+    if (this.op === "insert") {
+      const list = ([] as Row[]).concat(this.payload as Row | Row[]).map((r) => ({ id: randomUUID(), ...r }));
+      rows.push(...list);
+      return { data: list, error: null };
+    }
+    if (this.op === "update") {
+      const hit = rows.filter(match);
+      for (const r of hit) Object.assign(r, this.payload);
+      return { data: hit, error: null };
+    }
+    if (this.op === "delete") {
+      const keep = rows.filter((r) => !match(r));
+      const gone = rows.length - keep.length;
+      rows.splice(0, rows.length, ...keep);
+      return { data: null, error: null, count: gone };
+    }
+    const hit = rows.filter(match);
+    return { data: this.head ? null : hit, error: null, count: this.wantCount ? hit.length : null };
+  }
+
+  async maybeSingle(): Promise<Result> {
+    const r = this.exec();
+    return { ...r, data: Array.isArray(r.data) ? (r.data[0] ?? null) : r.data };
+  }
+  async single(): Promise<Result> {
+    const r = this.exec();
+    const list = Array.isArray(r.data) ? r.data : [];
+    if (list.length !== 1) return { data: null, error: { code: "PGRST116", message: "not exactly one row" } };
+    return { ...r, data: list[0] };
+  }
+  then<A = Result, B = never>(ok?: ((v: Result) => A | PromiseLike<A>) | null, bad?: ((e: unknown) => B | PromiseLike<B>) | null) {
+    return Promise.resolve(this.exec()).then(ok, bad);
+  }
+}
+
+/** The migration 0020 functions the app calls, re-done in memory. */
+function rpc(name: string, args: Record<string, unknown>): Result {
+  const s = fake();
+  if (s.rpcErrors[name]) return { data: null, error: { code: "XX000", message: s.rpcErrors[name] } };
+  const nowMs = s.now();
+
+  switch (name) {
+    case "claim_email_send": {
+      const log = table("email_send_log");
+      const since = nowMs - Number(args.p_window_seconds) * 1000;
+      const used = log.filter((r) => r.company_id === args.p_company_id && Number(r.created_ms) > since).length;
+      if (used >= Number(args.p_cap)) return { data: null, error: null };
+      const id = randomUUID();
+      log.push({ id, company_id: args.p_company_id, kind: args.p_kind, created_ms: nowMs });
+      return { data: id, error: null };
+    }
+    case "claim_request_cooldown": {
+      const cd = table("contractor_request_cooldowns");
+      const row = cd.find((r) => r.contractor_id === args.p_contractor_id);
+      const windowMs = Number(args.p_window_seconds) * 1000;
+      if (row && Number(row.last_ms) > nowMs - windowMs) return { data: false, error: null };
+      if (row) {
+        row.last_ms = nowMs;
+        row.last_sent_at = new Date(nowMs).toISOString();
+      } else {
+        cd.push({ contractor_id: args.p_contractor_id, last_ms: nowMs, last_sent_at: new Date(nowMs).toISOString() });
+      }
+      return { data: true, error: null };
+    }
+    case "release_request_cooldown": {
+      const cd = table("contractor_request_cooldowns");
+      const keep = cd.filter((r) => !(r.contractor_id === args.p_contractor_id && Number(r.last_ms) > nowMs - 120_000));
+      cd.splice(0, cd.length, ...keep);
+      return { data: null, error: null };
+    }
+    case "create_contractor": {
+      if (!s.company) return { data: null, error: { code: "P0001", message: "SUBBIES_NO_COMPANY" } };
+      const contractor = { id: randomUUID(), company_id: s.company.id, business_name: args.p_business_name, contact_name: args.p_contact_name, email: args.p_email, phone: args.p_phone, trade: args.p_trade, status: "pending" };
+      table("contractors").push(contractor);
+      for (const dt of args.p_document_type_ids as string[]) {
+        table("contractor_documents").push({ id: randomUUID(), contractor_id: contractor.id, document_type_id: dt, status: "requested", archived_at: null, replaces_document_id: null });
+      }
+      const token = randomUUID();
+      table("contractor_tokens").push({ id: randomUUID(), contractor_id: contractor.id, token });
+      return { data: [{ contractor_id: contractor.id, token }], error: null };
+    }
+    default:
+      return { data: null, error: { code: "42883", message: `fake: no rpc ${name}` } };
+  }
+}
+
+class RpcCall implements PromiseLike<Result> {
+  private name: string;
+  private args: Record<string, unknown>;
+  constructor(name: string, args: Record<string, unknown>) { this.name = name; this.args = args; }
+  async single(): Promise<Result> {
+    const r = rpc(this.name, this.args);
+    return { ...r, data: Array.isArray(r.data) ? (r.data[0] ?? null) : r.data };
+  }
+  async maybeSingle(): Promise<Result> { return this.single(); }
+  then<A = Result, B = never>(ok?: ((v: Result) => A | PromiseLike<A>) | null, bad?: ((e: unknown) => B | PromiseLike<B>) | null) {
+    return Promise.resolve(rpc(this.name, this.args)).then(ok, bad);
+  }
+}
+
+export function makeClient() {
+  return {
+    from: (name: string) => new Query(name),
+    rpc: (name: string, args: Record<string, unknown> = {}) => new RpcCall(name, args),
+    auth: { getClaims: async () => ({ data: null, error: null }) },
+  };
+}
+
+/** A stand-in for the `resend` package that records instead of sending. */
+export class FakeResend {
+  emails = {
+    send: async (payload: SentEmail) => {
+      fake().sent.push(payload);
+      return { data: { id: `em_${fake().sent.length}` }, error: null };
+    },
+  };
+}
+
+/** ESM source for a stub that re-exports names from this module. */
+export function fakeModuleSource(body: string): string {
+  const url = pathToFileURL(fileURLToPath(import.meta.url)).href;
+  return `import * as F from ${JSON.stringify(url)};\n${body}`;
+}

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/server";
-import { getCompany } from "@/lib/supabase/dal";
+import { requireActiveCompany } from "@/lib/billing/require-active";
 import { recomputeContractorStatus } from "@/lib/contractor-status";
 import { deleteFilesUnderPrefix } from "@/lib/storage";
 import {
@@ -15,7 +15,6 @@ import {
 } from "@/lib/document-lifecycle-logic";
 import type { DocumentStatus } from "@/lib/types";
 
-const SESSION_EXPIRED = "Your session has expired. Reload and try again.";
 
 interface LoadedForLifecycle {
   doc: {
@@ -103,8 +102,9 @@ function revalidateContractor(contractorId: string) {
 export async function archiveDocument(
   documentId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: SESSION_EXPIRED };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
   if (typeof documentId !== "string" || !documentId) {
     return { ok: false, error: "Couldn't find that document." };
   }
@@ -215,8 +215,9 @@ export async function archiveDocument(
 export async function deleteDocument(
   documentId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: SESSION_EXPIRED };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
   if (typeof documentId !== "string" || !documentId) {
     return { ok: false, error: "Couldn't find that document." };
   }

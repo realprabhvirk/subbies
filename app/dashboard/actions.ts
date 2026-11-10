@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany, requireUser } from "@/lib/supabase/dal";
+import { requireActiveCompany } from "@/lib/billing/require-active";
 import { MAX_COMPANY_NAME } from "@/lib/auth/signup-logic";
 
 export interface AccountSetupState {
@@ -54,8 +55,9 @@ export async function completeAccountSetup(
 }
 
 export async function markNotificationsRead(): Promise<{ ok: boolean }> {
-  const company = await getCompany();
-  if (!company) return { ok: false };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false };
+  const company = access.company;
 
   const supabase = await createClient();
   const { error } = await supabase

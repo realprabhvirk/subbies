@@ -1,10 +1,13 @@
 import "server-only";
 
-import { getResend, FROM_ADDRESS, resolveReplyTo } from "./resend";
+import { FROM_ADDRESS, resolveReplyTo } from "./resend";
+import { sendCappedEmail } from "./send-cap";
 import { emailShell, emailButton, emailHeading, docList, calloutBox, paragraph, escapeHtml } from "./template";
 import { REFRESH_NOTE, requestSubject, requestText } from "./request-copy";
 
 export interface OnboardingEmailInput {
+  /** The company sending it; its daily email cap is charged. */
+  companyId: string;
   to: string;
   contactName: string | null;
   companyName: string;
@@ -24,7 +27,7 @@ export interface OnboardingEmailInput {
 
 export type SendResult =
   | { ok: true; id: string | null }
-  | { ok: false; reason: "not_configured" | "send_failed"; error?: string };
+  | { ok: false; reason: "not_configured" | "send_failed" | "daily_limit"; error?: string };
 
 function buildHtml(input: OnboardingEmailInput): string {
   const greeting = input.contactName
@@ -85,10 +88,7 @@ function buildHtml(input: OnboardingEmailInput): string {
 export async function sendOnboardingEmail(
   input: OnboardingEmailInput,
 ): Promise<SendResult> {
-  const resend = getResend();
-  if (!resend) return { ok: false, reason: "not_configured" };
-
-  const { data, error } = await resend.emails.send({
+  return sendCappedEmail(input.companyId, "request", {
     from: FROM_ADDRESS,
     to: input.to,
     replyTo: resolveReplyTo(input.replyTo),
@@ -96,16 +96,11 @@ export async function sendOnboardingEmail(
     text: requestText(input),
     html: buildHtml(input),
   });
-
-  if (error) {
-    console.error("sendOnboardingEmail failed", error);
-    return { ok: false, reason: "send_failed", error: error.message };
-  }
-
-  return { ok: true, id: data?.id ?? null };
 }
 
 export interface ContractorApprovedEmailInput {
+  /** The company sending it; its daily email cap is charged. */
+  companyId: string;
   to: string;
   contactName: string | null;
   companyName: string;
@@ -116,9 +111,6 @@ export interface ContractorApprovedEmailInput {
 export async function sendContractorApprovedEmail(
   input: ContractorApprovedEmailInput,
 ): Promise<SendResult> {
-  const resend = getResend();
-  if (!resend) return { ok: false, reason: "not_configured" };
-
   const greeting = input.contactName ? `Hi ${input.contactName},` : "Hi,";
   const text = [
     greeting,
@@ -148,7 +140,7 @@ export async function sendContractorApprovedEmail(
     ].join("\n"),
   });
 
-  const { data, error } = await resend.emails.send({
+  return sendCappedEmail(input.companyId, "approved", {
     from: FROM_ADDRESS,
     to: input.to,
     replyTo: resolveReplyTo(input.replyTo),
@@ -156,15 +148,11 @@ export async function sendContractorApprovedEmail(
     text,
     html,
   });
-
-  if (error) {
-    console.error("sendContractorApprovedEmail failed", error);
-    return { ok: false, reason: "send_failed", error: error.message };
-  }
-  return { ok: true, id: data?.id ?? null };
 }
 
 export interface DocumentRejectedEmailInput {
+  /** The company sending it; its daily email cap is charged. */
+  companyId: string;
   to: string;
   contactName: string | null;
   companyName: string;
@@ -177,9 +165,6 @@ export interface DocumentRejectedEmailInput {
 export async function sendDocumentRejectedEmail(
   input: DocumentRejectedEmailInput,
 ): Promise<SendResult> {
-  const resend = getResend();
-  if (!resend) return { ok: false, reason: "not_configured" };
-
   const greeting = input.contactName ? `Hi ${input.contactName},` : "Hi,";
   const text = [
     greeting,
@@ -215,7 +200,7 @@ export async function sendDocumentRejectedEmail(
     ].join("\n"),
   });
 
-  const { data, error } = await resend.emails.send({
+  return sendCappedEmail(input.companyId, "rejected", {
     from: FROM_ADDRESS,
     to: input.to,
     replyTo: resolveReplyTo(input.replyTo),
@@ -223,10 +208,4 @@ export async function sendDocumentRejectedEmail(
     text,
     html,
   });
-
-  if (error) {
-    console.error("sendDocumentRejectedEmail failed", error);
-    return { ok: false, reason: "send_failed", error: error.message };
-  }
-  return { ok: true, id: data?.id ?? null };
 }

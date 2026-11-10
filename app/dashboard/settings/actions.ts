@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { getCompany } from "@/lib/supabase/dal";
+import { requireActiveCompany } from "@/lib/billing/require-active";
 
 export interface CompanyProfileState {
   ok: boolean;
@@ -15,10 +15,9 @@ export async function updateCompanyProfile(
   _prev: CompanyProfileState | null,
   formData: FormData,
 ): Promise<CompanyProfileState> {
-  const company = await getCompany();
-  if (!company) {
-    return { ok: false, error: "Your session has expired. Reload and try again." };
-  }
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
 
   const name = String(formData.get("name") ?? "").trim();
   const address = String(formData.get("address") ?? "").trim();

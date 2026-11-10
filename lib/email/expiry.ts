@@ -2,6 +2,7 @@ import "server-only";
 
 import { getResend, FROM_ADDRESS, resolveReplyTo } from "./resend";
 import type { SendResult } from "./onboarding";
+import { sendCappedEmail } from "./send-cap";
 import { emailShell, emailButton, paragraph, escapeHtml, emailHeading, docList } from "./template";
 
 /**
@@ -60,6 +61,8 @@ export interface ExpiringDocumentLine {
 }
 
 export interface ExpiryReminderEmailInput {
+  /** The company the reminder is sent for; its daily email cap is charged. */
+  companyId: string;
   to: string;
   contactName: string | null;
   companyName: string;
@@ -137,7 +140,14 @@ export async function sendExpiryReminderEmail(
     footerHtml: `Sent via Subbies on behalf of ${escapeHtml(input.companyName)}.`,
   });
 
-  return send(input.to, subject, text, html, input.replyTo);
+  return sendCappedEmail(input.companyId, "expiry_reminder", {
+    from: FROM_ADDRESS,
+    to: input.to,
+    replyTo: resolveReplyTo(input.replyTo),
+    subject,
+    text,
+    html,
+  });
 }
 
 export interface ExpiredEscalationLine {

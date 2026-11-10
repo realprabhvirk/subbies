@@ -4,11 +4,15 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
-import { getCompany, getUser } from "@/lib/supabase/dal";
+import { getUser } from "@/lib/supabase/dal";
+import { requireActiveCompany } from "@/lib/billing/require-active";
 import { getAppUrl } from "@/lib/app-url";
 import { canAddContractor, limitMessage } from "@/lib/billing/entitlements";
 import { sendOnboardingEmail, type SendResult } from "@/lib/email/onboarding";
 import { sendRequestToContractor } from "@/lib/contractors/request-email";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { RESEND_COOLDOWN_SECONDS } from "@/lib/contractor-details-logic";
+import { rpcErrorMessage, subbiesRpcCode } from "@/lib/db/rpc-errors";
 
 export interface NewContractorState {
   ok: boolean;
@@ -34,10 +38,9 @@ export async function createContractor(
   _prev: NewContractorState | null,
   formData: FormData,
 ): Promise<NewContractorState> {
-  const company = await getCompany();
-  if (!company) {
-    return { ok: false, error: "Your session has expired. Reload and try again." };
-  }
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
   const user = await getUser();
 
   const limitCheck = await canAddContractor(company.id);
@@ -92,59 +95,59 @@ export async function createContractor(
     };
   }
 
-  // Create the contractor.
-  const { data: contractor, error: contractorError } = await supabase
-    .from("contractors")
-    .insert({
-      company_id: company.id,
-      business_name: businessName,
-      contact_name: contactName || null,
-      email,
-      phone: phone || null,
-      trade: trade || null,
-      status: "pending",
+  // Create the contractor, its document requests and its upload link in one
+  // database call (create_contractor, migration 0020). The function re-checks
+  // access and the plan limit under a lock, so two tabs racing can't both slip
+  // past the limit, and a direct insert from the browser is refused.
+  const { data: created, error: createError } = await supabase
+    .rpc("create_contractor", {
+      p_business_name: businessName,
+      p_contact_name: contactName || null,
+      p_email: email,
+      p_phone: phone || null,
+      p_trade: trade || null,
+      p_document_type_ids: docTypes.map((dt) => dt.id),
     })
-    .select("id")
-    .single();
+    .single<{ contractor_id: string; token: string }>();
 
-  if (contractorError || !contractor) {
-    console.error("createContractor: insert failed", contractorError);
-    return { ok: false, error: "Something went wrong creating this contractor." };
-  }
-
-  // Create the requested document rows and the access token. If either fails,
-  // roll back the contractor so we don't leave a half-built record.
-  const { error: docsError } = await supabase.from("contractor_documents").insert(
-    docTypes.map((dt) => ({
-      contractor_id: contractor.id,
-      document_type_id: dt.id,
-      status: "requested" as const,
-    })),
-  );
-
-  const { data: tokenRow, error: tokenError } = await supabase
-    .from("contractor_tokens")
-    .insert({ contractor_id: contractor.id })
-    .select("token")
-    .single();
-
-  if (docsError || tokenError || !tokenRow) {
-    console.error("createContractor: follow-up insert failed", docsError, tokenError);
-    await supabase.from("contractors").delete().eq("id", contractor.id).eq("company_id", company.id);
-    return { ok: false, error: "Something went wrong setting up the document request. Try again." };
+  if (createError || !created) {
+    const code = subbiesRpcCode(createError);
+    if (code === "SUBBIES_LIMIT_REACHED") {
+      return { ok: false, limitReached: true, error: rpcErrorMessage(createError, "contractors") };
+    }
+    if (code === "SUBBIES_UNKNOWN_DOCUMENT_TYPE") {
+      return { ok: false, fieldErrors: { document_type_ids: rpcErrorMessage(createError, "contractors") } };
+    }
+    console.error("createContractor: create_contractor failed", {
+      code: createError?.code,
+      message: createError?.message,
+    });
+    return { ok: false, error: code ? rpcErrorMessage(createError, "contractors") : "Something went wrong creating this contractor." };
   }
 
   // Send the onboarding email. A failure here does not undo the contractor —
   // it can be resent from the contractors list.
   const appUrl = await getAppUrl();
   const emailResult: SendResult = await sendOnboardingEmail({
+    companyId: company.id,
     to: email,
     contactName: contactName || null,
     companyName: company.name,
     replyTo: user?.email ?? null,
     documentNames: docTypes.map((dt) => dt.name),
-    onboardUrl: `${appUrl}/onboard/${tokenRow.token}`,
+    onboardUrl: `${appUrl}/onboard/${created.token}`,
   });
+
+  // A delivered first email starts the resend cooldown, so "Resend" straight
+  // after creating doesn't send the same email twice. A failed one doesn't,
+  // so the company can retry at once.
+  if (emailResult.ok) {
+    const { error: stampError } = await createAdminClient().rpc("claim_request_cooldown", {
+      p_contractor_id: created.contractor_id,
+      p_window_seconds: RESEND_COOLDOWN_SECONDS,
+    });
+    if (stampError) console.error("createContractor: couldn't start the resend cooldown", { code: stampError.code });
+  }
 
   revalidatePath("/dashboard/contractors");
   revalidatePath("/dashboard");
@@ -157,8 +160,9 @@ export async function createContractor(
 export async function resendOnboardingRequest(
   contractorId: string,
 ): Promise<{ ok: boolean; message: string }> {
-  const company = await getCompany();
-  if (!company) return { ok: false, message: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, message: access.error };
+  const company = access.company;
   const user = await getUser();
 
   const supabase = await createClient();
@@ -199,6 +203,7 @@ export async function resendOnboardingRequest(
       : (docs ?? []).filter((d) => d.replaces_document_id === null).map(nameOf);
 
   const result = await sendRequestToContractor(supabase, {
+    companyId: company.id,
     contractor,
     companyName: company.name,
     replyTo: user?.email ?? null,

@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { getCompany, getUser } from "@/lib/supabase/dal";
+import { getUser } from "@/lib/supabase/dal";
+import { requireActiveCompany } from "@/lib/billing/require-active";
 import { deleteContractorFiles } from "@/lib/storage";
 import {
   sendRequestToContractor,
@@ -27,7 +28,6 @@ import { daysUntilExpiry } from "@/lib/reminders/expiry-logic";
 import { complianceToday } from "@/lib/time/compliance-today";
 import type { DocumentStatus } from "@/lib/types";
 
-const SESSION_EXPIRED = "Your session has expired. Reload and try again.";
 
 function revalidateContractor(contractorId: string) {
   revalidatePath(`/dashboard/contractors/${contractorId}`);
@@ -55,8 +55,9 @@ export async function updateContractorDetails(
   contractorId: string,
   input: ContractorDetailsInput,
 ): Promise<UpdateDetailsResult> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: SESSION_EXPIRED };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
   if (typeof contractorId !== "string" || !contractorId) {
     return { ok: false, error: "Couldn't find that contractor." };
   }
@@ -134,8 +135,9 @@ export type DeleteContractorResult =
 export async function deleteContractor(
   contractorId: string,
 ): Promise<DeleteContractorResult> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: SESSION_EXPIRED };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
   if (typeof contractorId !== "string" || !contractorId) {
     return { ok: false, error: "Couldn't find that contractor." };
   }
@@ -153,7 +155,7 @@ export async function deleteContractor(
   if (!contractor) return { ok: false, error: "Couldn't find that contractor." };
 
   // 2. Cut off the link before touching anything irreversible.
-  if (!(await disableUploadLink(supabase, contractor.id))) {
+  if (!(await disableUploadLink(contractor.id))) {
     return {
       ok: false,
       error: `Couldn't disable ${contractor.business_name}'s upload link, so nothing was deleted. Try again.`,
@@ -244,8 +246,9 @@ export async function resendDocumentRequests(
   contractorId: string,
   documentIds: string[],
 ): Promise<ResendRequestsResult> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: SESSION_EXPIRED };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
   const user = await getUser();
 
   if (typeof contractorId !== "string" || !contractorId) {
@@ -400,6 +403,7 @@ export async function resendDocumentRequests(
   };
 
   const result = await sendRequestToContractor(supabase, {
+    companyId: company.id,
     contractor,
     companyName: company.name,
     replyTo: user?.email ?? null,

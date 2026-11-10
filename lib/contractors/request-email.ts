@@ -3,6 +3,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getAppUrl } from "@/lib/app-url";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { DAILY_LIMIT_MESSAGE } from "@/lib/email/send-cap";
 import { sendOnboardingEmail } from "@/lib/email/onboarding";
 import {
   RESEND_COOLDOWN_SECONDS,
@@ -33,18 +35,19 @@ export type RequestSendResult =
   | { ok: false; reason: "cooldown"; retryAfterSeconds: number; message: string }
   | {
       ok: false;
-      reason: "no_link" | "not_configured" | "send_failed" | "prepare_failed";
+      reason: "no_link" | "not_configured" | "send_failed" | "prepare_failed" | "daily_limit";
       message: string;
     };
 
 interface TokenRow {
   token: string;
-  last_request_sent_at?: string | null;
 }
 
 export async function sendRequestToContractor(
   supabase: SupabaseClient,
   input: {
+    /** The caller's company: its daily email cap is charged. */
+    companyId: string;
     contractor: { id: string; email: string; contact_name: string | null };
     companyName: string;
     replyTo: string | null;
@@ -64,41 +67,25 @@ export async function sendRequestToContractor(
 ): Promise<RequestSendResult> {
   const { contractor } = input;
 
-  // Read the token together with the cooldown stamp. If the stamp column
-  // doesn't exist yet (this deployed before its migration ran), fall back to
-  // reading the token alone: the send must keep working, it just goes out
-  // without a cooldown until the migration lands.
-  let tokenRow: TokenRow | null = null;
-  let cooldownAvailable = true;
-
-  const first = await supabase
+  // Read through the caller's own client, so RLS still decides whether this
+  // company can see this contractor's link at all.
+  const { data: tokenRow, error: tokenError } = await supabase
     .from("contractor_tokens")
-    .select("token, last_request_sent_at")
+    .select("token")
     .eq("contractor_id", contractor.id)
     .maybeSingle<TokenRow>();
 
-  if (first.error && isMissingColumnError(first.error)) {
-    cooldownAvailable = false;
-    const fallback = await supabase
-      .from("contractor_tokens")
-      .select("token")
-      .eq("contractor_id", contractor.id)
-      .maybeSingle<TokenRow>();
-    tokenRow = fallback.data;
-  } else if (first.error) {
+  if (tokenError) {
     console.error("sendRequestToContractor: token lookup failed", {
-      code: first.error.code,
-      message: first.error.message,
+      code: tokenError.code,
+      message: tokenError.message,
     });
     return {
       ok: false,
       reason: "no_link",
       message: "Couldn't look up this contractor's upload link. Try again.",
     };
-  } else {
-    tokenRow = first.data;
   }
-
   if (!tokenRow) {
     return {
       ok: false,
@@ -107,64 +94,48 @@ export async function sendRequestToContractor(
     };
   }
 
-  const now = new Date();
-  const previousSentAt = tokenRow.last_request_sent_at ?? null;
-  let claimedAt: string | null = null;
+  // The cooldown lives in contractor_request_cooldowns, which only the server
+  // can write (migration 0020). It used to be a column on the token row that
+  // the company itself could reset, which made the cooldown optional.
+  // claim_request_cooldown checks and stamps in one statement, so two clicks
+  // at the same instant can't both send.
+  const admin = createAdminClient();
+  let claimed = false;
+  const claim = await admin.rpc("claim_request_cooldown", {
+    p_contractor_id: contractor.id,
+    p_window_seconds: RESEND_COOLDOWN_SECONDS,
+  });
 
-  if (cooldownAvailable) {
-    const check = resendCooldown(previousSentAt, now);
-    if (!check.allowed) {
-      return {
-        ok: false,
-        reason: "cooldown",
-        retryAfterSeconds: check.retryAfterSeconds,
-        message: cooldownMessage(check.retryAfterSeconds),
-      };
-    }
-
-    // Claim the slot with a conditional write, so two clicks landing at the
-    // same instant can't both pass the check above and both send. The
-    // condition lives in the UPDATE itself: only one of them matches a row.
-    // The same write extends the link's expiry, since we're about to email it.
-    const cutoff = new Date(now.getTime() - RESEND_COOLDOWN_SECONDS * 1000).toISOString();
-    const stamp = now.toISOString();
-    const claim = await supabase
-      .from("contractor_tokens")
-      .update({ last_request_sent_at: stamp, expires_at: tokenExpiryFrom(now) })
+  if (claim.error) {
+    // Fails OPEN. An anti-spam check that can't run must never stop a
+    // legitimate send. The daily email cap still applies below.
+    console.error("sendRequestToContractor: couldn't claim the resend slot, sending anyway", {
+      code: claim.error.code,
+      message: claim.error.message,
+    });
+  } else if (claim.data !== true) {
+    const { data: stamp } = await admin
+      .from("contractor_request_cooldowns")
+      .select("last_sent_at")
       .eq("contractor_id", contractor.id)
-      .or(`last_request_sent_at.is.null,last_request_sent_at.lt.${cutoff}`)
-      .select("contractor_id");
-
-    if (claim.error) {
-      // Fails OPEN. An anti-spam check that can't run must never stop a
-      // legitimate send — the same lesson as the trial-eligibility ledger.
-      // The cost of being wrong is one extra email; the cost of failing
-      // closed is a company unable to reach a contractor at all.
-      console.error("sendRequestToContractor: couldn't claim the resend slot, sending anyway", {
-        code: claim.error.code,
-        message: claim.error.message,
-      });
-    } else if (!claim.data || claim.data.length === 0) {
-      return {
-        ok: false,
-        reason: "cooldown",
-        retryAfterSeconds: RESEND_COOLDOWN_SECONDS,
-        message: cooldownMessage(RESEND_COOLDOWN_SECONDS),
-      };
-    } else {
-      claimedAt = stamp;
-    }
+      .maybeSingle<{ last_sent_at: string }>();
+    const check = resendCooldown(stamp?.last_sent_at ?? null, new Date());
+    const retryAfterSeconds = check.allowed ? RESEND_COOLDOWN_SECONDS : check.retryAfterSeconds;
+    return {
+      ok: false,
+      reason: "cooldown",
+      retryAfterSeconds,
+      message: cooldownMessage(retryAfterSeconds),
+    };
+  } else {
+    claimed = true;
   }
 
   // Hands the cooldown slot back: nothing was delivered, so a failure
   // shouldn't cost the company a wait.
   const release = async () => {
-    if (!claimedAt) return;
-    await supabase
-      .from("contractor_tokens")
-      .update({ last_request_sent_at: previousSentAt })
-      .eq("contractor_id", contractor.id)
-      .eq("last_request_sent_at", claimedAt);
+    if (!claimed) return;
+    await admin.rpc("release_request_cooldown", { p_contractor_id: contractor.id });
   };
 
   if (input.prepare) {
@@ -175,8 +146,12 @@ export async function sendRequestToContractor(
     }
   }
 
+  // We're about to email the link, so it has to stay valid.
+  await refreshTokenExpiry(contractor.id);
+
   const appUrl = await getAppUrl();
   const result = await sendOnboardingEmail({
+    companyId: input.companyId,
     to: contractor.email,
     contactName: contractor.contact_name,
     companyName: input.companyName,
@@ -188,17 +163,21 @@ export async function sendRequestToContractor(
 
   if (!result.ok) {
     await release();
-    return result.reason === "not_configured"
-      ? {
-          ok: false,
-          reason: "not_configured",
-          message: "Email isn't configured yet, so the request couldn't be sent.",
-        }
-      : {
-          ok: false,
-          reason: "send_failed",
-          message: "The email service rejected the request. Try again shortly.",
-        };
+    if (result.reason === "not_configured") {
+      return {
+        ok: false,
+        reason: "not_configured",
+        message: "Email isn't configured yet, so the request couldn't be sent.",
+      };
+    }
+    if (result.reason === "daily_limit") {
+      return { ok: false, reason: "daily_limit", message: DAILY_LIMIT_MESSAGE };
+    }
+    return {
+      ok: false,
+      reason: "send_failed",
+      message: "The email service rejected the request. Try again shortly.",
+    };
   }
 
   return { ok: true };
@@ -211,11 +190,10 @@ export async function sendRequestToContractor(
  * pointing at a page that says the link has expired. Never throws: a failure
  * here must not stop the email it's attached to.
  */
-export async function refreshTokenExpiry(
-  supabase: SupabaseClient,
-  contractorId: string,
-): Promise<void> {
-  const { error } = await supabase
+export async function refreshTokenExpiry(contractorId: string): Promise<void> {
+  // Service role: owners can only read their token rows (migration 0020).
+  // Every caller has already proven the contractor belongs to its company.
+  const { error } = await createAdminClient()
     .from("contractor_tokens")
     .update({ expires_at: tokenExpiryFrom() })
     .eq("contractor_id", contractorId);
@@ -237,11 +215,9 @@ export async function refreshTokenExpiry(
  * contractor who is still recoverable (a resend refreshes the link) instead of
  * one with no link at all.
  */
-export async function disableUploadLink(
-  supabase: SupabaseClient,
-  contractorId: string,
-): Promise<boolean> {
-  const { error } = await supabase
+export async function disableUploadLink(contractorId: string): Promise<boolean> {
+  // Service role, as in refreshTokenExpiry: the caller has proven ownership.
+  const { error } = await createAdminClient()
     .from("contractor_tokens")
     .update({ expires_at: new Date(0).toISOString() })
     .eq("contractor_id", contractorId);

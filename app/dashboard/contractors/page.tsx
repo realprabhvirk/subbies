@@ -8,6 +8,7 @@ import { Avatar } from "@/app/components/avatar";
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
 import { canAddContractor } from "@/lib/billing/entitlements";
+import { DAILY_LIMIT_MESSAGE } from "@/lib/email/send-cap";
 import { StatusBadge } from "@/app/components/status-badge";
 import { Alert } from "@/app/components/alert";
 import { EmptyState } from "@/app/components/empty-state";
@@ -134,6 +135,12 @@ export default async function ContractorsPage(
             <>
               <strong>{created}</strong> was added, but the onboarding email
               failed to send. Try <em>Resend request</em> in a moment.
+            </>
+          ) : emailIssue === "daily_limit" ? (
+            <>
+              <strong>{created}</strong> was added, but the onboarding email
+              wasn&apos;t sent: {DAILY_LIMIT_MESSAGE} Use <em>Resend request</em>{" "}
+              then.
             </>
           ) : (
             <>

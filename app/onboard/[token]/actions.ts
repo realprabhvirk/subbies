@@ -19,6 +19,7 @@ import {
 import { canSubmitDocument, MAX_FILES_PER_SUBMISSION } from "@/lib/document-actions-logic";
 import { isPathOwnedByCompany } from "@/lib/storage-path-ownership";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { companyHasAccess } from "@/lib/billing/require-active";
 import { classifySubmissionError } from "@/lib/save-error-logic";
 import { TERMS_VERSION } from "@/lib/legal/terms";
 import { PRIVACY_VERSION } from "@/lib/legal/privacy";
@@ -64,6 +65,9 @@ export async function requestDocumentUpload(
   const resolved = await resolveOnboardingToken(token);
   if (!resolved) return { ok: false, error: "This upload link is no longer valid." };
   if (!agreedToTerms) return { ok: false, error: AGREEMENT_REQUIRED_ERROR };
+  // A link belonging to a company without a live plan can't be used to store
+  // files (or trigger the company emails that follow a submit).
+  if (!(await companyHasAccess(resolved.companyId))) return { ok: false, error: LINK_INACTIVE_ERROR };
 
   // Keyed on the token, not the IP, so several contractors sharing a site's
   // network don't throttle each other, and the limit survives a page reload.
@@ -110,6 +114,9 @@ export async function requestDocumentUpload(
 
 export type SubmitStagedResult = { ok: boolean; error?: string };
 
+const LINK_INACTIVE_ERROR =
+  "This upload link isn't active right now. Please contact the company that sent it.";
+
 const AGREEMENT_REQUIRED_ERROR =
   "Tick the box to agree to the Privacy Policy and Terms before uploading.";
 
@@ -134,6 +141,9 @@ export async function submitStagedDocuments(
   const resolved = await resolveOnboardingToken(token);
   if (!resolved) return { ok: false, error: "This upload link is no longer valid." };
   if (!agreedToTerms) return { ok: false, error: AGREEMENT_REQUIRED_ERROR };
+  // A link belonging to a company without a live plan can't be used to store
+  // files (or trigger the company emails that follow a submit).
+  if (!(await companyHasAccess(resolved.companyId))) return { ok: false, error: LINK_INACTIVE_ERROR };
 
   if (!(await checkRateLimit(RATE_LIMITS.onboardAction, `submit:${token}`))) {
     return { ok: false, error: "Too many submissions just now. Wait a moment and try again." };

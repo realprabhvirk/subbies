@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany, getUser } from "@/lib/supabase/dal";
+import { requireActiveCompany } from "@/lib/billing/require-active";
 import { getAppUrl } from "@/lib/app-url";
 import { recomputeContractorStatus } from "@/lib/contractor-status";
 import { createSignedDownload } from "@/lib/storage";
@@ -14,6 +15,7 @@ import {
   sendContractorApprovedEmail,
 } from "@/lib/email/onboarding";
 import { refreshTokenExpiry } from "@/lib/contractors/request-email";
+import { DAILY_LIMIT_MESSAGE } from "@/lib/email/send-cap";
 import { resendDocumentRequests } from "./manage-actions";
 import {
   canRevoke,
@@ -104,8 +106,9 @@ export async function approveDocument(
   contractorDocumentId: string,
   expiryDate: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
   const user = await getUser();
 
   const validity = isValidApprovalExpiry(expiryDate);
@@ -180,6 +183,7 @@ export async function approveDocument(
   // Tell the contractor once everything is approved.
   if (newStatus === "approved" && loaded.contractor.status !== "approved") {
     await sendContractorApprovedEmail({
+      companyId: company.id,
       to: loaded.contractor.email,
       contactName: loaded.contractor.contact_name,
       companyName: company.name,
@@ -198,8 +202,9 @@ export async function rejectDocument(
   contractorDocumentId: string,
   reason: string,
 ): Promise<{ ok: boolean; error?: string; emailWarning?: string }> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
   const user = await getUser();
 
   const trimmed = reason.trim();
@@ -232,9 +237,10 @@ export async function rejectDocument(
   let emailWarning: string | undefined;
   if (loaded.token) {
     // The email carries the upload link, so it has to leave it valid.
-    await refreshTokenExpiry(supabase, loaded.contractor.id);
+    await refreshTokenExpiry(loaded.contractor.id);
     const appUrl = await getAppUrl();
     const result = await sendDocumentRejectedEmail({
+      companyId: company.id,
       to: loaded.contractor.email,
       contactName: loaded.contractor.contact_name,
       companyName: company.name,
@@ -247,7 +253,9 @@ export async function rejectDocument(
       emailWarning =
         result.reason === "not_configured"
           ? "Recorded, but the contractor wasn't emailed (email isn't configured)."
-          : "Recorded, but the notification email failed to send.";
+          : result.reason === "daily_limit"
+            ? `Recorded, but the contractor wasn't emailed. ${DAILY_LIMIT_MESSAGE}`
+            : "Recorded, but the notification email failed to send.";
     }
   }
 
@@ -271,8 +279,9 @@ export async function rejectDocument(
 export async function revokeDocumentRequest(
   contractorDocumentId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
 
   const supabase = await createClient();
   const loaded = await loadDocForCompany(supabase, company.id, contractorDocumentId);
@@ -322,8 +331,9 @@ export async function revokeDocumentRequest(
 export async function resendDocumentRequest(
   contractorDocumentId: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
 
   const supabase = await createClient();
   const loaded = await loadDocForCompany(supabase, company.id, contractorDocumentId);
@@ -353,8 +363,9 @@ export async function updateApprovedDocumentExpiry(
   contractorDocumentId: string,
   expiryDate: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
 
   const validity = isValidCorrectedExpiry(expiryDate);
   if (!validity.ok) {

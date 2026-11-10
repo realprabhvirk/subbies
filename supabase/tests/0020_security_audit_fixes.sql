@@ -73,6 +73,10 @@ select pg_temp.must_fail(
   'SUBBIES_LIMIT_REACHED', 'the 6th contractor on Starter is refused');
 
 select pg_temp.must_fail(
+  $q$insert into public.contractors (company_id, business_name, email) values ('10000000-0000-4000-8000-00000000000a', 'Over the limit', 'over@example.test')$q$,
+  'permission denied', 'a direct insert over the plan limit is refused too');
+
+select pg_temp.must_fail(
   $q$select public.create_project('Job', null, 'active', null, null)$q$,
   'SUBBIES_LIMIT_REACHED', 'Starter cannot create a project');
 
@@ -153,6 +157,13 @@ select pg_temp.check(
   (select count(*) from generate_series(1, 4) n
     where public.claim_email_send('10000000-0000-4000-8000-00000000000a', 'test', 3 + 0 * n, 86400) is not null) = 3,
   'email cap: 3 of 4 sends allowed with a cap of 3');
+
+-- The real cap (COMPANY_DAILY_EMAIL_CAP in lib/email/send-cap.ts): the 201st
+-- send in 24 hours gets no reservation. Company B has a log of its own.
+select pg_temp.check(
+  (select count(*) from generate_series(1, 201) n
+    where public.claim_email_send('10000000-0000-4000-8000-00000000000b', 'request', 200 + 0 * n, 86400) is not null) = 200,
+  'email cap: the 201st send in 24 hours is refused');
 
 insert into public.account_deletion_codes (user_id, code_hash, expires_at)
 values ('00000000-0000-4000-8000-00000000000a', 'hash', now() + interval '10 minutes');

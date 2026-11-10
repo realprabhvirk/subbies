@@ -256,9 +256,10 @@ export async function GET(req: NextRequest) {
 
     // The reminder carries the contractor's upload link, and a contractor who
     // has been quiet for months may be holding one that has since expired.
-    await refreshTokenExpiry(admin, contractorId);
+    await refreshTokenExpiry(contractorId);
 
     const result = await sendExpiryReminderEmail({
+      companyId: contractor.company_id,
       to: contractor.email,
       contactName: contractor.contact_name,
       companyName: company?.name ?? "Your client",

@@ -53,6 +53,12 @@ installServerModuleStubs({
     export async function getCompanyOwnerEmail(){ return null; }
   `,
   "@/lib/app-url": `export async function getAppUrl(){ return "https://app.test"; }`,
+  // The plan gate (H1) has its own tests; here every company is paying.
+  "@/lib/billing/require-active": `
+    export async function requireActiveCompany(){ const c = globalThis.__stubs.company; return c ? { ok: true, company: c, user: { id: "u", email: "x@test.local" } } : { ok: false, error: "no session" }; }
+    export async function companyHasAccess(){ return true; }
+  `,
+  "@/lib/email/send-cap": `export const DAILY_LIMIT_MESSAGE = "limit";`,
   "@/lib/contractor-status": `export async function recomputeContractorStatus(){ return null; }`,
   "@/lib/email/company": `export async function sendDocumentSubmittedEmail(){ return { ok: true }; }`,
   "@/lib/contractors/request-email": `export async function refreshTokenExpiry(){}`,

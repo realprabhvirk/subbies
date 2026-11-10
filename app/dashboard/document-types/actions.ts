@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
-import { getCompany } from "@/lib/supabase/dal";
+import { requireActiveCompany } from "@/lib/billing/require-active";
 import { canAddDocumentType, limitMessage } from "@/lib/billing/entitlements";
+import { rpcErrorMessage, subbiesRpcCode } from "@/lib/db/rpc-errors";
 
 export interface DocumentTypeFormState {
   ok: boolean;
@@ -86,8 +87,9 @@ export async function createDocumentType(
   _prev: DocumentTypeFormState | null,
   formData: FormData,
 ): Promise<DocumentTypeFormState> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
 
   const limitCheck = await canAddDocumentType(company.id);
   if (!limitCheck.allowed) {
@@ -98,15 +100,17 @@ export async function createDocumentType(
   if (state) return state;
 
   const supabase = await createClient();
-  const { error } = await supabase.from("document_types").insert({
-    company_id: company.id,
-    name: data!.name,
-    default_duration_months: data!.default_duration_months,
-    reminder_days: data!.reminder_days,
+  // create_document_type (migration 0020) re-checks access and the plan
+  // limit under a lock; direct inserts are refused once Part B runs.
+  const { error } = await supabase.rpc("create_document_type", {
+    p_name: data!.name,
+    p_default_duration_months: data!.default_duration_months,
+    p_reminder_days: data!.reminder_days,
   });
 
   if (error) {
-    console.error("createDocumentType failed", error);
+    if (subbiesRpcCode(error)) return { ok: false, error: rpcErrorMessage(error, "document types") };
+    console.error("createDocumentType failed", { code: error.code, message: error.message });
     return { ok: false, error: "Something went wrong saving this document type." };
   }
 
@@ -118,8 +122,9 @@ export async function updateDocumentType(
   _prev: DocumentTypeFormState | null,
   formData: FormData,
 ): Promise<DocumentTypeFormState> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
 
   const id = String(formData.get("id") ?? "");
   if (!id) return { ok: false, error: "Missing document type reference." };
@@ -150,8 +155,9 @@ export async function updateDocumentType(
 export async function deleteDocumentType(
   id: string,
 ): Promise<{ ok: boolean; error?: string }> {
-  const company = await getCompany();
-  if (!company) return { ok: false, error: "Your session has expired. Reload and try again." };
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
 
   const supabase = await createClient();
   const { error } = await supabase

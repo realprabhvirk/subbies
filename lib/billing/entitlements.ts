@@ -11,6 +11,7 @@ import {
   type PlanLimits,
   type LimitedResource,
 } from "./plans";
+import { statusHasAccess } from "./access-statuses";
 
 /**
  * Limits for an account that has no plan at all (pre-onboarding, or lapsed).
@@ -82,8 +83,7 @@ export const getEntitlement = cache(
 
     const onboardingCompleted = Boolean(sub?.onboarding_completed_at);
 
-    const paidAccess =
-      status === "trialing" || status === "active" || status === "past_due";
+    const paidAccess = statusHasAccess(status);
 
     const onTrial = status === "trialing";
     const trialEndsAt = onTrial ? (sub?.trial_end ?? null) : null;
