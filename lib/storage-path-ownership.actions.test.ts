@@ -56,6 +56,14 @@ installServerModuleStubs({
   "@/lib/contractor-status": `export async function recomputeContractorStatus(){ return null; }`,
   "@/lib/email/company": `export async function sendDocumentSubmittedEmail(){ return { ok: true }; }`,
   "@/lib/contractors/request-email": `export async function refreshTokenExpiry(){}`,
+  // The contractor actions rate-limit by token (lib/rate-limit.ts, which needs
+  // next/headers and the database). These tests are about path ownership, so
+  // the limiter is stubbed to always allow.
+  "@/lib/rate-limit": `
+    export const RATE_LIMITS = { onboardAction: { bucket: "t", limit: 1000, windowSeconds: 60 }, contact: { bucket: "c", limit: 1000, windowSeconds: 60 } };
+    export async function checkRateLimit(){ return true; }
+    export async function clientIp(){ return "test"; }
+  `,
 });
 
 test("dashboard getDocumentFileUrl refuses a file_path outside the caller's company", async () => {
