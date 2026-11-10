@@ -47,8 +47,8 @@ const loadNotifications = cache(
 /** Bell shape shown while the count is still loading, so the header doesn't shift. */
 export function NotificationsBellFallback() {
   return (
-    <span className="relative flex h-10 w-10 items-center justify-center rounded-md text-current opacity-60 pointer-coarse:h-11 pointer-coarse:w-11" aria-hidden>
-      <Bell className="h-5 w-5" strokeWidth={2} />
+    <span className="relative flex h-12 w-12 items-center justify-center rounded-full text-current opacity-60" aria-hidden>
+      <Bell className="h-6 w-6" strokeWidth={1.75} />
     </span>
   );
 }

@@ -12,12 +12,13 @@ import {
   Menu,
   X,
   ArrowRight,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 
 import { Logo } from "@/app/components/logo";
 import { Spinner } from "@/app/components/spinner";
-import { Avatar } from "@/app/components/avatar";
+import { Avatar, initialsOf } from "@/app/components/avatar";
 import { SignOutButton } from "./sign-out-button";
 
 interface NavItem {
@@ -50,9 +51,9 @@ function isActive(pathname: string, item: NavItem) {
 function NavIcon({ Icon }: { Icon: LucideIcon }) {
   const { pending } = useLinkStatus();
   return pending ? (
-    <Spinner className="h-4 w-4" />
+    <Spinner className="h-6 w-6" />
   ) : (
-    <Icon className="h-4 w-4" strokeWidth={2} aria-hidden />
+    <Icon className="h-6 w-6" strokeWidth={1.75} aria-hidden />
   );
 }
 
@@ -70,12 +71,12 @@ function NavLink({
       href={item.href}
       onClick={onNavigate}
       aria-current={active ? "page" : undefined}
-      // The active item is marked twice — a raised fill and a light bar on
-      // its left edge — so it reads at a glance on the dark rail.
-      className={`relative flex h-10 items-center gap-3 rounded-md px-3 text-sm transition-colors duration-[var(--duration-fast)] ${
+      // The active item is a filled brand-navy pill, white text; everything
+      // else is quiet. 56px tall so it is an easy target at arm's length.
+      className={`flex h-14 items-center gap-3.5 rounded-md px-4 text-nav font-semibold transition-colors duration-[var(--duration-fast)] ${
         active
-          ? "bg-sidebar-active-bg font-semibold text-sidebar-ink before:absolute before:inset-y-2.5 before:-left-3 before:w-0.75 before:rounded-r-full before:bg-sidebar-ink"
-          : "font-medium text-sidebar-ink-muted hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
+          ? "bg-brand text-white"
+          : "text-sidebar-ink-muted hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
       }`}
     >
       <NavIcon Icon={item.icon} />
@@ -122,8 +123,8 @@ export function DashboardShell({
    */
   const sidebarBody = (onNavigate?: () => void) => (
     <>
-      <nav aria-label="Main" className="flex-1 overflow-y-auto px-3 py-4">
-        <div className="flex flex-col gap-0.5">
+      <nav aria-label="Main" className="flex-1 overflow-y-auto px-4 py-5">
+        <div className="flex flex-col gap-1.5">
           {MAIN_NAV.map((item) => (
             <NavLink
               key={item.href}
@@ -134,9 +135,9 @@ export function DashboardShell({
           ))}
         </div>
 
-        <div className="my-4 border-t border-sidebar-border" />
+        <div className="my-5 border-t border-sidebar-border" />
 
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-1.5">
           {ACCOUNT_NAV.map((item) => (
             <NavLink
               key={item.href}
@@ -148,8 +149,8 @@ export function DashboardShell({
         </div>
       </nav>
 
-      <div className="shrink-0 border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-3 px-2 pb-3 pt-1">
+      <div className="shrink-0 border-t border-sidebar-border p-4">
+        <div className="flex items-center gap-3 px-1 pb-3 pt-1">
           <Avatar name={companyName} tone="navy" />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-sidebar-ink">
@@ -176,7 +177,7 @@ export function DashboardShell({
     trialEndsAt && daysLeft !== null ? (
       <Link
         href="/dashboard/settings?tab=billing"
-        className={`group flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 border-b px-4 py-2 text-xs transition-colors sm:text-sm lg:justify-start lg:px-10 ${
+        className={`group flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 border-b px-4 py-2 text-xs transition-colors sm:text-sm lg:justify-start lg:px-8 ${
           daysLeft === 0
             ? "border-attention-line bg-attention-bg text-attention"
             : "border-line bg-surface-muted text-ink-muted hover:text-ink"
@@ -207,9 +208,9 @@ export function DashboardShell({
         data-surface="sidebar"
         className="hidden bg-sidebar-bg lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col"
       >
-        <div className="flex h-(--header-height) shrink-0 items-center border-b border-sidebar-border px-5">
-          <Link href="/dashboard" aria-label="Subbies home" className="rounded-sm">
-            <Logo tone="inverse" height={26} priority />
+        <div className="flex h-(--header-height) shrink-0 items-center border-b border-sidebar-border px-6">
+          <Link href="/dashboard" aria-label="Subbies home" className="rounded-md">
+            <Logo tone="inverse" height={36} priority />
           </Link>
         </div>
         {sidebarBody()}
@@ -218,20 +219,20 @@ export function DashboardShell({
       {/* Mobile header */}
       <header
         data-surface="sidebar"
-        className="sticky top-0 z-30 flex h-14 items-center justify-between bg-sidebar-bg pl-4 pr-1.5 lg:hidden"
+        className="sticky top-0 z-30 flex h-16 items-center justify-between bg-sidebar-bg pl-5 pr-2 lg:hidden"
       >
-        <Link href="/dashboard" aria-label="Subbies home" className="rounded-sm">
-          <Logo tone="inverse" height={24} priority />
+        <Link href="/dashboard" aria-label="Subbies home" className="rounded-md">
+          <Logo tone="inverse" height={30} priority />
         </Link>
         <div className="flex items-center text-sidebar-ink-muted">
           {notificationsSlot}
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="flex h-11 w-11 items-center justify-center rounded-md text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
+            className="flex h-12 w-12 items-center justify-center rounded-md text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
             aria-label="Open menu"
           >
-            <Menu className="h-5 w-5" strokeWidth={2} />
+            <Menu className="h-6 w-6" strokeWidth={2} />
           </button>
         </div>
       </header>
@@ -245,17 +246,17 @@ export function DashboardShell({
           />
           <div
             data-surface="sidebar"
-            className="drawer-panel absolute inset-y-0 left-0 flex w-72 max-w-[85%] flex-col bg-sidebar-bg shadow-xl"
+            className="drawer-panel absolute inset-y-0 left-0 flex w-(--sidebar-width) max-w-[88%] flex-col bg-sidebar-bg shadow-xl"
           >
-            <div className="flex h-14 shrink-0 items-center justify-between border-b border-sidebar-border pl-4 pr-1.5">
-              <Logo tone="inverse" height={24} />
+            <div className="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border pl-6 pr-2">
+              <Logo tone="inverse" height={32} />
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="flex h-11 w-11 items-center justify-center rounded-md text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
+                className="flex h-12 w-12 items-center justify-center rounded-md text-sidebar-ink-muted transition-colors hover:bg-sidebar-bg-elevated hover:text-sidebar-ink"
                 aria-label="Close menu"
               >
-                <X className="h-5 w-5" strokeWidth={2} />
+                <X className="h-6 w-6" strokeWidth={2} />
               </button>
             </div>
             {sidebarBody(() => setMobileOpen(false))}
@@ -264,11 +265,13 @@ export function DashboardShell({
       )}
 
       <div className="flex min-w-0 flex-col">
-        {/* Desktop top bar: where you are (company / section) and
-            notifications. No search field: the app has no search to run,
-            and a box that does nothing is worse than no box. */}
-        <header className="sticky top-0 z-20 hidden h-(--header-height) items-center justify-between gap-4 border-b border-line bg-surface/95 px-10 text-ink-muted backdrop-blur-sm lg:flex">
-          <p className="flex min-w-0 items-center gap-2 text-sm">
+        {/* Desktop top bar: where you are (company / section), then the
+            bell, the company chip (a link to Settings, no dropdown) and the
+            avatar. No search field and no company switcher: the app has
+            neither feature, and a control that does nothing is worse than
+            no control. */}
+        <header className="sticky top-0 z-20 hidden h-(--header-height) items-center justify-between gap-4 border-b border-line bg-canvas/90 px-8 text-ink-muted backdrop-blur-sm lg:flex">
+          <p className="flex min-w-0 items-center gap-2.5 text-sm">
             <span className="truncate font-medium text-ink-muted">{companyName}</span>
             {section && (
               <>
@@ -279,12 +282,28 @@ export function DashboardShell({
               </>
             )}
           </p>
-          {notificationsSlot}
+          <div className="flex shrink-0 items-center gap-3 text-ink-muted">
+            {notificationsSlot}
+            <Link
+              href="/dashboard/settings"
+              className="flex h-12 max-w-72 items-center gap-2.5 rounded-md border border-line-strong bg-surface px-4 text-sm font-semibold text-ink shadow-sm transition-colors hover:border-field-line"
+            >
+              <Building2 className="h-5 w-5 shrink-0 text-ink-muted" strokeWidth={1.75} aria-hidden />
+              <span className="truncate">{companyName}</span>
+            </Link>
+            <span
+              role="img"
+              aria-label={`Signed in as ${companyName}`}
+              className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand font-display text-xs font-semibold text-white"
+            >
+              {initialsOf(companyName)}
+            </span>
+          </div>
         </header>
 
         {trialStrip}
 
-        <main className="mx-auto w-full max-w-(--content-max-width) flex-1 px-4 pb-16 pt-8 sm:px-6 lg:px-10 lg:pt-10">
+        <main className="mx-auto w-full max-w-(--content-max-width) flex-1 px-(--page-padding) pb-16 pt-8 lg:pt-10">
           {children}
         </main>
       </div>

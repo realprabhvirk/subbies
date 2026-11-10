@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, type LucideIcon } from "lucide-react";
 
-import { IconDisc, type DiscTone } from "./icon-disc";
+import { IconDisc } from "./icon-disc";
 
 /**
  * The tinted stat tile: a soft status-coloured surface, one saturated icon

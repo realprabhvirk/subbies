@@ -59,16 +59,16 @@ export function NotificationsBell({
         // Inherits its colour from whichever header it sits in — the light
         // desktop bar or the navy mobile one — and tints its own hover from
         // that colour, so one bell works on both surfaces.
-        className="pressable relative flex h-10 w-10 items-center justify-center rounded-md text-current hover:bg-current/10 pointer-coarse:h-11 pointer-coarse:w-11"
+        className="pressable relative flex h-12 w-12 items-center justify-center rounded-full text-current hover:bg-current/10"
         aria-label={
           unreadCount > 0
             ? `Notifications, ${unreadCount} unread`
             : "Notifications"
         }
       >
-        <Bell className="h-5 w-5" strokeWidth={2} />
+        <Bell className="h-6 w-6" strokeWidth={1.75} />
         {unreadCount > 0 && (
-          <span className="absolute right-1.5 top-1.5 flex h-4 min-w-4 items-center justify-center rounded-sm bg-expired px-1 font-mono text-2xs font-medium leading-none text-white ring-2 ring-surface in-data-[surface=sidebar]:ring-sidebar-bg">
+          <span className="absolute right-1 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-expired px-1 font-mono text-2xs font-medium leading-none text-white ring-2 ring-surface in-data-[surface=sidebar]:ring-sidebar-bg">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
