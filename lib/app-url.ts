@@ -2,29 +2,29 @@ import "server-only";
 
 import { headers } from "next/headers";
 
+import { resolveAppUrl } from "@/lib/app-url-logic";
+
 /**
  * The absolute base URL of this deployment, used to build links that go into
  * emails (so they must be absolute and correct per environment).
  *
- * Priority:
- *   1. NEXT_PUBLIC_APP_URL — set this in production to a stable canonical URL.
- *   2. The incoming request's forwarded host (works on Vercel previews).
- *   3. localhost fallback for dev.
+ * NEXT_PUBLIC_APP_URL is required in production (Production AND Preview on
+ * Vercel, both run with NODE_ENV=production) and this throws without it.
+ * Request headers are only consulted in local development, and only for a
+ * localhost Host. See lib/app-url-logic.ts.
  */
 export async function getAppUrl(): Promise<string> {
-  const configured = process.env.NEXT_PUBLIC_APP_URL;
-  if (configured) return configured.replace(/\/$/, "");
-
-  try {
-    const h = await headers();
-    const host = h.get("x-forwarded-host") ?? h.get("host");
-    if (host) {
-      const proto = h.get("x-forwarded-proto") ?? "https";
-      return `${proto}://${host}`;
+  let host: string | null = null;
+  if (process.env.NODE_ENV !== "production" && !process.env.NEXT_PUBLIC_APP_URL) {
+    try {
+      host = (await headers()).get("host");
+    } catch {
+      // headers() unavailable outside a request
     }
-  } catch {
-    // headers() unavailable outside a request — fall through
   }
-
-  return "http://localhost:3000";
+  return resolveAppUrl({
+    configured: process.env.NEXT_PUBLIC_APP_URL,
+    nodeEnv: process.env.NODE_ENV,
+    host,
+  });
 }
