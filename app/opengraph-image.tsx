@@ -5,7 +5,7 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "nodejs";
 
-export const alt = "Subbies — contractor compliance, without the chasing";
+export const alt = "Subbies: contractor compliance, without the chasing";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -14,26 +14,29 @@ const CANVAS = "#f8f6f4";
 const SURFACE = "#fcfcfa";
 const INK = "#120e0e";
 const INK_MUTED = "#7a736f";
-const BRAND = "#1E3A5F";
 const LINE = "#ebe7e3";
 
-// The site's own typefaces (SIL Open Font License; licences alongside in
-// app/_fonts). Bundled as WOFF because the image renderer can't read the WOFF2
-// files next/font serves to browsers.
-async function loadFonts() {
+// The site's own typeface, Mona Sans (SIL Open Font License; licence alongside
+// in app/_fonts). Bundled as static WOFF because the image renderer can't read
+// the variable WOFF2 file next/font serves to browsers.
+async function loadAssets() {
   const dir = join(process.cwd(), "app/_fonts");
-  const [display, body] = await Promise.all([
-    readFile(join(dir, "SpaceGrotesk-Bold-latin.woff")),
-    readFile(join(dir, "HankenGrotesk-Regular-latin.woff")),
+  const [bold, regular, icon] = await Promise.all([
+    readFile(join(dir, "MonaSans-Bold-latin.woff")),
+    readFile(join(dir, "MonaSans-Regular-latin.woff")),
+    readFile(join(process.cwd(), "public/brand/subbies-icon.png")),
   ]);
-  return [
-    { name: "Space Grotesk", data: display, weight: 700 as const, style: "normal" as const },
-    { name: "Hanken Grotesk", data: body, weight: 400 as const, style: "normal" as const },
-  ];
+  return {
+    fonts: [
+      { name: "Mona Sans", data: bold, weight: 700 as const, style: "normal" as const },
+      { name: "Mona Sans", data: regular, weight: 400 as const, style: "normal" as const },
+    ],
+    iconSrc: `data:image/png;base64,${icon.toString("base64")}`,
+  };
 }
 
 export default async function OpengraphImage() {
-  const fonts = await loadFonts();
+  const { fonts, iconSrc } = await loadAssets();
   return new ImageResponse(
     (
       <div
@@ -45,29 +48,13 @@ export default async function OpengraphImage() {
           justifyContent: "space-between",
           background: CANVAS,
           padding: "72px 80px",
-          fontFamily: "Hanken Grotesk",
+          fontFamily: "Mona Sans",
         }}
       >
         {/* Brand lockup */}
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          <div
-            style={{
-              width: 64,
-              height: 64,
-              borderRadius: 14,
-              background: BRAND,
-              color: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 40,
-              fontWeight: 700,
-              fontFamily: "Space Grotesk",
-            }}
-          >
-            S
-          </div>
-          <div style={{ fontSize: 40, fontWeight: 700, color: INK, fontFamily: "Space Grotesk" }}>
+          <img src={iconSrc} width={64} height={64} alt="" />
+          <div style={{ fontSize: 40, fontWeight: 700, color: INK, fontFamily: "Mona Sans" }}>
             Subbies
           </div>
         </div>
@@ -78,7 +65,7 @@ export default async function OpengraphImage() {
             style={{
               fontSize: 76,
               fontWeight: 700,
-              fontFamily: "Space Grotesk",
+              fontFamily: "Mona Sans",
               color: INK,
               lineHeight: 1.05,
               letterSpacing: "-0.02em",
