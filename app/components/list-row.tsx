@@ -39,6 +39,7 @@ export function ListRow({
   trailing,
   actions,
   footer,
+  wrapTitle = false,
   className = "",
 }: {
   href?: string;
@@ -48,8 +49,11 @@ export function ListRow({
   trailing?: React.ReactNode;
   actions?: React.ReactNode;
   footer?: React.ReactNode;
+  /** Let the title run to two lines instead of truncating (messages, not names). */
+  wrapTitle?: boolean;
   className?: string;
 }) {
+  const titleClass = wrapTitle ? "line-clamp-2 break-words" : "truncate";
   return (
     <li
       className={`group relative flex min-h-16 gap-3.5 px-card py-3.5 sm:px-6 ${footer ? "items-start md:items-center" : "items-center"} ${
@@ -61,12 +65,12 @@ export function ListRow({
         {href ? (
           <Link
             href={href}
-            className="block truncate text-sm font-semibold text-ink after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-[3px] focus-visible:after:ring-inset focus-visible:after:ring-brand"
+            className={`block ${titleClass} text-sm font-semibold text-ink after:absolute after:inset-0 focus-visible:outline-none focus-visible:after:ring-[3px] focus-visible:after:ring-inset focus-visible:after:ring-brand`}
           >
             {title}
           </Link>
         ) : (
-          <span className="block truncate text-sm font-semibold text-ink">{title}</span>
+          <span className={`block ${titleClass} text-sm font-semibold text-ink`}>{title}</span>
         )}
         {meta && <span className="mt-0.5 block truncate text-xs text-ink-muted">{meta}</span>}
         {footer && (

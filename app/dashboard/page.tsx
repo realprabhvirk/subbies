@@ -446,6 +446,7 @@ export default async function DashboardPage() {
                     href={n.contractor_id ? `/dashboard/contractors/${n.contractor_id}` : undefined}
                     leading={<IconDisc icon={Upload} tone="neutral" size="sm" />}
                     title={n.message}
+                    wrapTitle
                     meta={relativeTime(n.created_at)}
                   />
                 ))}
