@@ -3,11 +3,11 @@
 import { useState, useTransition } from "react";
 import { CircleCheck } from "lucide-react";
 
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/app/components/button";
 import { Field } from "@/app/components/input";
 import { PasswordField } from "@/app/components/password-field";
 import { validatePassword, MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
+import { saveNewPassword } from "@/lib/auth/password-actions";
 
 export function ChangePasswordForm() {
   const [password, setPassword] = useState("");
@@ -32,11 +32,10 @@ export function ChangePasswordForm() {
     }
 
     startTransition(async () => {
-      const { error: updateError } = await createClient().auth.updateUser({
-        password,
-      });
-      if (updateError) {
-        setError(updateError.message);
+      // Checked on the server too (L2), not just above.
+      const result = await saveNewPassword(password);
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
       setPassword("");

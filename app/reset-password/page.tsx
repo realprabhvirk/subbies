@@ -11,6 +11,7 @@ import { Button, ButtonLink } from "@/app/components/button";
 import { Spinner } from "@/app/components/spinner";
 import { PasswordField } from "@/app/components/password-field";
 import { validatePassword, MIN_PASSWORD_LENGTH } from "@/lib/auth/password-policy";
+import { saveNewPassword } from "@/lib/auth/password-actions";
 
 type Phase = "checking" | "ready" | "invalid" | "done";
 
@@ -176,9 +177,10 @@ export default function ResetPasswordPage() {
 
     startTransition(async () => {
       const supabase = createClient();
-      const { error: updateError } = await supabase.auth.updateUser({ password });
-      if (updateError) {
-        setError(updateError.message);
+      // Checked on the server too (L2), not just above.
+      const result = await saveNewPassword(password);
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
 
