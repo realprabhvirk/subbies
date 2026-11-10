@@ -19,6 +19,7 @@ import {
   sendPaymentFailedEmail,
 } from "@/lib/email/billing";
 import { markTrialReminderSent } from "@/lib/billing/trial-reminders";
+import { enforceOneTrialPerCard } from "@/lib/billing/trial-card";
 
 export const runtime = "nodejs";
 
@@ -38,7 +39,10 @@ const RELEVANT = new Set<string>([
  * enabled the welcome email would never have been sent. The trial→active
  * conversion then sends the "card charged" email.
  */
-async function sendActivationEmail(result: SyncResult): Promise<void> {
+async function sendActivationEmail(
+  result: SyncResult,
+  opts: { trialNotApplied?: boolean } = {},
+): Promise<void> {
   if (!result.companyId || !result.plan) return;
 
   const plan = PLANS[result.plan];
@@ -71,6 +75,7 @@ async function sendActivationEmail(result: SyncResult): Promise<void> {
     to: email,
     planName: plan.name,
     amount: plan.amount,
+    trialNotApplied: opts.trialNotApplied,
   });
 }
 
@@ -108,9 +113,22 @@ export async function POST(req: NextRequest) {
             typeof session.subscription === "string"
               ? session.subscription
               : session.subscription.id;
-          const sub = await stripe.subscriptions.retrieve(subId);
+          let sub: Stripe.Subscription = await stripe.subscriptions.retrieve(subId);
+
+          // One free trial per card (M6): a card that has already had a
+          // trial on another company gets its trial ended straight away.
+          let trialNotApplied = false;
+          const companyId = sub.metadata?.company_id ?? session.client_reference_id ?? null;
+          if (sub.status === "trialing" && companyId) {
+            const outcome = await enforceOneTrialPerCard(stripe, sub, companyId);
+            if (outcome.removed) {
+              sub = outcome.subscription;
+              trialNotApplied = true;
+            }
+          }
+
           const result = await syncSubscription(sub);
-          await sendActivationEmail(result);
+          await sendActivationEmail(result, { trialNotApplied });
         }
         break;
       }

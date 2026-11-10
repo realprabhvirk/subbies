@@ -16,8 +16,16 @@ process.env.STRIPE_PRICE_STARTER = "price_starter_test";
 process.env.STRIPE_PRICE_BUSINESS = "price_business_test";
 process.env.STRIPE_PRICE_PRO = "price_pro_test";
 
-type FakeSub = { id: string; customer: string; status: string; trial_end: number | null; cancel_at_period_end: boolean; metadata: Record<string, string>; items: { data: { price: { id: string }; current_period_end: number }[] } };
-const stripeState = { subs: new Map<string, FakeSub>(), retrieved: [] as string[], emails: [] as string[] };
+type FakeSub = { default_payment_method?: string | null; id: string; customer: string; status: string; trial_end: number | null; cancel_at_period_end: boolean; metadata: Record<string, string>; items: { data: { price: { id: string }; current_period_end: number }[] } };
+const stripeState = {
+  subs: new Map<string, FakeSub>(),
+  retrieved: [] as string[],
+  emails: [] as string[],
+  updates: [] as { id: string; params: Record<string, unknown> }[],
+  fingerprints: {} as Record<string, string>,
+  customerPm: null as string | null,
+  pmFails: false,
+};
 (globalThis as Record<string, unknown>).__stripeState = stripeState;
 
 installServerModuleStubs({
@@ -36,6 +44,19 @@ installServerModuleStubs({
         },
         list: async () => ({ data: [] }),
         cancel: async () => ({}),
+        update: async (id, params) => {
+          const sub = st().subs.get(id);
+          st().updates.push({ id, params });
+          if (params.trial_end === "now") { sub.status = "active"; sub.trial_end = null; }
+          return structuredClone(sub);
+        },
+      },
+      customers: { retrieve: async (id) => ({ id, invoice_settings: { default_payment_method: st().customerPm ?? null } }) },
+      paymentMethods: {
+        retrieve: async (id) => {
+          if (st().pmFails) { const e = new Error("pm lookup failed"); e.code = "api_error"; throw e; }
+          return { id, card: { fingerprint: st().fingerprints[id] } };
+        },
       },
     };
     export function getStripe(){ return stripe; }
@@ -44,7 +65,7 @@ installServerModuleStubs({
   "@/lib/app-url": `export async function getAppUrl(){ return "https://app.test"; }`,
   "@/lib/billing/trial-reminders": `export async function markTrialReminderSent(){ return true; }`,
   "@/lib/email/billing": `
-    const rec = (kind) => async () => { globalThis.__stripeState.emails.push(kind); return { ok: true }; };
+    const rec = (kind) => async (input) => { globalThis.__stripeState.emails.push(kind + (input?.trialNotApplied ? ":no_trial" : "")); return { ok: true }; };
     export const sendTrialStartedEmail = rec("trial_started");
     export const sendSubscriptionStartedEmail = rec("subscription_started");
     export const sendTrialEndingEmail = rec("trial_ending");
@@ -70,6 +91,10 @@ function seed(dbStatus: string) {
   stripeState.subs.clear();
   stripeState.retrieved.length = 0;
   stripeState.emails.length = 0;
+  stripeState.updates.length = 0;
+  stripeState.fingerprints = {};
+  stripeState.customerPm = null;
+  stripeState.pmFails = false;
   return s;
 }
 
@@ -144,4 +169,79 @@ test("M5: a Stripe outage answers 500 so Stripe retries", async () => {
     console.error = err;
     (stripeState.subs as unknown as { get: typeof original }).get = original;
   }
+});
+
+// ---------------------------------------------------------------------------
+// M6: one free trial per card
+
+const B = "34c4652e-ae33-4973-82e5-53d8b1ed7a20";
+
+function checkoutSession(subId: string, companyId: string) {
+  return { id: "cs_1", mode: "subscription", subscription: subId, client_reference_id: companyId };
+}
+
+function seedTrialCheckout(companyId: string, fingerprint: string) {
+  const s = seed("none");
+  s.tables.subscriptions = [{ company_id: companyId, stripe_customer_id: "cus_A", stripe_subscription_id: null, status: "none", plan: null, onboarding_completed_at: null }];
+  const trialing = { ...sub("sub_1", "trialing"), metadata: { company_id: companyId }, trial_end: 2_000_000_000, default_payment_method: "pm_1" };
+  stripeState.subs.set("sub_1", trialing);
+  stripeState.fingerprints = { pm_1: fingerprint };
+  return s;
+}
+
+const quiet = async <T>(fn: () => Promise<T>) => {
+  const e = console.error, w = console.warn;
+  console.error = () => {}; console.warn = () => {};
+  try { return await fn(); } finally { console.error = e; console.warn = w; }
+};
+
+test("M6 normal path: a new card keeps its trial and is recorded", async () => {
+  const s = seedTrialCheckout(A, "fp_new");
+  assert.equal(await deliver("checkout.session.completed", checkoutSession("sub_1", A)), 200);
+  assert.equal(s.tables.subscriptions[0].status, "trialing");
+  assert.deepEqual(stripeState.updates, []);
+  assert.deepEqual(stripeState.emails, ["trial_started"]);
+  assert.equal(s.tables.trial_card_fingerprints.length, 1);
+});
+
+test("M6: a card that already had a trial on another company has the trial ended, and the email says so", async () => {
+  const s = seedTrialCheckout(B, "fp_used");
+  s.tables.trial_card_fingerprints = [{ fingerprint: "fp_used", first_company_id: A }];
+  assert.equal(await quiet(() => deliver("checkout.session.completed", checkoutSession("sub_1", B))), 200);
+  assert.deepEqual(stripeState.updates.map((u) => u.params.trial_end), ["now"]);
+  assert.equal(s.tables.subscriptions[0].status, "active");
+  assert.deepEqual(stripeState.emails, ["subscription_started:no_trial"]);
+});
+
+test("M6: the same company's webhook retry keeps its trial", async () => {
+  const s = seedTrialCheckout(A, "fp_mine");
+  s.tables.trial_card_fingerprints = [{ fingerprint: "fp_mine", first_company_id: A }];
+  assert.equal(await deliver("checkout.session.completed", checkoutSession("sub_1", A)), 200);
+  assert.deepEqual(stripeState.updates, []);
+  assert.equal(s.tables.subscriptions[0].status, "trialing");
+});
+
+test("M6: a card lookup error fails open, leaving the trial", async () => {
+  const s = seedTrialCheckout(B, "fp_used");
+  s.tables.trial_card_fingerprints = [{ fingerprint: "fp_used", first_company_id: A }];
+  stripeState.pmFails = true;
+  assert.equal(await quiet(() => deliver("checkout.session.completed", checkoutSession("sub_1", B))), 200);
+  assert.deepEqual(stripeState.updates, []);
+  assert.equal(s.tables.subscriptions[0].status, "trialing");
+});
+
+test("M6: a ledger error fails open, leaving the trial", async () => {
+  const s = seedTrialCheckout(B, "fp_used");
+  s.rpcErrors.claim_trial_fingerprint = "db down";
+  assert.equal(await quiet(() => deliver("checkout.session.completed", checkoutSession("sub_1", B))), 200);
+  assert.deepEqual(stripeState.updates, []);
+});
+
+test("M6: the card falls back to the customer's default payment method", async () => {
+  const s = seedTrialCheckout(B, "fp_used");
+  s.tables.trial_card_fingerprints = [{ fingerprint: "fp_used", first_company_id: A }];
+  stripeState.subs.get("sub_1")!.default_payment_method = null;
+  stripeState.customerPm = "pm_1";
+  await quiet(() => deliver("checkout.session.completed", checkoutSession("sub_1", B)));
+  assert.equal(stripeState.updates.length, 1);
 });

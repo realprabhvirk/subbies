@@ -72,8 +72,11 @@ export function sendSubscriptionStartedEmail(input: {
   to: string;
   planName: string;
   amount: number;
+  /** The card had already been used for a free trial, so this plan had none (M6). */
+  trialNotApplied?: boolean;
 }): Promise<SendResult> {
-  const text = `Your Subbies ${input.planName} plan is now active and your card has been charged A$${input.amount}. Your subscription continues month to month. Manage or cancel any time from Settings → Billing.`;
+  const noTrial = "This card has already been used for a Subbies free trial, so no trial applies to this plan.";
+  const text = `Your Subbies ${input.planName} plan is now active and your card has been charged A$${input.amount}.${input.trialNotApplied ? ` ${noTrial}` : ""} Your subscription continues month to month. Manage or cancel any time from Settings → Billing.`;
   const html = emailShell({
     preheader: `Your ${input.planName} plan is active. Thanks for subscribing.`,
     bodyHtml: [
@@ -82,6 +85,7 @@ export function sendSubscriptionStartedEmail(input: {
         "approved",
         `Your <strong>${input.planName}</strong> plan is now active and your card has been charged <strong>A$${input.amount}</strong>.`,
       ),
+      ...(input.trialNotApplied ? [paragraph(noTrial)] : []),
       paragraph("Manage or cancel any time from Settings &rarr; Billing.", {
         muted: true,
         last: true,

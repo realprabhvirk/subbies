@@ -219,6 +219,15 @@ function rpc(name: string, args: Record<string, unknown>): Result {
       table("contractor_tokens").push({ id: randomUUID(), contractor_id: contractor.id, token });
       return { data: [{ contractor_id: contractor.id, token }], error: null };
     }
+    case "claim_trial_fingerprint": {
+      const ledger = table("trial_card_fingerprints");
+      let row = ledger.find((r) => r.fingerprint === args.p_fingerprint);
+      if (!row) {
+        row = { fingerprint: args.p_fingerprint, first_company_id: args.p_company_id };
+        ledger.push(row);
+      }
+      return { data: row.first_company_id === args.p_company_id, error: null };
+    }
     case "consume_deletion_code_attempt": {
       const row = table("account_deletion_codes").find(
         (r) => r.user_id === args.p_user_id && Number(r.attempts) < Number(args.p_max_attempts),
