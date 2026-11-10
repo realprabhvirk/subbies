@@ -97,6 +97,20 @@ class Query implements PromiseLike<Result> {
     else this.filters.push((r) => r[c] !== v);
     return this;
   }
+  /** Supports the PostgREST `or` forms the app uses: col.is.null, col.lt.value. */
+  or(expr: string) {
+    const parts = expr.split(",").map((p) => {
+      const [col, op, ...rest] = p.split(".");
+      const val = rest.join(".");
+      return (r: Row) => {
+        if (op === "is" && val === "null") return (r[col] ?? null) === null;
+        if (op === "lt") return r[col] != null && String(r[col]) < val;
+        throw new Error(`fake: unsupported or() part ${p}`);
+      };
+    });
+    this.filters.push((r) => parts.some((f) => f(r)));
+    return this;
+  }
   private window: [number, number] | null = null;
   range(from: number, to: number) { this.window = [from, to]; return this; }
   order() { return this; }

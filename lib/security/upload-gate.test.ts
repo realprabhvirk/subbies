@@ -20,6 +20,9 @@ const DOC = "dccdcb9d-42b2-4f57-80f9-884e3ffba4e0";
 const signed: string[] = [];
 (globalThis as Record<string, unknown>).__signedUploads = signed;
 
+const ownerEmails: unknown[] = [];
+(globalThis as Record<string, unknown>).__ownerEmails = ownerEmails;
+
 type Obj = { path: string; createdAt: string | null };
 const storage = { objects: [] as Obj[], deleted: [] as string[], listFails: false };
 (globalThis as Record<string, unknown>).__storage = storage;
@@ -33,11 +36,11 @@ installServerModuleStubs({
   "@/lib/supabase/dal": `export async function getCompany(){ return null; } export async function getUser(){ return null; } export async function getCompanyContext(){ return null; }`,
   "@/lib/onboarding": `
     export async function resolveOnboardingToken(){ return { contractorId: ${JSON.stringify(K)}, companyId: ${JSON.stringify(A)} }; }
-    export async function getCompanyOwnerEmail(){ return null; }
+    export async function getCompanyOwnerEmail(){ return "owner@acme.test"; }
   `,
   "@/lib/app-url": `export async function getAppUrl(){ return "https://app.test"; }`,
   "@/lib/contractor-status": `export async function recomputeContractorStatus(){ return null; }`,
-  "@/lib/email/company": `export async function sendDocumentSubmittedEmail(){ return { ok: true }; }`,
+  "@/lib/email/company": `export async function sendDocumentSubmittedEmail(input){ globalThis.__ownerEmails.push(input); return { ok: true }; }`,
   "@/lib/rate-limit": `
     export const RATE_LIMITS = { onboardAction: { bucket: "t", limit: 1000, windowSeconds: 60 } };
     export async function checkRateLimit(){ return true; }
@@ -75,6 +78,7 @@ function seed(status: string | null) {
   storage.objects = [];
   storage.deleted = [];
   storage.listFails = false;
+  ownerEmails.length = 0;
   return s;
 }
 
@@ -168,4 +172,48 @@ test("normal path: submitting registers the batch and clears leftovers, never th
   assert.equal(s.tables.contractor_documents[0].status, "uploaded");
   for (const b of batch) assert.ok(!storage.deleted.includes(b.path), `${b.path} must survive`);
   assert.equal(storage.deleted.filter((p) => p.includes("/abandoned")).length, 3);
+});
+
+// ---------------------------------------------------------------------------
+// M3: owner notifications on repeat submissions
+
+async function submitOnce(name: string) {
+  const path = `${PREFIX}/${name}.pdf`;
+  storage.objects.push({ path, createdAt: minutesAgo(0) });
+  const r = await submitStagedDocuments("tok", DOC, [{ path, fileName: `${name}.pdf` }], true);
+  assert.deepEqual(r, { ok: true });
+}
+
+test("M3 normal path: a first upload notifies the owner once (email + in-app)", async () => {
+  const s = seed("active");
+  await submitOnce("first");
+  assert.equal(ownerEmails.length, 1);
+  assert.equal(s.tables.notifications.length, 1);
+  assert.ok(s.tables.contractor_documents[0].last_owner_notified_at);
+});
+
+test("M3: resubmitting a document still awaiting review within the hour notifies nobody", async () => {
+  const s = seed("active");
+  await submitOnce("first");
+  await submitOnce("second");
+  await submitOnce("third");
+  assert.equal(ownerEmails.length, 1, "one owner email, not three");
+  assert.equal(s.tables.notifications.length, 1, "repeat notifications collapse");
+});
+
+test("M3: a resubmission more than an hour after the last notice notifies again", async () => {
+  const s = seed("active");
+  await submitOnce("first");
+  s.tables.contractor_documents[0].last_owner_notified_at = minutesAgo(61);
+  await submitOnce("second");
+  assert.equal(ownerEmails.length, 2);
+  assert.equal(s.tables.notifications.length, 2);
+});
+
+test("M3: an upload after a rejection always notifies, even within the hour", async () => {
+  const s = seed("active");
+  await submitOnce("first");
+  s.tables.contractor_documents[0].status = "rejected";
+  await submitOnce("fixed");
+  assert.equal(ownerEmails.length, 2);
 });

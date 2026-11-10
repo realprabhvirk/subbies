@@ -127,6 +127,35 @@ export async function requestDocumentUpload(
 
 export type SubmitStagedResult = { ok: boolean; error?: string };
 
+/** The owner hears about repeat submissions of one document at most this often. */
+const OWNER_RENOTIFY_MS = 60 * 60 * 1000;
+
+/**
+ * Claims the right to tell the owner about this submission, by stamping
+ * last_owner_notified_at (migration 0020). For a document that was already
+ * awaiting review, the stamp is only taken if the last one is over an hour
+ * old, in one conditional update, so two quick resubmits can't both notify.
+ * Fails open (logged): a broken stamp must not hide a real submission.
+ */
+async function shouldNotifyOwner(doc: DocRow): Promise<boolean> {
+  const admin = createAdminClient();
+  const now = new Date();
+  let query = admin
+    .from("contractor_documents")
+    .update({ last_owner_notified_at: now.toISOString() })
+    .eq("id", doc.id);
+  if (doc.status === "uploaded") {
+    const cutoff = new Date(now.getTime() - OWNER_RENOTIFY_MS).toISOString();
+    query = query.or(`last_owner_notified_at.is.null,last_owner_notified_at.lt.${cutoff}`);
+  }
+  const { data, error } = await query.select("id");
+  if (error) {
+    console.error("shouldNotifyOwner: couldn't stamp, notifying anyway", { code: error.code, message: error.message });
+    return true;
+  }
+  return (data?.length ?? 0) > 0;
+}
+
 const TOO_MANY_PENDING_ERROR =
   "There are too many unfinished uploads for this document. Wait 10 minutes, then try again.";
 
@@ -394,23 +423,29 @@ export async function submitStagedDocuments(
 
   const documentName = doc.document_types?.name ?? "A document";
 
-  await admin.from("notifications").insert({
-    company_id: resolved.companyId,
-    contractor_id: resolved.contractorId,
-    type: "document_uploaded",
-    message: `${resolved.businessName} uploaded ${documentName}`,
-  });
-
-  // Best-effort email to the company.
-  const ownerEmail = await getCompanyOwnerEmail(resolved.companyId);
-  if (ownerEmail) {
-    const appUrl = await getAppUrl();
-    await sendDocumentSubmittedEmail({
-      to: ownerEmail,
-      contractorName: resolved.businessName,
-      documentNames: [documentName],
-      reviewUrl: `${appUrl}/dashboard/contractors/${resolved.contractorId}`,
+  // M3: a contractor re-submitting a document that's still awaiting review
+  // used to email the owner (and add a notification) every time. Now the
+  // owner hears about a resubmission at most once an hour per document. A
+  // first upload, or one after a rejection, always notifies.
+  if (await shouldNotifyOwner(doc)) {
+    await admin.from("notifications").insert({
+      company_id: resolved.companyId,
+      contractor_id: resolved.contractorId,
+      type: "document_uploaded",
+      message: `${resolved.businessName} uploaded ${documentName}`,
     });
+
+    // Best-effort email to the company.
+    const ownerEmail = await getCompanyOwnerEmail(resolved.companyId);
+    if (ownerEmail) {
+      const appUrl = await getAppUrl();
+      await sendDocumentSubmittedEmail({
+        to: ownerEmail,
+        contractorName: resolved.businessName,
+        documentNames: [documentName],
+        reviewUrl: `${appUrl}/dashboard/contractors/${resolved.contractorId}`,
+      });
+    }
   }
 
   revalidatePath(`/onboard/${token}`);
