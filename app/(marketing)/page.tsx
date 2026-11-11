@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowRight, Check, FileCheck } from "lucide-react";
+import { BellRing, Check, ClipboardCheck, FileCheck, History, Link2 } from "lucide-react";
 
 import {
+  Band,
   Section,
   SectionHead,
   Eyebrow,
   Reveal,
   PrimaryLink,
+  SecondaryLink,
   CtaBand,
 } from "./_components/ui";
 import { TRIAL_DAYS, PLANS } from "@/lib/billing/plans";
@@ -24,11 +25,12 @@ export const metadata: Metadata = {
     "Stop chasing contractors for paperwork and know whether they're approved to work. Collect, review, and track compliance documents in one place.",
 };
 
-const FACTS = [
-  { k: "Contractor logins", v: "None. One link." },
-  { k: "Accepted files", v: "PDF, JPG, PNG, HEIC" },
-  { k: "Expiry reminders", v: "On your schedule" },
-  { k: "Plans from", v: `A$${PLANS.starter.amount} / month` },
+// What the product does, stated plainly: no stats, logos or testimonials.
+const PROOF = [
+  { icon: Link2, label: "Secure upload links", line: "No contractor logins. Photos or PDFs from any phone." },
+  { icon: BellRing, label: "Expiry reminders", line: "Sent on the schedule you set for each document type." },
+  { icon: ClipboardCheck, label: "Review in one place", line: "Approve with an expiry date, or reject with a reason." },
+  { icon: History, label: "Full document history", line: "Replaced and archived copies stay on record." },
 ];
 
 const STEPS = [
@@ -89,10 +91,10 @@ const FEATURES = [
 export default function LandingPage() {
   return (
     <>
-      {/* Hero — editorial, left-set, the real product beside the promise.
-          The ruled background is the "register" motif, drawn in the warm
-          hairline colour. */}
-      <section className="relative isolate overflow-hidden border-b border-line">
+      {/* Hero: fills the first screen under the nav on desktop, content
+          centred. The ruled background (the "register" motif) is the one
+          texture. */}
+      <section className="relative isolate overflow-hidden border-b border-line lg:flex lg:min-h-[calc(100svh-5rem)] lg:items-center">
         <div
           aria-hidden
           className="absolute inset-0 -z-10 opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent_85%)]"
@@ -101,87 +103,84 @@ export default function LandingPage() {
               "repeating-linear-gradient(to bottom, transparent 0, transparent 39px, var(--color-line) 39px, var(--color-line) 40px)",
           }}
         />
-        <Section className="grid grid-cols-[minmax(0,1fr)] items-center gap-12 pb-16 pt-14 sm:pb-24 sm:pt-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-14 lg:pb-32 lg:pt-24">
+        <Section className="grid grid-cols-[minmax(0,1fr)] items-center gap-14 py-14 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16 lg:py-16">
           <div>
             <Eyebrow>Contractor onboarding &amp; compliance</Eyebrow>
-            <h1 className="mt-5 text-[2.6rem] leading-[0.98] tracking-display sm:text-6xl xl:text-[4.25rem]">
+            <h1 className="mt-5 max-w-[14ch] text-[2.6rem] leading-[0.98] tracking-display sm:text-6xl lg:text-[4.25rem] xl:text-[5rem]">
               Stop chasing paperwork. Know who&apos;s cleared for site.
             </h1>
-            <p className="mt-6 max-w-xl text-base text-ink-muted sm:text-lg">
+            <p className="mt-7 max-w-[34rem] text-lg text-ink-muted sm:text-xl xl:text-[1.375rem] xl:leading-[1.5]">
               Collect insurance certificates, licences and workers comp from your
               subcontractors, review them in one place, and see at a glance
               who is approved to work.
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
+            <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <PrimaryLink href="/signup">Start {TRIAL_DAYS}-day free trial</PrimaryLink>
-              <Link
-                href="/how-it-works"
-                className="group inline-flex items-center gap-1.5 text-sm font-semibold text-ink transition-colors hover:text-brand"
-              >
-                See how it works
-                <ArrowRight
-                  className="h-4 w-4 transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5"
-                  strokeWidth={2.25}
-                  aria-hidden
-                />
-              </Link>
+              <SecondaryLink href="/how-it-works">See how it works</SecondaryLink>
             </div>
-            <p className="mt-6 text-sm text-ink-muted">
+            <p className="mt-6 text-base text-ink-muted">
               Card required, nothing charged for {TRIAL_DAYS} days. Built for
               builders, property maintenance and facilities teams.
             </p>
           </div>
 
-          {/* Product composite: the register with the contractor's phone
-              view overlapping its corner. */}
-          <div aria-hidden className="relative sm:pt-16">
+          {/* Product composite, scaled up with the screen so it holds the
+              right half. The notification card is the moment the product
+              exists for, labelled as an example like the panel. */}
+          <div aria-hidden className="relative mx-auto w-full max-w-xl sm:pt-20 lg:max-w-none lg:[zoom:1.12] xl:[zoom:1.25]">
             <ProductPreview />
-            {/* The moment the product exists for: a contractor's upload
-                landing. Mirrors the app's real notification copy. */}
             <div className="absolute -left-4 top-0 hidden w-80 items-start gap-3 rounded-card border border-line bg-surface p-3.5 shadow-lg sm:flex xl:-left-10">
               <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-review-line bg-review-bg text-review">
                 <FileCheck className="h-4 w-4" strokeWidth={2.25} />
               </span>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold leading-snug">
                   BJ Plumbing &amp; Gas uploaded Public liability insurance
                 </p>
-                <p className="mt-1 font-mono text-2xs text-ink-subtle">just now</p>
+                <p className="mt-1 flex justify-between font-mono text-2xs text-ink-subtle">
+                  <span>just now</span>
+                  <span>Example</span>
+                </p>
               </div>
             </div>
           </div>
         </Section>
       </section>
 
-      {/* Facts strip — true statements about the product, in place of a logo
-          wall or invented stats. */}
-      <div className="border-b border-line bg-surface">
-        <Section>
-          <dl className="grid grid-cols-2 lg:grid-cols-4">
-            {FACTS.map((f, i) => (
-              <div
-                key={f.k}
-                className={`py-6 sm:py-8 ${i % 2 === 1 ? "border-l border-line pl-5 sm:pl-8" : ""} ${
-                  i >= 2 ? "border-t border-line lg:border-t-0" : ""
-                } ${i === 2 ? "lg:border-l lg:pl-8" : ""}`}
+      {/* Proof strip: what Subbies does, in four plain lines. */}
+      <Band tone="surface" className="border-b border-line">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          {PROOF.map((p, i) => {
+            const Icon = p.icon;
+            return (
+              <li
+                key={p.label}
+                className={`flex gap-4 py-7 sm:py-9 ${i > 0 ? "border-t border-line sm:border-t-0" : ""} ${
+                  i % 2 === 1 ? "sm:border-l sm:pl-8" : ""
+                } ${i >= 2 ? "sm:border-t lg:border-t-0" : ""} ${i === 2 ? "lg:border-l lg:pl-8" : ""} ${i === 3 ? "lg:pl-8" : ""} sm:pr-6`}
               >
-                <dt className="label-caps text-ink-muted">{f.k}</dt>
-                <dd className="mt-2 font-display text-lg font-semibold sm:text-xl">{f.v}</dd>
-              </div>
-            ))}
-          </dl>
-        </Section>
-      </div>
+                <span aria-hidden className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-brand-tint text-brand">
+                  <Icon className="h-6 w-6" strokeWidth={2} />
+                </span>
+                <div>
+                  <p className="font-display text-lg font-semibold sm:text-xl">{p.label}</p>
+                  <p className="mt-1 text-base text-ink-muted">{p.line}</p>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </Band>
 
       {/* The problem — named plainly, in two columns: the claim, the cost. */}
-      <Section className="py-section">
-        <Reveal className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
+      <Band tone="deep" innerClassName="py-section">
+        <Reveal className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-20">
           <SectionHead
             index="01"
             label="The problem"
             title="You're not short on subbies. You're short on certainty about them."
           />
-          <div className="space-y-4 text-base text-ink-muted lg:pt-16">
+          <div className="max-w-[62ch] space-y-5 text-lg text-ink-muted sm:text-xl lg:pt-16">
             <p>
               Insurance certificates that quietly lapse. A licence you meant to
               check before the job started. A spreadsheet three people are
@@ -197,11 +196,10 @@ export default function LandingPage() {
             </p>
           </div>
         </Reveal>
-      </Section>
+      </Band>
 
       {/* How it works — four ruled, numbered steps. */}
-      <div className="border-y border-line bg-surface">
-        <Section className="py-section">
+      <Band tone="surface" bordered innerClassName="py-section">
           <Reveal>
             <SectionHead
               index="02"
@@ -222,23 +220,16 @@ export default function LandingPage() {
                   i > 0 ? "lg:border-l lg:pl-8" : ""
                 } ${i % 2 === 1 ? "sm:border-l sm:pl-8 lg:pl-8" : ""}`}
               >
-                <span className="figure text-4xl text-line-strong">0{i + 1}</span>
-                <h3 className="mt-4 text-xl">{step.title}</h3>
-                <p className="mt-2 text-sm text-ink-muted">{step.body}</p>
+                <span className="figure text-5xl text-line-strong">0{i + 1}</span>
+                <h3 className="mt-4 text-2xl">{step.title}</h3>
+                <p className="mt-2 text-base text-ink-muted sm:text-lg">{step.body}</p>
               </li>
             ))}
           </ol>
-          <div className="mt-10">
-            <Link
-              href="/how-it-works"
-              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
-            >
-              The full walkthrough
-              <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-            </Link>
+          <div className="mt-12">
+            <SecondaryLink href="/how-it-works">The full walkthrough</SecondaryLink>
           </div>
-        </Section>
-      </div>
+      </Band>
 
       {/* Features — alternating text and real product, separated by rules. */}
       <Section className="py-section">
@@ -252,23 +243,23 @@ export default function LandingPage() {
         <div className="mt-14 divide-y divide-line border-y border-line">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title}>
-              <div className="grid grid-cols-[minmax(0,1fr)] items-center gap-10 py-12 sm:py-16 lg:grid-cols-2 lg:gap-16">
+              <div className="grid grid-cols-[minmax(0,1fr)] items-center gap-12 py-14 sm:py-20 lg:grid-cols-2 lg:gap-24">
                 <div className={i % 2 === 1 ? "lg:order-2" : ""}>
                   <Eyebrow className="text-brand">{f.label}</Eyebrow>
-                  <h3 className="mt-3 text-2xl leading-tight tracking-display sm:text-4xl">
+                  <h3 className="mt-3 text-3xl leading-tight tracking-display sm:text-[2.75rem]">
                     {f.title}
                   </h3>
-                  <p className="mt-4 max-w-lg text-base text-ink-muted">{f.body}</p>
-                  <ul className="mt-6 max-w-lg divide-y divide-line border-y border-line">
+                  <p className="mt-5 max-w-[62ch] text-lg text-ink-muted">{f.body}</p>
+                  <ul className="mt-7 max-w-xl divide-y divide-line border-y border-line">
                     {f.points.map((p) => (
-                      <li key={p} className="flex items-center gap-2.5 py-2.5 text-sm">
-                        <Check className="h-4 w-4 shrink-0 text-approved" strokeWidth={2.5} aria-hidden />
+                      <li key={p} className="flex items-center gap-3 py-3 text-base">
+                        <Check className="h-5 w-5 shrink-0 text-brand" strokeWidth={2.5} aria-hidden />
                         {p}
                       </li>
                     ))}
                   </ul>
                 </div>
-                <div aria-hidden className={`mx-auto w-full max-w-md ${i % 2 === 1 ? "lg:order-1" : ""}`}>
+                <div aria-hidden className={`mx-auto w-full max-w-md lg:[zoom:1.12] xl:[zoom:1.25] ${i % 2 === 1 ? "lg:order-1" : ""}`}>
                   {f.preview}
                 </div>
               </div>
@@ -278,8 +269,7 @@ export default function LandingPage() {
       </Section>
 
       {/* Why Subbies exists — an honest founder note, not a testimonial. */}
-      <div className="border-t border-line bg-surface">
-        <Section className="py-section">
+      <Band tone="deep" className="border-t border-line" innerClassName="py-section">
           <Reveal className="grid grid-cols-[minmax(0,1fr)] items-center gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
             <Image
               src="/marketing/trust-crew.webp"
@@ -291,12 +281,12 @@ export default function LandingPage() {
             />
             <div>
               <Eyebrow>Why Subbies exists</Eyebrow>
-              <blockquote className="mt-4 font-display text-2xl font-semibold leading-snug tracking-[-0.02em] sm:text-3xl">
+              <blockquote className="mt-4 font-display text-2xl font-semibold leading-snug tracking-[-0.02em] sm:text-[2.25rem] sm:leading-[1.25]">
                 &ldquo;Built by someone who&apos;s spent real afternoons chasing
                 subcontractors for the same insurance certificate twice, because
                 there was nowhere it was supposed to live.&rdquo;
               </blockquote>
-              <p className="mt-5 max-w-xl text-sm text-ink-muted">
+              <p className="mt-6 max-w-[62ch] text-lg text-ink-muted">
                 Subbies isn&apos;t a feature bolted onto a bigger project
                 management suite. It does one job: know who&apos;s compliant,
                 without the spreadsheet. The screens on this page are built from
@@ -304,27 +294,18 @@ export default function LandingPage() {
               </p>
             </div>
           </Reveal>
-        </Section>
-      </div>
+      </Band>
 
       {/* Pricing teaser — one honest line and a link. */}
-      <div className="border-t border-line">
-        <Section className="flex flex-col gap-4 py-10 sm:flex-row sm:items-center sm:justify-between">
-          <p className="font-display text-xl font-semibold sm:text-2xl">
+      <Band tone="surface" className="border-t border-line" innerClassName="flex flex-col gap-6 py-12 sm:flex-row sm:items-center sm:justify-between lg:py-16">
+          <p className="font-display text-2xl font-semibold sm:text-3xl">
             Plans from A${PLANS.starter.amount} a month.{" "}
             <span className="text-ink-muted">
               No per-contractor fees. {TRIAL_DAYS} days free.
             </span>
           </p>
-          <Link
-            href="/pricing"
-            className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
-          >
-            Compare plans
-            <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-          </Link>
-        </Section>
-      </div>
+          <SecondaryLink href="/pricing">Compare plans</SecondaryLink>
+      </Band>
 
       <CtaBand />
     </>

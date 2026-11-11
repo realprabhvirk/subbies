@@ -67,6 +67,9 @@
      one surface that stays dark regardless of what the brand accent does. */
   --color-sidebar-bg: oklch(17% 0.025 258);
   --color-sidebar-bg-elevated: oklch(21% 0.028 258);
+  /* One step darker than the rail: the marketing footer, so it reads apart
+     from a navy CTA band directly above it. */
+  --color-sidebar-bg-deep: oklch(13% 0.02 258);
   --color-sidebar-border: oklch(30% 0.025 258 / 0.6);
   --color-sidebar-active-bg: oklch(28% 0.05 258);
   --color-sidebar-ink: oklch(97% 0.003 90);
