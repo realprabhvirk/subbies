@@ -4,10 +4,11 @@ import { CalendarRange, MapPin } from "lucide-react";
 
 import { PageHeader } from "@/app/components/page-header";
 import { StatusBadge } from "@/app/components/status-badge";
-import { can } from "@/lib/billing/plans";
+import { can, featureError } from "@/lib/billing/plans";
 import { getProjectBasics } from "./_lib/workspace";
 import { EditProjectButton } from "./_components/edit-project-button";
 import { ProjectTabs } from "./_components/project-tabs";
+import { ReportButton } from "./_components/report-button";
 import { ComplianceFigure, ComplianceFigureSkeleton } from "./_components/compliance-figure";
 
 function fmtDate(iso: string): string {
@@ -41,6 +42,7 @@ export default async function ProjectLayout({ children, params }: LayoutProps<"/
         actions={
           <>
             <StatusBadge kind="project" status={project.status} />
+            <ReportButton projectId={project.id} locked={featureError(plan, "pdfExport")} />
             <EditProjectButton
               project={{
                 id: project.id,

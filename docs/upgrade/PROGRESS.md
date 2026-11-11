@@ -10,7 +10,8 @@ Start each session with: "Continue the Subbies upgrade from `docs/upgrade/PROGRE
 | 1 Foundation | `feature/upgrade-p1-foundation` | Done. Merged to `main` 2026-11-11 (0021 applied first). |
 | 2 Project workspace | `feature/upgrade-p2-project-workspace` (branched from the Phase 1 branch, which isn't merged) | Done. Merged to `main` 2026-11-11 (0021 and 0022 applied and verified first). |
 | 3 Location and photos | `feature/upgrade-p3-location-photos` (from `main`) | Done. Merged to `main` 2026-11-11 (0022 and 0023 applied to the live database first). Mapbox tokens still to be added in Vercel. |
-| 4 PDF compliance report | `feature/upgrade-p4-pdf` (from `main`) | Not started. |
+| 4 PDF compliance report | `feature/upgrade-p4-pdf` (from `main`) | Done, pushed, not merged. No migration needed. |
+| 5A onwards | | Not started |
 
 ## Before merging Phase 1
 
@@ -120,6 +121,30 @@ The code reads `contractors.archived_at`. Without 0021, the dashboard and contra
   - `mapbox-gl` 3.33.0, the brief's choice for the editor. It's lazy-loaded in one dialog only. Pinned to a version four weeks old.
   - `sharp` 0.35.5, needed for server-side re-encoding. Next already installs this exact build as an optional dependency; it's now listed directly so it can't silently disappear. Pinned.
 
+## Phase 4: what shipped
+
+- **`GET /api/projects/[id]/report`:**
+  - Node runtime, `maxDuration = 30`.
+  - Checks session, company, plan (`pdfExport`, Business and up, refused with 403 on Starter) and rate limit (10 per minute per company).
+  - Same loader and engine as the workspace; checked end to end, the PDF showed 22% matching the screen.
+  - The response is streamed in 64 KB chunks with `Cache-Control: private, no-store` and a dated filename.
+- **Layout (A4, 18 mm margins):**
+  - navy header band with the white logo and "Compliance report";
+  - a footer on every page with generated time, "Page x of y", "Subbies" and the disclaimer;
+  - page 1: company, project, address and generated time, then the % figure and seven metric boxes, then map plus details, then photos (up to 3, contain fit, never split);
+  - contractor blocks never split, and the section heading stays with the first block.
+- **Statuses:** always printed as words; colour only reinforces. A missing optional document is neutral and doesn't count as "Missing".
+- **Resilience:**
+  - The map is fetched server-side with a 4 s timeout ("Map unavailable" or "Location not provided" when absent).
+  - Each photo is fetched independently, and anything undecodable is dropped.
+  - Images are re-encoded for print (1000px, JPEG q70). Over 4 MB re-renders once at 700px q45.
+- **Privacy:** the report model only carries names, trades, statuses, dates and notes. A test checks its keys and that no email, phone, ABN, policy or path data is present.
+- **Fonts and logo:** Mona Sans (the app's actual font; the brief named Hanken/Space Grotesk) as local WOFF files with the OFL licence, plus a trimmed white logo, all in `lib/pdf/assets`. They're traced into the route via `outputFileTracingIncludes`.
+- **UI:** a "Download PDF" button in the project header. It fetches, so refusals show as a message rather than downloading an error file. On Starter it shows a lock and opens the UpgradePrompt in a dialog. PDF reports have come off "Coming soon".
+- **Tests (9):** 0 and 25 contractors, long names, map plus 3 photos, broken map/photo, heavy photos within budget, privacy, words and notes, optional-missing handling. Sample output: about 63 KB for 9 contractors with a map and 2 photos.
+- **Fixed on the way (a live Phase 2 bug):** on Starter the locked tabs' screen-reader text escaped the tab strip's scroll clipping and made project pages 216px too wide at 390px. Each tab link is now `relative`. The shared `PageHeader` action row can now wrap (`min-w-0 max-w-full`).
+- **New dependency:** `@react-pdf/renderer` 4.9.0 (the brief's choice, D2; React 19 compatible; pinned; already on Next's server-external list).
+
 ## Decisions
 
 - D1–D11 locked as per the brief.
@@ -162,6 +187,7 @@ The code reads `contractors.archived_at`. Without 0021, the dashboard and contra
 - (P3) The location editor (GL JS map, Search Box, reverse geocoding, permanent geocoding) wasn't run against real Mapbox: there's no token in the sandbox. The static map was checked with a stand-in image.
 - (P3) HEIC from a real iPhone wasn't tested. With `accept="image/jpeg,image/png,image/webp"`, Safari should hand over JPEG; HEIC that arrives anyway gets a clear refusal.
 - (P3) 0023 was tested on the local replica only; real Supabase Storage policies and `storage.foldername` weren't exercised.
+- (P4) The PDF's static map wasn't fetched from real Mapbox (no token in the sandbox); the failure path ("Map unavailable") was exercised through the route. Font tracing on Vercel isn't verified until a preview deploy downloads a report.
 - (P2) Not exercised end to end: Request, add/remove requirement, Load more, the cron project job, and token upload fan-out. The SQL functions are covered by SQL tests and the engine and register by unit tests.
 
 ## Env vars
@@ -171,7 +197,7 @@ No new env vars in Phase 1 or Phase 2. Phase 3 (add in Vercel, Production and Pr
 | Name | What | Where it's used |
 |---|---|---|
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox **public** token (`pk.`), URL-restricted in Mapbox to the site's domains | Browser: static map image, location editor, address search |
-| `MAPBOX_SERVER_TOKEN` | Mapbox token for server use, **no** `NEXT_PUBLIC_` prefix, scoped to geocoding | Server: permanent geocoding on save (later: PDF static maps) |
+| `MAPBOX_SERVER_TOKEN` | Mapbox token for server use, **no** `NEXT_PUBLIC_` prefix | Server: permanent geocoding on save, and the PDF report's static map (falls back to the public token) |
 
 Without them the map shows "Map unavailable", and saving a searched address asks the user to place the pin by hand. Photos don't need either.
 

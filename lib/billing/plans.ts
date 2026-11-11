@@ -123,6 +123,8 @@ export const SHIPPED_FEATURES: readonly PlanFeature[] = [
   "requirements",
   "documentRegister",
   "activityView",
+  // Phase 4: PDF compliance report.
+  "pdfExport",
 ];
 
 export function isShipped(feature: PlanFeature): boolean {

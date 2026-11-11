@@ -195,7 +195,7 @@ test("planToAdd skips plans that still wouldn't fit", () => {
 
 test("coming soon lists exactly the unshipped features, at the plan that first has them", () => {
   assert.deepEqual(PLANS.starter.comingSoon, ["Project map", "Photos"]);
-  assert.deepEqual(PLANS.business.comingSoon, ["PDF reports"]);
+  assert.deepEqual(PLANS.business.comingSoon, []);
   assert.deepEqual(PLANS.pro.comingSoon, ["Analytics", "Team members (up to 10)", "Bulk tools", "Audit exports", "Priority support"]);
 });
 

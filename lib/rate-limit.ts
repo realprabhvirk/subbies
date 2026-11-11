@@ -38,6 +38,8 @@ export const RATE_LIMITS = {
   // Jobsite photo uploads, per company: decoding and re-encoding is the
   // heaviest thing a signed-in user can make the server do.
   photoUpload: { bucket: "photo_upload", limit: 30, windowSeconds: 600 },
+  // PDF reports, per company: each one renders a document and fetches a map.
+  pdfReport: { bucket: "pdf_report", limit: 10, windowSeconds: 60 },
 } as const satisfies Record<string, RateLimitRule>;
 
 /**
