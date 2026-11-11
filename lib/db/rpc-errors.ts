@@ -12,7 +12,8 @@ export type SubbiesRpcCode =
   | "SUBBIES_UNKNOWN_DOCUMENT_TYPE"
   | "SUBBIES_NOT_FOUND"
   | "SUBBIES_FEATURE_NOT_IN_PLAN"
-  | "SUBBIES_ALREADY_REQUIRED";
+  | "SUBBIES_ALREADY_REQUIRED"
+  | "SUBBIES_PHOTO_LIMIT";
 
 const CODES: readonly SubbiesRpcCode[] = [
   "SUBBIES_NO_COMPANY",
@@ -23,6 +24,7 @@ const CODES: readonly SubbiesRpcCode[] = [
   "SUBBIES_NOT_FOUND",
   "SUBBIES_FEATURE_NOT_IN_PLAN",
   "SUBBIES_ALREADY_REQUIRED",
+  "SUBBIES_PHOTO_LIMIT",
 ];
 
 export function subbiesRpcCode(error: { message?: string | null } | null | undefined): SubbiesRpcCode | null {
@@ -51,6 +53,8 @@ export function rpcErrorMessage(
       return "That isn't included in your plan. Upgrade in Settings → Billing to use it.";
     case "SUBBIES_ALREADY_REQUIRED":
       return "That document type is already a requirement on this project.";
+    case "SUBBIES_PHOTO_LIMIT":
+      return "All 3 photo slots are used. Replace or delete one first.";
     default:
       return "Something went wrong. Try again.";
   }

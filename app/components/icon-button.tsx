@@ -12,7 +12,7 @@ import { Spinner } from "./spinner";
  * that the identically-shaped edit buttons next to them had, so the same
  * gesture animated in one place and snapped in another.
  *
- * Two tones only, matching how these actually get used: `neutral` for edit and
+ * `overlay` sits on top of photos. Otherwise two tones, matching how these actually get used: `neutral` for edit and
  * close, `danger` for the ones that remove something. Both rest at the same
  * muted ink and only diverge on hover, so a row of them reads as one control
  * group until you point at the destructive one.
@@ -21,11 +21,13 @@ import { Spinner } from "./spinner";
  * on, so an unlabelled one is unusable rather than merely untidy.
  */
 
-export type IconButtonTone = "neutral" | "danger";
+export type IconButtonTone = "neutral" | "danger" | "overlay";
 
 const TONE: Record<IconButtonTone, string> = {
   neutral: "text-ink-muted hover:bg-surface-muted hover:text-ink",
   danger: "text-ink-muted hover:bg-expired-bg hover:text-expired",
+  // On top of a photo: white glyph on a dark disc, readable on any image.
+  overlay: "bg-black/45 text-white hover:bg-black/65 focus-visible:ring-white",
 };
 
 // 44px square: the touch-target minimum, for mouse and finger alike.

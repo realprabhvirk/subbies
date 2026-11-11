@@ -6,6 +6,7 @@ import { getCompanyOwnerEmail } from "@/lib/onboarding";
 import { getAppUrl } from "@/lib/app-url";
 import { recomputeContractorStatus } from "@/lib/contractor-status";
 import { runProjectDailyJob } from "@/lib/projects/daily";
+import { sweepProjectPhotos } from "@/lib/photos/sweep-server";
 import {
   planReminders,
   groupByContractor,
@@ -368,6 +369,8 @@ export async function GET(req: NextRequest) {
   if (!dryRun) {
     const project = await runProjectDailyJob(admin, companyIds, today);
     projectLine = ` | project expiries ${project.expiredEvents} | status changes ${project.statusChanges}`;
+    const photos = await sweepProjectPhotos();
+    projectLine += photos.skipped ? " | photo sweep skipped" : ` | orphan photos removed ${photos.removed}`;
   }
 
   // One line a non-technical founder can read in the Vercel logs.

@@ -35,7 +35,7 @@ export function DialogFrame({
   onClose: () => void;
   /** Locks the backdrop and close button (e.g. while an action runs). */
   closeDisabled?: boolean;
-  size?: "md" | "lg";
+  size?: "md" | "lg" | "xl";
   children: React.ReactNode;
 }) {
   return (
@@ -50,7 +50,7 @@ export function DialogFrame({
         aria-labelledby={titleId}
         aria-describedby={describedById}
         className={`dialog-panel relative flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-xl border border-line bg-surface shadow-xl sm:rounded-xl ${
-          size === "lg" ? "sm:max-w-xl" : "sm:max-w-md"
+          size === "xl" ? "sm:max-w-3xl" : size === "lg" ? "sm:max-w-xl" : "sm:max-w-md"
         }`}
       >
         {/* Grab handle: a visual cue that this is a sheet on a phone. */}

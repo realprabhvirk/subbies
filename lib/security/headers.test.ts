@@ -37,12 +37,14 @@ test("L8: CSP blocks framing, <base> hijacking and cross-origin form posts", asy
   assert.equal(csp.get("default-src"), "'self'");
 });
 
-test("L8: CSP allows the Supabase project for API calls and realtime, and nothing else external", async () => {
+test("L8: CSP allows the Supabase project and Mapbox (maps, search) for API calls, and nothing else external", async () => {
   const csp = directives((await headerMap()).get("content-security-policy") ?? "");
   assert.equal(
     csp.get("connect-src"),
-    "'self' https://example-project.supabase.co wss://example-project.supabase.co",
+    "'self' https://example-project.supabase.co wss://example-project.supabase.co https://api.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com",
   );
+  assert.equal(csp.get("img-src"), "'self' data: blob: https://example-project.supabase.co https://api.mapbox.com");
+  assert.equal(csp.get("worker-src"), "'self' blob:");
 });
 
 test("L8: the other security headers are present", async () => {

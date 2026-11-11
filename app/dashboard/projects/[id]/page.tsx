@@ -15,6 +15,10 @@ import { getProjectWorkspace } from "./_lib/workspace";
 import { loadProjectActivity } from "./_lib/activity";
 import { RequestButton } from "./_components/request-button";
 import { ActivityFeed } from "./_components/activity-feed";
+import { LocationCard } from "./_components/location-card";
+import { PhotosCard } from "./_components/photos-card";
+import { loadProjectLocation } from "./_lib/location";
+import { loadProjectPhotos } from "./_lib/photos";
 
 export const metadata: Metadata = { title: "Project" };
 
@@ -26,7 +30,11 @@ export default async function ProjectOverviewPage(props: PageProps<"/dashboard/p
   if (!ws) return null;
   const { compliance: c, plan, project } = ws;
   const showActivity = can(plan, "activityView");
-  const activity = showActivity ? await loadProjectActivity(id, { limit: 5 }) : null;
+  const [activity, location, photos] = await Promise.all([
+    showActivity ? loadProjectActivity(id, { limit: 5 }) : Promise.resolve(null),
+    loadProjectLocation(id, ws.company.id),
+    loadProjectPhotos(id),
+  ]);
   const base = `/dashboard/projects/${id}`;
 
   const attention = c.needsAttention.slice(0, ATTENTION_SHOWN);
@@ -67,9 +75,9 @@ export default async function ProjectOverviewPage(props: PageProps<"/dashboard/p
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
         <SectionCard
           id="attention"
-          className="lg:col-span-2"
           icon={TriangleAlert}
           tone="brand"
           title="Needs attention"
@@ -143,6 +151,13 @@ export default async function ProjectOverviewPage(props: PageProps<"/dashboard/p
             </p>
           </SectionCard>
         )}
+        </div>
+
+        {/* Right rail: height-capped, never above compliance on a phone. */}
+        <div className="min-w-0 space-y-6">
+          <LocationCard projectId={project.id} location={location} freeTextAddress={project.address} />
+          <PhotosCard projectId={project.id} photos={photos} />
+        </div>
       </div>
     </div>
   );

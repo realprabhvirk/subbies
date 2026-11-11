@@ -35,6 +35,9 @@ export const RATE_LIMITS = {
   onboardAction: { bucket: "onboard_action", limit: 60, windowSeconds: 60 },
   // The contact form: a human sends one message, not twenty.
   contact: { bucket: "contact", limit: 5, windowSeconds: 600 },
+  // Jobsite photo uploads, per company: decoding and re-encoding is the
+  // heaviest thing a signed-in user can make the server do.
+  photoUpload: { bucket: "photo_upload", limit: 30, windowSeconds: 600 },
 } as const satisfies Record<string, RateLimitRule>;
 
 /**

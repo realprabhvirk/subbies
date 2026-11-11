@@ -1,8 +1,7 @@
 import type { NextConfig } from "next";
 
 /**
- * The one external origin the browser actually talks to is the Supabase
- * project (auth + database + storage signed uploads), derived from the public
+ * The main external origin the browser talks to is the Supabase project (auth + database + storage signed uploads), derived from the public
  * env var so nothing is hardcoded. Stripe checkout and the billing portal are
  * top-level redirects (window.location), not embedded scripts or iframes, and
  * document signed-URLs open in a new tab — so neither needs a CSP allowance.
@@ -17,6 +16,15 @@ function supabaseOrigin(): string {
     return "";
   }
 }
+
+/**
+ * Mapbox (Phase 3): the overview's static map image, and inside the location
+ * editor only, GL JS tiles and styles, Search Box requests, telemetry, and
+ * the blob: web workers GL JS runs. These are the origins Mapbox's own CSP
+ * guidance lists for GL JS.
+ */
+const MAPBOX_IMG = "https://api.mapbox.com";
+const MAPBOX_CONNECT = "https://api.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com";
 
 function contentSecurityPolicy(): string {
   const supa = supabaseOrigin();
@@ -38,9 +46,10 @@ function contentSecurityPolicy(): string {
     `default-src 'self'`,
     `script-src ${script}`,
     `style-src 'self' 'unsafe-inline'`,
-    `img-src 'self' data: blob:${supa ? " " + supa : ""}`,
+    `img-src 'self' data: blob:${supa ? " " + supa : ""} ${MAPBOX_IMG}`,
     `font-src 'self'`,
-    `connect-src 'self'${supa ? ` ${supa} ${supaWs}` : ""}`,
+    `connect-src 'self'${supa ? ` ${supa} ${supaWs}` : ""} ${MAPBOX_CONNECT}`,
+    `worker-src 'self' blob:`,
     `frame-src 'none'`,
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
