@@ -140,7 +140,7 @@ None.
 
 See `MIGRATIONS.md`. None applied to production by Claude.
 
-- 2026-11-11: Mr Virk reports 0021 and 0022 applied in the Supabase SQL editor. Verification query output not shared yet.
+- 2026-11-11: Mr Virk reports 0021 and 0022 applied in the Supabase SQL editor. Both verification queries matched the expected output.
 
 ## Founder decisions to confirm
 
