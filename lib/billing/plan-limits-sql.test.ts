@@ -92,3 +92,12 @@ test("plan feature gates match the latest subbies_plan_has_feature", () => {
   for (const m of block.matchAll(/\('(\w+)',\s*'(\w+)'\)/g)) fromSql[m[1]] = m[2];
   assert.deepEqual(fromSql, { ...FEATURE_MIN_PLAN });
 });
+
+test("the photo slot cap matches PLAN_CONFIG photos", () => {
+  const { file, sql } = latestDefining("PHOTO_SLOTS:");
+  const m = sql.match(/-- PHOTO_SLOTS: (\d+)/);
+  assert.ok(m, `PHOTO_SLOTS marker not found in ${file}`);
+  const slots = Number(m![1]);
+  for (const plan of Object.values(PLANS)) assert.equal(plan.photos, slots, plan.id);
+  assert.match(sql, new RegExp(`position between 1 and ${slots}`));
+});
