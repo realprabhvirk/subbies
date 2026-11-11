@@ -62,6 +62,8 @@ installServerModuleStubs({
   `,
   "@/lib/email/send-cap": `export const DAILY_LIMIT_MESSAGE = "limit";`,
   "@/lib/contractor-status": `export async function recomputeContractorStatus(){ return null; }`,
+  "@/lib/projects/after-change": `export async function syncAfterContractorChange(){} export async function syncAfterProjectChange(){}`,
+  "@/lib/projects/server-events": `export async function afterTokenUpload(){}`,
   "@/lib/email/company": `export async function sendDocumentSubmittedEmail(){ return { ok: true }; }`,
   "@/lib/contractors/request-email": `export async function refreshTokenExpiry(){}`,
   // The contractor actions rate-limit by token (lib/rate-limit.ts, which needs

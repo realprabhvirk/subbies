@@ -5,6 +5,7 @@ import { purgeRateLimitHits } from "@/lib/rate-limit";
 import { getCompanyOwnerEmail } from "@/lib/onboarding";
 import { getAppUrl } from "@/lib/app-url";
 import { recomputeContractorStatus } from "@/lib/contractor-status";
+import { runProjectDailyJob } from "@/lib/projects/daily";
 import {
   planReminders,
   groupByContractor,
@@ -361,9 +362,17 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // Project activity and per-project status (migration 0022). After the
+  // contractor status recompute above, so it sees today's statuses.
+  let projectLine = "";
+  if (!dryRun) {
+    const project = await runProjectDailyJob(admin, companyIds, today);
+    projectLine = ` | project expiries ${project.expiredEvents} | status changes ${project.statusChanges}`;
+  }
+
   // One line a non-technical founder can read in the Vercel logs.
   console.log(
-    `expiry-reminders:${dryRun ? " DRY RUN |" : ""} evaluated ${evaluated} | reminders ${remindersSent} | escalations ${escalationsSent} | failed ${failed}`,
+    `expiry-reminders:${dryRun ? " DRY RUN |" : ""} evaluated ${evaluated} | reminders ${remindersSent} | escalations ${escalationsSent} | failed ${failed}${projectLine}`,
   );
 
   return Response.json({

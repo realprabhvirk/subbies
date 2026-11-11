@@ -7,6 +7,9 @@ import { requireActiveCompany } from "@/lib/billing/require-active";
 import { canAddProject, limitMessage } from "@/lib/billing/entitlements";
 import { rpcErrorMessage, subbiesRpcCode } from "@/lib/db/rpc-errors";
 import type { ProjectStatus } from "@/lib/types";
+import { recordProjectActivity } from "@/lib/projects/activity";
+import { describeProjectEdit } from "@/lib/projects/activity-text";
+import { syncAfterProjectChange } from "@/lib/projects/after-change";
 
 const STATUSES: ProjectStatus[] = ["active", "on_hold", "completed"];
 
@@ -84,7 +87,7 @@ export async function createProject(
   const supabase = await createClient();
   // create_project (migration 0020) re-checks access and the plan limit
   // under a lock; direct inserts are refused once Part B runs.
-  const { error } = await supabase.rpc("create_project", {
+  const { data: newProjectId, error } = await supabase.rpc("create_project", {
     p_name: data!.name,
     p_address: data!.address,
     p_status: data!.status,
@@ -96,6 +99,14 @@ export async function createProject(
     if (subbiesRpcCode(error)) return { ok: false, error: rpcErrorMessage(error, "projects") };
     console.error("createProject failed", { code: error.code, message: error.message });
     return { ok: false, error: "Couldn't create the project. Try again." };
+  }
+
+  if (typeof newProjectId === "string") {
+    await recordProjectActivity(supabase, {
+      projectId: newProjectId,
+      eventType: "project_created",
+      description: `Created the project ${data!.name}`,
+    });
   }
 
   revalidatePath("/dashboard/projects");
@@ -118,6 +129,14 @@ export async function updateProject(
   if (state) return state;
 
   const supabase = await createClient();
+  const { data: before } = await supabase
+    .from("projects")
+    .select("name, address, status, start_date, end_date")
+    .eq("id", id)
+    .eq("company_id", company.id)
+    .maybeSingle<{ name: string; address: string | null; status: ProjectStatus; start_date: string | null; end_date: string | null }>();
+  if (!before) return { ok: false, error: "Couldn't find that project." };
+
   const { error } = await supabase
     .from("projects")
     .update(data!)
@@ -141,6 +160,11 @@ export async function updateProject(
     return { ok: false, error: "Couldn't save the project. Try again." };
   }
 
+  const edit = describeProjectEdit(before, data!);
+  if (edit) {
+    await recordProjectActivity(supabase, { projectId: id, eventType: edit.eventType, description: edit.description });
+  }
+
   revalidatePath("/dashboard/projects");
   revalidatePath(`/dashboard/projects/${id}`);
   revalidatePath("/dashboard");
@@ -161,7 +185,7 @@ export async function assignContractor(
   // Confirm both the project and the contractor belong to this company.
   const [{ data: project }, { data: contractor }] = await Promise.all([
     supabase.from("projects").select("id").eq("id", projectId).eq("company_id", company.id).maybeSingle(),
-    supabase.from("contractors").select("id, archived_at").eq("id", contractorId).eq("company_id", company.id).maybeSingle(),
+    supabase.from("contractors").select("id, archived_at, business_name").eq("id", contractorId).eq("company_id", company.id).maybeSingle(),
   ]);
 
   if (!project || !contractor) return { ok: false, error: "Couldn't find that project or contractor." };
@@ -188,6 +212,15 @@ export async function assignContractor(
     return { ok: false, error: "Couldn't assign the contractor. Try again." };
   }
 
+  await recordProjectActivity(supabase, {
+    projectId,
+    eventType: "contractor_assigned",
+    description: `Assigned ${contractor.business_name ?? "a contractor"}${trimmedRole ? ` as ${trimmedRole}` : ""}`,
+    contractorId,
+  });
+  // First sighting is stored silently; later changes are recorded.
+  await syncAfterProjectChange(company.id, projectId);
+
   revalidatePath(`/dashboard/projects/${projectId}`);
   revalidatePath(`/dashboard/contractors/${contractorId}`);
   revalidatePath("/dashboard/projects");
@@ -208,13 +241,14 @@ export async function removeContractor(
   // enforces this, but resolve ids for revalidation.
   const { data: row } = await supabase
     .from("project_contractors")
-    .select("id, project_id, contractor_id, projects!inner(company_id)")
+    .select("id, project_id, contractor_id, projects!inner(company_id), contractors(business_name)")
     .eq("id", projectContractorId)
     .maybeSingle<{
       id: string;
       project_id: string;
       contractor_id: string;
       projects: { company_id: string } | null;
+      contractors: { business_name: string } | null;
     }>();
 
   if (!row || row.projects?.company_id !== company.id) {
@@ -230,6 +264,13 @@ export async function removeContractor(
     console.error("removeContractor failed", error);
     return { ok: false, error: "Couldn't remove the contractor. Try again." };
   }
+
+  await recordProjectActivity(supabase, {
+    projectId: row.project_id,
+    eventType: "contractor_removed",
+    description: `Removed ${row.contractors?.business_name ?? "a contractor"} from the project`,
+    contractorId: row.contractor_id,
+  });
 
   revalidatePath(`/dashboard/projects/${row.project_id}`);
   revalidatePath(`/dashboard/contractors/${row.contractor_id}`);

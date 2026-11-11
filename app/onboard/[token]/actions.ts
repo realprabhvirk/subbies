@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveOnboardingToken, getCompanyOwnerEmail } from "@/lib/onboarding";
 import { getAppUrl } from "@/lib/app-url";
 import { recomputeContractorStatus } from "@/lib/contractor-status";
+import { afterTokenUpload } from "@/lib/projects/server-events";
 import { sendDocumentSubmittedEmail } from "@/lib/email/company";
 import {
   MAX_UPLOAD_BYTES,
@@ -453,6 +454,15 @@ export async function submitStagedDocuments(
   await recomputeContractorStatus(admin, resolved.contractorId);
 
   const documentName = doc.document_types?.name ?? "A document";
+
+  // Project audit trail (every project they're on) and per-project status.
+  await afterTokenUpload({
+    companyId: resolved.companyId,
+    contractorId: resolved.contractorId,
+    businessName: resolved.businessName,
+    documentName,
+    documentId: doc.id,
+  });
 
   // M3: a contractor re-submitting a document that's still awaiting review
   // used to email the owner (and add a notification) every time. Now the

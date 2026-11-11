@@ -25,6 +25,8 @@ import {
 } from "@/lib/document-actions-logic";
 import { originalToArchiveOnApprove } from "@/lib/document-lifecycle-logic";
 import type { DocumentStatus } from "@/lib/types";
+import { recordContractorActivity } from "@/lib/projects/activity";
+import { syncAfterContractorChange } from "@/lib/projects/after-change";
 
 interface LoadedDoc {
   doc: {
@@ -180,6 +182,18 @@ export async function approveDocument(
 
   const newStatus = await recomputeContractorStatus(supabase, loaded.contractor.id);
 
+  // Project audit trail and per-project status (best-effort, never fails the approval).
+  await recordContractorActivity(supabase, {
+    contractorId: loaded.contractor.id,
+    eventType: originalId ? "document_replaced" : "document_approved",
+    description: originalId
+      ? `Approved an updated ${loaded.doc.documentName} for ${loaded.contractor.business_name}, replacing the previous copy`
+      : `Approved ${loaded.doc.documentName} for ${loaded.contractor.business_name}`,
+    documentId: loaded.doc.id,
+    metadata: { expiry_date: expiryDate },
+  });
+  await syncAfterContractorChange(company.id, loaded.contractor.id);
+
   // Tell the contractor once everything is approved.
   if (newStatus === "approved" && loaded.contractor.status !== "approved") {
     await sendContractorApprovedEmail({
@@ -233,6 +247,14 @@ export async function rejectDocument(
   }
 
   await recomputeContractorStatus(supabase, loaded.contractor.id);
+
+  await recordContractorActivity(supabase, {
+    contractorId: loaded.contractor.id,
+    eventType: "document_rejected",
+    description: `Rejected ${loaded.doc.documentName} for ${loaded.contractor.business_name}`,
+    documentId: loaded.doc.id,
+  });
+  await syncAfterContractorChange(company.id, loaded.contractor.id);
 
   let emailWarning: string | undefined;
   if (loaded.token) {
