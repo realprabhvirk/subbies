@@ -73,10 +73,12 @@ export default async function DashboardPage() {
         .from("contractors")
         .select("id, business_name, trade, status")
         .eq("company_id", company.id)
+        // Archived contractors are off the register: no tiles, no counts.
+        .is("archived_at", null)
         .order("created_at", { ascending: false }),
       supabase
         .from("projects")
-        .select("id, project_contractors(removed_at, contractors(status))")
+        .select("id, project_contractors(removed_at, contractors(status, archived_at))")
         .eq("company_id", company.id)
         .neq("status", "completed"),
       loadNotifications(),
@@ -105,11 +107,14 @@ export default async function DashboardPage() {
   for (const project of (projectRows ?? []) as unknown as {
     id: string;
     project_contractors:
-      | { removed_at: string | null; contractors: { status: ContractorStatus } | null }[]
+      | {
+          removed_at: string | null;
+          contractors: { status: ContractorStatus; archived_at: string | null } | null;
+        }[]
       | null;
   }[]) {
     const active = (project.project_contractors ?? []).filter(
-      (pc) => pc.removed_at === null,
+      (pc) => pc.removed_at === null && pc.contractors?.archived_at == null,
     );
     if (active.some((pc) => pc.contractors && hasComplianceIssue(pc.contractors.status))) {
       projectsWithIssues += 1;

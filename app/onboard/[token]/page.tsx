@@ -7,6 +7,7 @@ import { Logo } from "@/app/components/logo";
 import { IconDisc } from "@/app/components/icon-disc";
 import { getOnboardingContext } from "@/lib/onboarding";
 import { OnboardChecklist } from "./_components/onboard-checklist";
+import { LinkInactive } from "./_components/link-inactive";
 
 export const metadata: Metadata = {
   title: "Upload your documents",
@@ -18,6 +19,7 @@ export default async function OnboardPage(props: PageProps<"/onboard/[token]">) 
   const context = await getOnboardingContext(token);
 
   if (!context) notFound();
+  if (context.inactive) return <LinkInactive companyName={context.companyName} />;
 
   const { contractor, companyName, items } = context;
   const outstanding = items.filter(

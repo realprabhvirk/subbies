@@ -24,7 +24,7 @@ export const metadata: Metadata = { title: "Contractors" };
 
 type ContractorRow = Pick<
   Contractor,
-  "id" | "business_name" | "contact_name" | "email" | "trade" | "status" | "created_at"
+  "id" | "business_name" | "contact_name" | "email" | "trade" | "status" | "created_at" | "archived_at"
 >;
 
 export default async function ContractorsPage(
@@ -40,6 +40,8 @@ export default async function ContractorsPage(
     typeof searchParams.email === "string" ? searchParams.email : null;
   const deleted =
     typeof searchParams.deleted === "string" ? searchParams.deleted : null;
+  const archivedName =
+    typeof searchParams.archived === "string" ? searchParams.archived : null;
   const filter = parseContractorFilter(searchParams.status);
 
   const supabase = await createClient();
@@ -47,19 +49,23 @@ export default async function ContractorsPage(
   const [{ data, error }, limitCheck] = await Promise.all([
     supabase
       .from("contractors")
-      .select("id, business_name, contact_name, email, trade, status, created_at")
+      .select("id, business_name, contact_name, email, trade, status, created_at, archived_at")
       .eq("company_id", company.id)
       .order("created_at", { ascending: false }),
     canAddContractor(company.id),
   ]);
 
-  const contractors = (data ?? []) as ContractorRow[];
+  const everyone = (data ?? []) as ContractorRow[];
+  // The register is live contractors only. Archived ones keep all their data
+  // and are listed under their own filter.
+  const contractors = everyone.filter((c) => !c.archived_at);
+  const archived = everyone.filter((c) => c.archived_at);
 
   // Per-contractor document progress, plus the expiry dates the filter chips
   // need (the same buckets the dashboard tiles use).
   const progress = new Map<string, { approved: number; total: number }>();
   let docRows: { contractor_id: string; status: DocumentStatus; expiry_date: string | null }[] = [];
-  if (contractors.length > 0) {
+  if (everyone.length > 0) {
     const { data: docs } = await supabase
       .from("contractor_documents")
       .select("contractor_id, status, expiry_date")
@@ -69,7 +75,7 @@ export default async function ContractorsPage(
       .is("replaces_document_id", null)
       .in(
         "contractor_id",
-        contractors.map((c) => c.id),
+        everyone.map((c) => c.id),
       );
     docRows = (docs ?? []) as typeof docRows;
     for (const doc of docRows) {
@@ -92,6 +98,7 @@ export default async function ContractorsPage(
       c.status === "pending" || c.status === "awaiting_review" || c.status === "attention_required",
     expiring: (c) => buckets.expiringIds.has(c.id),
     expired: (c) => buckets.expiredIds.has(c.id),
+    archived: () => true,
   };
   const filterCounts: Record<ContractorFilter, number> = {
     all: contractors.length,
@@ -99,8 +106,9 @@ export default async function ContractorsPage(
     pending: buckets.pendingCount,
     expiring: buckets.expiringIds.size,
     expired: buckets.expiredIds.size,
+    archived: archived.length,
   };
-  const visible = contractors.filter(matches[filter]);
+  const visible = filter === "archived" ? archived : contractors.filter(matches[filter]);
 
   const dateFmt = new Intl.DateTimeFormat("en-AU", {
     day: "numeric",
@@ -178,6 +186,13 @@ export default async function ContractorsPage(
         </Alert>
       )}
 
+      {archivedName && (
+        <Alert tone="success">
+          <strong>{archivedName}</strong> was archived. Their documents and history are
+          kept, and you can restore them from the Archived filter.
+        </Alert>
+      )}
+
       {deleted && (
         <Alert tone="success">
           <strong>{deleted}</strong> was deleted, along with their documents and
@@ -191,7 +206,7 @@ export default async function ContractorsPage(
         </Alert>
       )}
 
-      {contractors.length === 0 ? (
+      {everyone.length === 0 ? (
         <EmptyState
           icon={Users}
           title="No contractors yet"
@@ -235,8 +250,12 @@ export default async function ContractorsPage(
           {visible.length === 0 ? (
             <EmptyState
               icon={Users}
-              title="No contractors match this filter"
-              description="Nothing on the register is in this state right now."
+              title={filter === "archived" ? "No archived contractors" : "No contractors match this filter"}
+              description={
+                filter === "archived"
+                  ? "Contractors you archive are kept here with all their documents, and can be restored."
+                  : "Nothing on the register is in this state right now."
+              }
               action={
                 <ButtonLink href="/dashboard/contractors" variant="secondary">
                   Show all contractors
@@ -249,9 +268,10 @@ export default async function ContractorsPage(
                 {visible.map((c) => {
                   const p = progress.get(c.id);
                   const canResend =
-                    c.status === "pending" ||
+                    !c.archived_at &&
+                    (c.status === "pending" ||
                     c.status === "awaiting_review" ||
-                    c.status === "attention_required";
+                    c.status === "attention_required");
                   const docs =
                     p && p.total > 0 ? (
                       <div className="w-28">
@@ -269,7 +289,9 @@ export default async function ContractorsPage(
                     ) : (
                       <p className="w-28 text-xs text-ink-subtle">No documents</p>
                     );
-                  const added = dateFmt.format(new Date(c.created_at));
+                  const added = c.archived_at
+                    ? `Archived ${dateFmt.format(new Date(c.archived_at))}`
+                    : `Added ${dateFmt.format(new Date(c.created_at))}`;
                   return (
                     <ListRow
                       key={c.id}
@@ -281,7 +303,7 @@ export default async function ContractorsPage(
                         <>
                           <StatusBadge kind="contractor" status={c.status} size="sm" />
                           {docs}
-                          <span className="whitespace-nowrap font-mono text-xs text-ink-muted">Added {added}</span>
+                          <span className="whitespace-nowrap font-mono text-xs text-ink-muted">{added}</span>
                         </>
                       }
                       trailing={
@@ -290,7 +312,7 @@ export default async function ContractorsPage(
                           <span className="flex w-52 justify-start">
                             <StatusBadge kind="contractor" status={c.status} />
                           </span>
-                          <span className="hidden w-28 font-mono text-xs text-ink-muted xl:block">{added}</span>
+                          <span className="hidden w-36 font-mono text-xs text-ink-muted xl:block">{added}</span>
                         </>
                       }
                       actions={canResend ? <ResendButton contractorId={c.id} /> : undefined}

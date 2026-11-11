@@ -125,6 +125,18 @@ export async function updateProject(
     .eq("company_id", company.id);
 
   if (error) {
+    // Reopening a completed project is checked against the project limit
+    // (the projects_reopen_guard trigger in migration 0021).
+    if (subbiesRpcCode(error) === "SUBBIES_LIMIT_REACHED") {
+      return {
+        ok: false,
+        error:
+          "Reopening this project would put you over your plan's project limit. Complete another project first, or upgrade in Settings → Billing.",
+      };
+    }
+    if (subbiesRpcCode(error) === "SUBBIES_NO_ACCESS") {
+      return { ok: false, error: rpcErrorMessage(error, "projects") };
+    }
     console.error("updateProject failed", error);
     return { ok: false, error: "Couldn't save the project. Try again." };
   }
@@ -149,10 +161,13 @@ export async function assignContractor(
   // Confirm both the project and the contractor belong to this company.
   const [{ data: project }, { data: contractor }] = await Promise.all([
     supabase.from("projects").select("id").eq("id", projectId).eq("company_id", company.id).maybeSingle(),
-    supabase.from("contractors").select("id").eq("id", contractorId).eq("company_id", company.id).maybeSingle(),
+    supabase.from("contractors").select("id, archived_at").eq("id", contractorId).eq("company_id", company.id).maybeSingle(),
   ]);
 
   if (!project || !contractor) return { ok: false, error: "Couldn't find that project or contractor." };
+  if (contractor.archived_at) {
+    return { ok: false, error: "That contractor is archived. Restore them before assigning them to a project." };
+  }
 
   const trimmedRole = role.trim();
   if (trimmedRole.length > 120) return { ok: false, error: "Keep the role under 120 characters." };

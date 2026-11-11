@@ -9,6 +9,9 @@ export const CONTRACTOR_FILTERS = [
   { id: "pending", label: "Pending onboarding" },
   { id: "expiring", label: "Expiring soon" },
   { id: "expired", label: "Expired" },
+  // Not a dashboard bucket: archived contractors are off the register, and
+  // this is the only place they're listed (D8).
+  { id: "archived", label: "Archived" },
 ] as const;
 
 export type ContractorFilter = (typeof CONTRACTOR_FILTERS)[number]["id"];

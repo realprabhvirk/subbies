@@ -66,6 +66,29 @@ async function lookupToken(
 }
 
 /**
+ * Loads the token's contractor with `archived_at` (migration 0021). Like
+ * lookupToken, a deploy that lands before the migration must not turn every
+ * link invalid, so a missing-column error retries without it (nobody can be
+ * archived before the column exists).
+ */
+async function selectContractor<T extends object>(
+  admin: ReturnType<typeof createAdminClient>,
+  contractorId: string,
+  columns: string,
+): Promise<{ data: (T & { archived_at?: string | null }) | null; error: { code?: string; message?: string } | null }> {
+  const first = await admin
+    .from("contractors")
+    .select(`${columns}, archived_at`)
+    .eq("id", contractorId)
+    .maybeSingle();
+  if (first.error && isMissingColumnError(first.error)) {
+    const retry = await admin.from("contractors").select(columns).eq("id", contractorId).maybeSingle();
+    return { data: retry.data as T | null, error: retry.error };
+  }
+  return { data: first.data as (T & { archived_at?: string | null }) | null, error: first.error };
+}
+
+/**
  * Trusted server-side resolution of a contractor token to the ids and contact
  * details the upload actions need. Returns null for a missing/malformed token.
  */
@@ -79,20 +102,17 @@ export async function resolveOnboardingToken(
   const tokenRow = await lookupToken(admin, token);
   if (!tokenRow) return null;
 
-  const { data: contractor } = await admin
-    .from("contractors")
-    .select("id, company_id, business_name, contact_name, email, companies(name)")
-    .eq("id", tokenRow.contractorId)
-    .maybeSingle<{
-      id: string;
-      company_id: string;
-      business_name: string;
-      contact_name: string | null;
-      email: string;
-      companies: { name: string } | null;
-    }>();
+  const { data: contractor } = await selectContractor<{
+    id: string;
+    company_id: string;
+    business_name: string;
+    contact_name: string | null;
+    email: string;
+    companies: { name: string } | null;
+  }>(admin, tokenRow.contractorId, "id, company_id, business_name, contact_name, email, companies(name)");
 
-  if (!contractor) return null;
+  // An archived contractor's link is no longer active: no uploads, no consent.
+  if (!contractor || contractor.archived_at) return null;
 
   return {
     contractorId: contractor.id,
@@ -142,7 +162,14 @@ export interface OnboardingChecklistItem {
   isReplacement: boolean;
 }
 
+/** The link is real but the company has archived this contractor. */
+export interface InactiveOnboardingLink {
+  inactive: true;
+  companyName: string;
+}
+
 export interface OnboardingContext {
+  inactive?: false;
   contractor: {
     id: string;
     businessName: string;
@@ -162,7 +189,7 @@ export interface OnboardingContext {
  */
 export async function getOnboardingContext(
   token: string,
-): Promise<OnboardingContext | null> {
+): Promise<OnboardingContext | InactiveOnboardingLink | null> {
   if (!token || !UUID_RE.test(token)) return null;
 
   const admin = createAdminClient();
@@ -170,19 +197,21 @@ export async function getOnboardingContext(
   const tokenRow = await lookupToken(admin, token);
   if (!tokenRow) return null;
 
-  const { data: contractor, error: contractorError } = await admin
-    .from("contractors")
-    .select("id, business_name, contact_name, company_id, companies(name)")
-    .eq("id", tokenRow.contractorId)
-    .maybeSingle<{
-      id: string;
-      business_name: string;
-      contact_name: string | null;
-      company_id: string;
-      companies: { name: string } | null;
-    }>();
+  const { data: contractor, error: contractorError } = await selectContractor<{
+    id: string;
+    business_name: string;
+    contact_name: string | null;
+    company_id: string;
+    companies: { name: string } | null;
+  }>(admin, tokenRow.contractorId, "id, business_name, contact_name, company_id, companies(name)");
 
   if (contractorError || !contractor) return null;
+
+  // Archived: the page says the link is no longer active and names the
+  // company, and shows nothing else (no documents, no upload controls).
+  if (contractor.archived_at) {
+    return { inactive: true, companyName: contractor.companies?.name ?? "The company" };
+  }
 
   const { data: allDocs, error: docsError } = await admin
     .from("contractor_documents")

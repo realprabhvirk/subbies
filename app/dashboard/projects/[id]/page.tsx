@@ -54,7 +54,7 @@ export default async function ProjectDetailPage(
     supabase
       .from("project_contractors")
       .select(
-        "id, contractor_id, role_on_project, assigned_at, contractors(business_name, trade, status)",
+        "id, contractor_id, role_on_project, assigned_at, contractors(business_name, trade, status, archived_at)",
       )
       .eq("project_id", project.id)
       .is("removed_at", null)
@@ -63,11 +63,11 @@ export default async function ProjectDetailPage(
       .from("contractors")
       .select("id, business_name, trade, status")
       .eq("company_id", company.id)
+      .is("archived_at", null)
       .order("business_name", { ascending: true }),
   ]);
 
-  const assigned: AssignedContractor[] = (
-    (assignmentRows ?? []) as unknown as {
+  type AssignmentRow = {
       id: string;
       contractor_id: string;
       role_on_project: string | null;
@@ -76,9 +76,16 @@ export default async function ProjectDetailPage(
         business_name: string;
         trade: string | null;
         status: ContractorStatus;
+        archived_at: string | null;
       } | null;
-    }[]
-  ).map((r) => ({
+  };
+  const assignmentList = (assignmentRows ?? []) as unknown as AssignmentRow[];
+  // Archived contractors keep their assignment (restoring brings it back)
+  // but drop out of the project's list and compliance count.
+  const archivedAssigned = assignmentList.filter((r) => r.contractors?.archived_at != null).length;
+  const assigned: AssignedContractor[] = assignmentList
+    .filter((r) => r.contractors?.archived_at == null)
+    .map((r) => ({
     projectContractorId: r.id,
     contractorId: r.contractor_id,
     businessName: r.contractors?.business_name ?? "Contractor",
@@ -172,6 +179,13 @@ export default async function ProjectDetailPage(
         assigned={assigned}
         available={available}
       />
+
+      {archivedAssigned > 0 && (
+        <p className="text-sm text-ink-muted">
+          {archivedAssigned} archived {archivedAssigned === 1 ? "contractor is" : "contractors are"} hidden
+          from this project. Restoring a contractor brings their assignment back.
+        </p>
+      )}
     </div>
   );
 }

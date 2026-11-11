@@ -173,7 +173,7 @@ class Query implements PromiseLike<Result> {
   }
 }
 
-/** The migration 0020 functions the app calls, re-done in memory. */
+/** The migration 0020/0021 functions the app calls, re-done in memory. */
 function rpc(name: string, args: Record<string, unknown>): Result {
   const s = fake();
   if (s.rpcErrors[name]) return { data: null, error: { code: "XX000", message: s.rpcErrors[name] } };
@@ -218,6 +218,32 @@ function rpc(name: string, args: Record<string, unknown>): Result {
       const token = randomUUID();
       table("contractor_tokens").push({ id: randomUUID(), contractor_id: contractor.id, token });
       return { data: [{ contractor_id: contractor.id, token }], error: null };
+    }
+    // Migration 0021. Same rules: caller's company only, restore re-checks
+    // the plan limit counting live (unarchived) contractors.
+    case "archive_contractor": {
+      if (!s.company) return { data: null, error: { code: "P0001", message: "SUBBIES_NO_COMPANY" } };
+      const row = table("contractors").find((r) => r.id === args.p_contractor_id && r.company_id === s.company!.id);
+      if (!row) return { data: null, error: { code: "P0001", message: "SUBBIES_NOT_FOUND" } };
+      row.archived_at ??= new Date(nowMs).toISOString();
+      return { data: row.archived_at, error: null };
+    }
+    case "restore_contractor": {
+      if (!s.company) return { data: null, error: { code: "P0001", message: "SUBBIES_NO_COMPANY" } };
+      const companyId = s.company.id;
+      const row = table("contractors").find((r) => r.id === args.p_contractor_id && r.company_id === companyId);
+      if (!row) return { data: null, error: { code: "P0001", message: "SUBBIES_NOT_FOUND" } };
+      if ((row.archived_at ?? null) === null) return { data: null, error: null };
+      const sub = table("subscriptions").find((r) => r.company_id === companyId);
+      if (!sub || !["trialing", "active", "past_due"].includes(String(sub.status))) {
+        return { data: null, error: { code: "P0001", message: "SUBBIES_NO_ACCESS" } };
+      }
+      const limits: Record<string, number | null> = { starter: 5, business: 25, pro: null };
+      const lim = String(sub.plan) in limits ? limits[String(sub.plan)] : 0;
+      const live = table("contractors").filter((r) => r.company_id === companyId && (r.archived_at ?? null) === null).length;
+      if (lim !== null && live >= lim) return { data: null, error: { code: "P0001", message: "SUBBIES_LIMIT_REACHED" } };
+      row.archived_at = null;
+      return { data: null, error: null };
     }
     case "check_rate_limit": {
       const hits = table("rate_limit_hits");

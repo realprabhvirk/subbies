@@ -58,7 +58,7 @@ export default async function ProjectsPage() {
   if (projects.length > 0) {
     const { data: assignments } = await supabase
       .from("project_contractors")
-      .select("project_id, contractors(status)")
+      .select("project_id, contractors(status, archived_at)")
       .in(
         "project_id",
         projects.map((p) => p.id),
@@ -67,8 +67,11 @@ export default async function ProjectsPage() {
 
     for (const row of (assignments ?? []) as unknown as {
       project_id: string;
-      contractors: { status: ContractorStatus } | null;
+      contractors: { status: ContractorStatus; archived_at: string | null } | null;
     }[]) {
+      // Archived contractors keep their assignment (restoring brings it
+      // back) but don't count towards the project.
+      if (row.contractors?.archived_at != null) continue;
       const entry = counts.get(row.project_id) ?? { total: 0, issues: 0 };
       entry.total += 1;
       if (row.contractors && hasComplianceIssue(row.contractors.status)) {

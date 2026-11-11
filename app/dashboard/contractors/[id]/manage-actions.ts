@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getUser } from "@/lib/supabase/dal";
 import { requireActiveCompany } from "@/lib/billing/require-active";
+import { canAddContractor } from "@/lib/billing/entitlements";
+import type { PlanError } from "@/lib/billing/plans";
+import { rpcErrorMessage, subbiesRpcCode } from "@/lib/db/rpc-errors";
 import { deleteContractorFiles } from "@/lib/storage";
 import {
   sendRequestToContractor,
@@ -34,6 +37,88 @@ function revalidateContractor(contractorId: string) {
   revalidatePath(`/dashboard/contractors/${contractorId}`);
   revalidatePath("/dashboard/contractors");
   revalidatePath("/dashboard");
+}
+
+const ARCHIVED_NO_EMAIL = "This contractor is archived. Restore them before sending requests.";
+
+// --- archive and restore ------------------------------------------------------
+
+export type ArchiveResult = { ok: true } | { ok: false; error: string };
+export type RestoreResult =
+  | { ok: true }
+  | { ok: false; error: string; planError?: PlanError | null };
+
+/**
+ * Archives a contractor: nothing is deleted. They leave the register, stop
+ * counting towards the plan, get no reminders, and their upload link shows
+ * "no longer active". The archive_contractor RPC (migration 0021) does the
+ * write; archived_at isn't writable any other way.
+ */
+export async function archiveContractor(contractorId: string): Promise<ArchiveResult> {
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  if (typeof contractorId !== "string" || !contractorId) {
+    return { ok: false, error: "Couldn't find that contractor." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("archive_contractor", { p_contractor_id: contractorId });
+  if (error) {
+    if (subbiesRpcCode(error) === "SUBBIES_NOT_FOUND") {
+      return { ok: false, error: "Couldn't find that contractor." };
+    }
+    console.error("archiveContractor failed", { code: error.code, message: error.message });
+    return { ok: false, error: "Couldn't archive this contractor. Try again." };
+  }
+
+  revalidateContractor(contractorId);
+  revalidatePath("/dashboard/projects");
+  return { ok: true };
+}
+
+/**
+ * Restores an archived contractor. Counts as adding one, so it's checked
+ * against the plan: the friendly pre-check here gives the typed error the
+ * UpgradePrompt renders, and the RPC re-checks under the same lock as a
+ * create (that's the real gate).
+ */
+export async function restoreContractor(contractorId: string): Promise<RestoreResult> {
+  const access = await requireActiveCompany();
+  if (!access.ok) return { ok: false, error: access.error };
+  const company = access.company;
+  if (typeof contractorId !== "string" || !contractorId) {
+    return { ok: false, error: "Couldn't find that contractor." };
+  }
+
+  const limit = await canAddContractor(company.id);
+  if (!limit.allowed && limit.planError) {
+    return {
+      ok: false,
+      error: `Your plan allows ${limit.limit} active contractors and you have ${limit.used}. Archive another contractor or upgrade to restore this one.`,
+      planError: limit.planError,
+    };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("restore_contractor", { p_contractor_id: contractorId });
+  if (error) {
+    const code = subbiesRpcCode(error);
+    if (code === "SUBBIES_LIMIT_REACHED") {
+      const fresh = await canAddContractor(company.id);
+      return {
+        ok: false,
+        error: "Your plan's contractor limit is reached. Archive another contractor or upgrade to restore this one.",
+        planError: fresh.planError,
+      };
+    }
+    if (code) return { ok: false, error: rpcErrorMessage(error, "contractors") };
+    console.error("restoreContractor failed", { code: error.code, message: error.message });
+    return { ok: false, error: "Couldn't restore this contractor. Try again." };
+  }
+
+  revalidateContractor(contractorId);
+  revalidatePath("/dashboard/projects");
+  return { ok: true };
 }
 
 // --- edit details -----------------------------------------------------------
@@ -307,7 +392,7 @@ export async function resendDocumentRequests(
 
   const { data: contractor } = await supabase
     .from("contractors")
-    .select("id, business_name, contact_name, email")
+    .select("id, business_name, contact_name, email, archived_at")
     .eq("id", contractorId)
     .eq("company_id", company.id)
     .maybeSingle<{
@@ -315,9 +400,11 @@ export async function resendDocumentRequests(
       business_name: string;
       contact_name: string | null;
       email: string;
+      archived_at: string | null;
     }>();
 
   if (!contractor) return { ok: false, error: "Couldn't find that contractor." };
+  if (contractor.archived_at) return { ok: false, error: ARCHIVED_NO_EMAIL };
 
   const { data: docs, error: docsError } = await supabase
     .from("contractor_documents")

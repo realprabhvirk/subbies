@@ -54,6 +54,8 @@ export interface Contractor {
   trade: string | null;
   status: ContractorStatus;
   created_at: string;
+  /** Set when archived (migration 0021). Archived contractors keep their data. */
+  archived_at: string | null;
 }
 
 export interface ContractorDocument {

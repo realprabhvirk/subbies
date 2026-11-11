@@ -169,13 +169,16 @@ export async function resendOnboardingRequest(
 
   const { data: contractor, error: contractorError } = await supabase
     .from("contractors")
-    .select("id, business_name, contact_name, email")
+    .select("id, business_name, contact_name, email, archived_at")
     .eq("id", contractorId)
     .eq("company_id", company.id)
     .single();
 
   if (contractorError || !contractor) {
     return { ok: false, message: "Couldn't find that contractor." };
+  }
+  if (contractor.archived_at) {
+    return { ok: false, message: "This contractor is archived. Restore them before sending requests." };
   }
 
   // Archived documents are the company's private record and never go in an

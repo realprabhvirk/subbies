@@ -118,7 +118,9 @@ export async function GET(req: NextRequest) {
   const { data: contractorData, error: contractorError } = await admin
     .from("contractors")
     .select("id, company_id, business_name, contact_name, email")
-    .in("company_id", companyIds);
+    .in("company_id", companyIds)
+    // Archived contractors get no reminders and raise no escalations.
+    .is("archived_at", null);
 
   if (contractorError) {
     console.error("expiry-reminders: contractor query failed", contractorError);
