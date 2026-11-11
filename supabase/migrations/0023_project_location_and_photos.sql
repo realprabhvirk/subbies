@@ -18,6 +18,20 @@
 -- Rollback: see docs/upgrade/MIGRATIONS.md.
 
 
+-- 0. Prerequisites ------------------------------------------------------------
+-- 0023 builds on 0022 (activity log, composite keys). Stop with a plain
+-- message rather than a cryptic foreign-key error if it hasn't been applied.
+do $$
+begin
+  if to_regprocedure('public.subbies_insert_project_activity(uuid,uuid,text,text,uuid,uuid,uuid,jsonb)') is null then
+    raise exception 'Migration 0022 (project workspace) has not been applied to this database. Run 0022 first, then 0023.';
+  end if;
+end $$;
+
+-- The key project_photos points at (also created by 0022; harmless if present).
+create unique index if not exists projects_id_company_uniq on public.projects (id, company_id);
+
+
 -- 1. Location columns ----------------------------------------------------------
 alter table public.projects add column if not exists location_address text;
 alter table public.projects add column if not exists latitude numeric(9,6);
