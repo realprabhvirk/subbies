@@ -58,6 +58,8 @@ const INCLUDED: {
   { label: "Compliance status tracking" },
   { label: "Expiry reminders" },
   { label: "Project assignment and compliance", included: (p) => !isNotIncluded(p.limits.projects) },
+  { label: "Project map and location", included: (p) => !isNotIncluded(p.limits.projects) },
+  { label: "Jobsite photos (3 per project)", included: (p) => !isNotIncluded(p.limits.projects) },
   { label: "Email notifications" },
 ];
 

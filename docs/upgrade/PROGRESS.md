@@ -120,6 +120,33 @@ The code reads `contractors.archived_at`. Without 0021, the dashboard and contra
   - `mapbox-gl` 3.33.0, the brief's choice for the editor. It's lazy-loaded in one dialog only. Pinned to a version four weeks old.
   - `sharp` 0.35.5, needed for server-side re-encoding. Next already installs this exact build as an optional dependency; it's now listed directly so it can't silently disappear. Pinned.
 
+## Phase 3 follow-up: public token only, map and photos live (2026-11-11)
+
+- **Searched addresses save with only `NEXT_PUBLIC_MAPBOX_TOKEN`.** Before, they needed `MAPBOX_SERVER_TOKEN` for permanent geocoding, and without it a searched address couldn't be saved.
+  - The browser now runs the one permanent lookup (`permanent=true`) with the public token when you press Save. The pin moves to the confirmed point and that point is stored.
+  - If the browser can't confirm the address, the server tries with `MAPBOX_SERVER_TOKEN` when it's set. Otherwise the user is asked to place the pin by hand.
+  - Pins placed by hand (click, drag, crosshair, including a searched pin that was then moved) are stored as placed, with no lookup.
+- **Where the rules live:**
+  - `lib/mapbox/geocode.ts` holds the request and response helpers, shared by the browser and the server.
+  - `lib/projects/location-save.ts` holds the pure save decision. The action calls it.
+  - Trusting the browser's confirmed point adds no new power, because a hand-placed pin can already be anywhere. It only records which Mapbox mode the point came from.
+- **Map and photos are live on every plan.**
+  - `map` and `photos` are now in `SHIPPED_FEATURES`.
+  - The Starter card lists "Project map and location" and "3 jobsite photos per project".
+  - The comparison table has both rows as included on every plan, and they're no longer "Coming soon".
+  - The 3-photo cap is enforced in SQL (`SUBBIES_PHOTO_LIMIT`, 0023 PHOTO_SLOTS marker) for every plan.
+- **No migration.** 0023 is unchanged and already applied.
+- **Tests:**
+  - `lib/mapbox/geocode.test.ts` (8).
+  - `lib/projects/location-save.test.ts` (6).
+  - One plans test for map and photos on every plan.
+  - Totals: 456 unit tests pass, the 0021/0022/0023 SQL tests pass on the local replica, and the build is clean.
+- **End to end against a mocked Mapbox and mock Supabase (real Chromium, real GL JS):**
+  - Search, then Save: stores the permanent point (not the Search Box point) with `is_manual = false`. Every Mapbox call carried a Referer.
+  - Mapbox refusing permanent geocoding (403): nothing stored, and the user is told to place the pin.
+  - Click to place: stored as clicked with `is_manual = true`, and no permanent call.
+- **Still unverified against real Mapbox:** whether the account has a card on file for permanent geocoding, and the token's URL restrictions for the production and preview domains.
+
 ## Decisions
 
 - D1–D11 locked as per the brief.
@@ -171,9 +198,9 @@ No new env vars in Phase 1 or Phase 2. Phase 3 (add in Vercel, Production and Pr
 | Name | What | Where it's used |
 |---|---|---|
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox **public** token (`pk.`), URL-restricted in Mapbox to the site's domains | Browser: static map image, location editor, address search |
-| `MAPBOX_SERVER_TOKEN` | Mapbox token for server use, **no** `NEXT_PUBLIC_` prefix, scoped to geocoding | Server: permanent geocoding on save (later: PDF static maps) |
+| `MAPBOX_SERVER_TOKEN` | **Optional.** Mapbox token for server use, **no** `NEXT_PUBLIC_` prefix | Server: fallback permanent geocoding on save, if the browser lookup fails |
 
-Without them the map shows "Map unavailable", and saving a searched address asks the user to place the pin by hand. Photos don't need either.
+Only the public token is needed: the browser runs the permanent lookup with it (Phase 3 follow-up). Without the public token the map shows "Map unavailable" and the editor can't load. Photos need neither.
 
 ## New dependencies
 
