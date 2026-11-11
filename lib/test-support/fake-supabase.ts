@@ -9,6 +9,7 @@
  * closely enough to drive the TypeScript paths; the SQL itself is proven by
  * supabase/tests/0020_security_audit_fixes.sql against real Postgres.
  */
+import { limitFor, type PlanId } from "../billing/plans.ts";
 import { pathToFileURL, fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 
@@ -238,8 +239,7 @@ function rpc(name: string, args: Record<string, unknown>): Result {
       if (!sub || !["trialing", "active", "past_due"].includes(String(sub.status))) {
         return { data: null, error: { code: "P0001", message: "SUBBIES_NO_ACCESS" } };
       }
-      const limits: Record<string, number | null> = { starter: 5, business: 25, pro: null };
-      const lim = String(sub.plan) in limits ? limits[String(sub.plan)] : 0;
+      const lim = limitFor(String(sub.plan) as PlanId, "contractors");
       const live = table("contractors").filter((r) => r.company_id === companyId && (r.archived_at ?? null) === null).length;
       if (lim !== null && live >= lim) return { data: null, error: { code: "P0001", message: "SUBBIES_LIMIT_REACHED" } };
       row.archived_at = null;

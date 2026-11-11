@@ -92,6 +92,8 @@ export default async function SettingsPage(
           blurb: PLANS[id].blurb,
           featured: PLANS[id].featured,
           features: PLANS[id].features,
+          tag: PLANS[id].tag,
+          comingSoon: PLANS[id].comingSoon,
         }))}
         checkout={checkoutParam}
       />

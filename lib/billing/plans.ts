@@ -106,11 +106,29 @@ export const FEATURE_LABEL: Record<PlanFeature, string> = {
   activityView: "Activity history",
   pdfExport: "PDF reports",
   analytics: "Analytics",
-  team: "Team members",
+  team: "Team members (up to 10)",
   bulkTools: "Bulk tools",
   auditExports: "Audit exports",
   prioritySupport: "Priority support",
 };
+
+/**
+ * Gated features that are live today. Everything else is "Coming soon" in
+ * marketing and is never sold as available. Each later phase adds its
+ * feature here when it ships.
+ */
+export const SHIPPED_FEATURES: readonly PlanFeature[] = ["projectCompliance"];
+
+export function isShipped(feature: PlanFeature): boolean {
+  return SHIPPED_FEATURES.includes(feature);
+}
+
+/** Unshipped features that first appear on this plan, by label. */
+function comingSoonAt(plan: PlanId): string[] {
+  return (Object.keys(FEATURE_MIN_PLAN) as PlanFeature[])
+    .filter((f) => FEATURE_MIN_PLAN[f] === plan && !isShipped(f))
+    .map((f) => FEATURE_LABEL[f]);
+}
 
 /** Plural nouns for limit copy, e.g. "5 contractors". */
 export const RESOURCE_NOUN: Record<LimitResource, { one: string; many: string }> = {
@@ -159,7 +177,7 @@ export const PLAN_CONFIG: Record<PlanId, PlanConfig> = {
       "Expiry reminders",
       "Compliance status per project",
     ],
-    comingSoon: ["Project map", "Site photos"],
+    comingSoon: comingSoonAt("starter"),
   },
   business: {
     id: "business",
@@ -173,7 +191,7 @@ export const PLAN_CONFIG: Record<PlanId, PlanConfig> = {
     seats: 1,
     photos: 3,
     features: [...limitFeatures(BUSINESS_LIMITS), "Everything in Starter"],
-    comingSoon: ["Project requirements", "Document register", "Activity history", "PDF reports"],
+    comingSoon: comingSoonAt("business"),
   },
   pro: {
     id: "pro",
@@ -187,7 +205,7 @@ export const PLAN_CONFIG: Record<PlanId, PlanConfig> = {
     seats: 10,
     photos: 3,
     features: [...limitFeatures(PRO_LIMITS), "Everything in Business"],
-    comingSoon: ["Analytics", "Up to 10 team members", "Bulk tools", "Audit exports", "Priority support"],
+    comingSoon: comingSoonAt("pro"),
   },
 };
 

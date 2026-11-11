@@ -271,7 +271,8 @@ export function BillingPanel({
             return (
               <StatTile
                 key={r}
-                tone={atLimit ? "expiring" : "pending"}
+                // Navy, never amber or red: those colours mean compliance.
+                tone="brand"
                 icon={RESOURCE_ICON[r]}
                 label={RESOURCE_LABEL[r]}
                 value={used}
@@ -292,6 +293,9 @@ export function BillingPanel({
             );
           })}
         </div>
+        <p className="mt-3 text-xs text-ink-muted">
+          Archived contractors and completed projects don&apos;t count towards your plan.
+        </p>
       </section>
     </div>
   );

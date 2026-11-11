@@ -13,13 +13,15 @@ import { IconDisc } from "./icon-disc";
  * in the disc colour with a text alternative.
  */
 
-export type StatTileTone = "approved" | "pending" | "expiring" | "expired";
+/** Status tones for compliance counts; `brand` for anything that isn't compliance (plan usage). */
+export type StatTileTone = "approved" | "pending" | "expiring" | "expired" | "brand";
 
 const SURFACE: Record<StatTileTone, string> = {
   approved: "bg-tile-approved",
   pending: "bg-tile-pending",
   expiring: "bg-tile-expiring",
   expired: "bg-tile-expired",
+  brand: "bg-brand-tint",
 };
 
 const BAR: Record<StatTileTone, string> = {
@@ -27,6 +29,7 @@ const BAR: Record<StatTileTone, string> = {
   pending: "bg-tile-pending-disc",
   expiring: "bg-tile-expiring-disc",
   expired: "bg-tile-expired-disc",
+  brand: "bg-brand",
 };
 
 export function StatTile({

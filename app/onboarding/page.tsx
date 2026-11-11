@@ -39,6 +39,8 @@ export default async function OnboardingPage(
     blurb: PLANS[id].blurb,
     featured: PLANS[id].featured,
     features: PLANS[id].features,
+    tag: PLANS[id].tag,
+    comingSoon: PLANS[id].comingSoon,
   }));
 
   return (

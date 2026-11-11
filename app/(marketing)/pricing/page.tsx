@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
-import { Check, Minus, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 import { Section, Eyebrow, CtaBand } from "../_components/ui";
 import { ButtonLink } from "@/app/components/button";
-import { PLANS, PLAN_IDS, TRIAL_DAYS } from "@/lib/billing/plans";
+import {
+  FEATURE_LABEL,
+  FEATURE_MIN_PLAN,
+  PLANS,
+  PLAN_IDS,
+  TRIAL_DAYS,
+  can,
+  isShipped,
+  type PlanFeature,
+} from "@/lib/billing/plans";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -35,13 +44,10 @@ const COMPARISON: {
     value: (p) => limitText(p.limits.projects),
     notIncluded: (p) => isNotIncluded(p.limits.projects),
   },
-  {
-    // Storage isn't metered per plan (the real limit is the shared Supabase
-    // project), so this says what's true rather than a number we don't enforce.
-    label: "Document storage",
-    value: (p) => (p.id === "pro" ? "Unlimited" : "Fair use"),
-  },
 ];
+
+/** Announced features, marked "Coming soon" wherever a plan will include them. */
+const COMING_SOON = (Object.keys(FEATURE_MIN_PLAN) as PlanFeature[]).filter((f) => !isShipped(f));
 
 const INCLUDED: {
   label: string;
@@ -51,7 +57,7 @@ const INCLUDED: {
   { label: "Document review, approval & rejection" },
   { label: "Compliance status tracking" },
   { label: "Expiry reminders" },
-  { label: "Project assignment", included: (p) => !isNotIncluded(p.limits.projects) },
+  { label: "Project assignment and compliance", included: (p) => !isNotIncluded(p.limits.projects) },
   { label: "Email notifications" },
 ];
 
@@ -76,7 +82,7 @@ export default function PricingPage() {
 
       <Section className="pb-10">
         {/* One rate card, three columns divided by rules. */}
-        <div className="grid overflow-hidden rounded-card border border-line bg-surface lg:grid-cols-3">
+        <div className="grid min-w-0 max-w-full grid-cols-[minmax(0,1fr)] overflow-hidden rounded-card border border-line bg-surface lg:grid-cols-3">
           {TIERS.map((tier, i) => (
             <div
               key={tier.id}
@@ -89,9 +95,7 @@ export default function PricingPage() {
               )}
               <div className="flex items-baseline justify-between gap-3">
                 <h2 className="text-xl">{tier.name}</h2>
-                {tier.featured && (
-                  <span className="label-caps text-brand">Most popular</span>
-                )}
+                {tier.tag && <span className="label-caps text-brand">{tier.tag}</span>}
               </div>
               <p className="mt-2 min-h-12 text-sm text-ink-muted">{tier.blurb}</p>
               <p className="mt-6 flex items-baseline gap-1.5">
@@ -103,17 +107,23 @@ export default function PricingPage() {
                 variant={tier.featured ? "primary" : "secondary"}
                 className="mt-7 w-full"
               >
-                Start free
+                Start your {TRIAL_DAYS}-day free trial
               </ButtonLink>
               <ul className="mt-7 divide-y divide-line border-t border-line text-sm">
                 {tier.features.map((f) => (
                   <li key={f} className="flex items-start gap-2.5 py-2.5">
                     <Check
-                      className="mt-0.5 h-4 w-4 shrink-0 text-approved"
+                      className="mt-0.5 h-4 w-4 shrink-0 text-brand"
                       strokeWidth={2.5}
                       aria-hidden
                     />
                     <span>{f}</span>
+                  </li>
+                ))}
+                {tier.comingSoon.map((f) => (
+                  <li key={f} className="flex items-start justify-between gap-3 py-2.5 text-ink-muted">
+                    <span>{f}</span>
+                    <ComingSoon />
                   </li>
                 ))}
               </ul>
@@ -130,7 +140,9 @@ export default function PricingPage() {
       {/* Comparison */}
       <Section className="pb-section pt-10">
         <h2 className="text-2xl sm:text-3xl">Compare plans</h2>
-        <div className="relative mt-6 overflow-x-auto rounded-card border border-line bg-surface">
+        {/* The table scrolls inside its own box on a phone; min-w-0 and
+            max-w-full stop it widening the page. */}
+        <div className="relative mt-6 w-full min-w-0 max-w-full overflow-x-auto rounded-card border border-line bg-surface">
           <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="border-b border-line-strong bg-surface-muted">
@@ -189,7 +201,7 @@ export default function PricingPage() {
                         {included ? (
                           <>
                             <Check
-                              className="h-4 w-4 text-approved"
+                              className="h-4 w-4 text-brand"
                               strokeWidth={2.5}
                               aria-hidden
                             />
@@ -210,21 +222,42 @@ export default function PricingPage() {
                   })}
                 </tr>
               ))}
+              {COMING_SOON.map((feature) => (
+                <tr key={feature}>
+                  <th scope="row" className="px-5 py-3.5 text-left font-medium text-ink-muted">
+                    {FEATURE_LABEL[feature]}
+                  </th>
+                  {TIERS.map((t) => (
+                    <td key={t.id} className={`px-5 py-3.5 ${t.featured ? "bg-brand-tint/30" : ""}`}>
+                      {can(t.id, feature) ? (
+                        <ComingSoon />
+                      ) : (
+                        <>
+                          <X className="h-4 w-4 text-ink-subtle" strokeWidth={2.5} aria-hidden />
+                          <span className="sr-only">Not included</span>
+                        </>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
-        <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-muted">
-          <Minus className="h-3 w-3" strokeWidth={2} aria-hidden />
-          Document storage is fair-use — generous for normal compliance
-          paperwork. We&apos;ll be in touch if an account ever approaches a real
-          limit.
-        </p>
       </Section>
 
       <CtaBand
         heading="Not sure which plan fits?"
-        sub="Start free. You can change plan any time, and everything you set up carries over."
+        sub={`Start with ${TRIAL_DAYS} days free. You can change plan any time, and everything you set up carries over.`}
       />
     </>
+  );
+}
+
+function ComingSoon() {
+  return (
+    <span className="inline-flex shrink-0 items-center rounded-full border border-line bg-surface-muted px-2 py-0.5 text-2xs font-semibold text-ink-muted">
+      Coming soon
+    </span>
   );
 }

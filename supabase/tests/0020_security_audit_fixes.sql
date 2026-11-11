@@ -48,7 +48,9 @@ insert into public.document_types (id, company_id, name) values
 
 -- Plan limits as the database sees them --------------------------------------
 select pg_temp.check(public.subbies_plan_limit('starter', 'contractors') = 5, 'starter contractors = 5');
-select pg_temp.check(public.subbies_plan_limit('starter', 'projects') = 0, 'starter projects = 0');
+-- 0 under 0020; migration 0021 raises it to 1 (upgrade Phase 1).
+select pg_temp.check(public.subbies_plan_limit('starter', 'projects') in (0, 1), 'starter projects = 0 (or 1 after 0021)');
+select set_config('subbies_test.starter_projects', public.subbies_plan_limit('starter', 'projects')::text, true);
 select pg_temp.check(public.subbies_plan_limit('business', 'projects') = 10, 'business projects = 10');
 select pg_temp.check(public.subbies_plan_limit('pro', 'contractors') is null, 'pro contractors unlimited');
 select pg_temp.check(public.subbies_plan_limit(null, 'contractors') = 0, 'no plan = 0');
@@ -76,9 +78,16 @@ select pg_temp.must_fail(
   $q$insert into public.contractors (company_id, business_name, email) values ('10000000-0000-4000-8000-00000000000a', 'Over the limit', 'over@example.test')$q$,
   'permission denied', 'a direct insert over the plan limit is refused too');
 
+-- Fill Starter's project allowance first (none under 0020, one after 0021).
+do $$
+begin
+  for i in 1 .. current_setting('subbies_test.starter_projects')::int loop
+    perform public.create_project('Allowed job ' || i, null, 'active', null, null);
+  end loop;
+end $$;
 select pg_temp.must_fail(
   $q$select public.create_project('Job', null, 'active', null, null)$q$,
-  'SUBBIES_LIMIT_REACHED', 'Starter cannot create a project');
+  'SUBBIES_LIMIT_REACHED', 'Starter cannot create a project past its limit');
 
 select pg_temp.must_fail(
   $q$select public.create_contractor('Sneaky', null, 'sneak@example.test', null, null, array['20000000-0000-4000-8000-00000000000b']::uuid[])$q$,

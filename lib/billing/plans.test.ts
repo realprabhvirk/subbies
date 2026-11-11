@@ -192,3 +192,17 @@ test("planToAdd skips plans that still wouldn't fit", () => {
   assert.equal(planToAdd("pro", "contractors", 1_000), null);
   assert.equal(planToAdd(null, "contractors", 0), "starter");
 });
+
+test("coming soon lists exactly the unshipped features, at the plan that first has them", () => {
+  assert.deepEqual(PLANS.starter.comingSoon, ["Project map", "Photos"]);
+  assert.deepEqual(PLANS.business.comingSoon, ["Project requirements", "Document register", "Activity history", "PDF reports"]);
+  assert.deepEqual(PLANS.pro.comingSoon, ["Analytics", "Team members (up to 10)", "Bulk tools", "Audit exports", "Priority support"]);
+});
+
+test("nothing unshipped appears in a plan's live feature list", () => {
+  for (const id of PLAN_IDS) {
+    for (const soon of PLANS[id].comingSoon) {
+      assert.ok(!PLANS[id].features.includes(soon), `${id} sells ${soon} as live`);
+    }
+  }
+});

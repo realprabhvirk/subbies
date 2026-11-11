@@ -36,7 +36,7 @@ export function Section({
   id?: string;
 }) {
   return (
-    <section id={id} className={`mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 ${className}`}>
+    <section id={id} className={`mx-auto w-full min-w-0 max-w-6xl px-4 sm:px-6 lg:px-8 ${className}`}>
       {children}
     </section>
   );
