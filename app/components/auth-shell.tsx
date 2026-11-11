@@ -71,7 +71,12 @@ function PhotoPanel({ wide }: { wide: boolean }) {
   return (
     <aside
       data-surface="sidebar"
-      className={`relative hidden overflow-hidden bg-sidebar-bg ${wide ? "xl:block" : "lg:block"}`}
+      // Pinned to the viewport: on a tall page (signup's long form) the panel
+      // would otherwise stretch to the full page height and push the tagline
+      // below the fold.
+      className={`relative hidden overflow-hidden bg-sidebar-bg ${
+        wide ? "xl:sticky xl:top-0 xl:block xl:h-screen xl:self-start" : "lg:sticky lg:top-0 lg:block lg:h-screen lg:self-start"
+      }`}
     >
       <Image
         src="/marketing/hero-construction.webp"
@@ -84,7 +89,7 @@ function PhotoPanel({ wide }: { wide: boolean }) {
         aria-hidden
         className="absolute inset-0 bg-gradient-to-b from-sidebar-bg/80 via-sidebar-bg/25 to-sidebar-bg/90"
       />
-      <div className="relative flex h-full min-h-screen flex-col justify-between p-10 xl:p-14">
+      <div className="relative flex h-full flex-col justify-between p-10 xl:p-14">
         <Link href="/" prefetch={false} aria-label="Subbies home" className="self-start rounded-md">
           <Logo tone="inverse" height={40} />
         </Link>
