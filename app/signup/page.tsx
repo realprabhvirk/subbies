@@ -201,7 +201,7 @@ export default function SignupPage() {
                 required
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
-                className={fieldClasses()}
+                className={fieldClasses(false, "", "lg")}
               />
             </div>
 
@@ -216,7 +216,7 @@ export default function SignupPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={fieldClasses()}
+                className={fieldClasses(false, "", "lg")}
               />
             </div>
 
@@ -225,6 +225,7 @@ export default function SignupPage() {
                 Password
               </label>
               <PasswordField
+                fieldSize="lg"
                 id="password"
                 autoComplete="new-password"
                 required
@@ -280,7 +281,7 @@ export default function SignupPage() {
               duplicate free trials.
             </p>
 
-            <Button type="submit" pending={pending} fullWidth>
+            <Button type="submit" size="lg" pending={pending} fullWidth>
               {pending ? "Creating account…" : "Create account"}
             </Button>
           </form>

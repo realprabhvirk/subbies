@@ -242,6 +242,7 @@ export default function ResetPasswordPage() {
                     New password
                   </label>
                   <PasswordField
+                    fieldSize="lg"
                     id="password"
                     autoComplete="new-password"
                     required
@@ -255,6 +256,7 @@ export default function ResetPasswordPage() {
                     Confirm new password
                   </label>
                   <PasswordField
+                    fieldSize="lg"
                     id="confirm"
                     autoComplete="new-password"
                     required
@@ -270,7 +272,7 @@ export default function ResetPasswordPage() {
                   </p>
                 )}
 
-                <Button type="submit" pending={pending} fullWidth>
+                <Button type="submit" size="lg" pending={pending} fullWidth>
                   {pending ? "Saving…" : "Update password"}
                 </Button>
               </form>
