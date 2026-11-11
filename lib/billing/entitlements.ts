@@ -7,10 +7,14 @@ import { getCompanyContext } from "@/lib/supabase/dal";
 import type { Subscription, SubscriptionStatus } from "@/lib/types";
 import {
   PLANS,
+  checkLimit,
+  type LimitCheck,
   type PlanId,
   type PlanLimits,
   type LimitedResource,
 } from "./plans";
+
+export type { LimitCheck } from "./plans";
 import { statusHasAccess } from "./access-statuses";
 
 /**
@@ -137,15 +141,23 @@ const RESOURCE_TABLE: Record<LimitedResource, string> = {
   projects: "projects",
 };
 
+/**
+ * What counts towards a plan (D8): contractors that aren't archived, projects
+ * that aren't completed, and every document type. Same rule as
+ * subbies_assert_can_add in migration 0021.
+ */
 async function countResource(
   companyId: string,
   resource: LimitedResource,
 ): Promise<number> {
   const supabase = await createClient();
-  const { count } = await supabase
+  let query = supabase
     .from(RESOURCE_TABLE[resource])
     .select("id", { count: "exact", head: true })
     .eq("company_id", companyId);
+  if (resource === "contractors") query = query.is("archived_at", null);
+  if (resource === "projects") query = query.neq("status", "completed");
+  const { count } = await query;
   return count ?? 0;
 }
 
@@ -166,39 +178,15 @@ export const getUsageCounts = cache(
   },
 );
 
-export interface LimitCheck {
-  allowed: boolean;
-  used: number;
-  limit: number | null;
-  /** true when blocked because access has lapsed rather than a count cap. */
-  accessLapsed: boolean;
-}
-
 export async function checkResourceLimit(
   companyId: string,
   resource: LimitedResource,
 ): Promise<LimitCheck> {
-  const [entitlement, used] = await Promise.all([
-    getEntitlement(companyId),
+  const [sub, used] = await Promise.all([
+    getSubscriptionRow(companyId),
     countResource(companyId, resource),
   ]);
-
-  if (!entitlement.hasAccess) {
-    return {
-      allowed: false,
-      used,
-      limit: entitlement.limits[resource],
-      accessLapsed: true,
-    };
-  }
-
-  const limit = entitlement.limits[resource];
-  return {
-    allowed: limit === null || used < limit,
-    used,
-    limit,
-    accessLapsed: false,
-  };
+  return checkLimit({ plan: sub?.plan ?? null, status: sub?.status ?? "none", resource, used });
 }
 
 export const canAddContractor = (companyId: string) =>

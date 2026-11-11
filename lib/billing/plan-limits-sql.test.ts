@@ -6,7 +6,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -14,7 +14,22 @@ import { PLANS } from "./plans.ts";
 import { ACCESS_STATUSES } from "./access-statuses.ts";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const SQL = readFileSync(path.join(ROOT, "supabase/migrations/0020_security_audit_fixes.sql"), "utf8");
+const MIGRATIONS = path.join(ROOT, "supabase/migrations");
+const files = readdirSync(MIGRATIONS).filter((f) => f.endsWith(".sql")).sort();
+
+/** The newest migration that redefines a function: that's the live definition. */
+function latestDefining(marker: string): { file: string; sql: string } {
+  for (const file of [...files].reverse()) {
+    const sql = readFileSync(path.join(MIGRATIONS, file), "utf8");
+    if (sql.includes(marker)) return { file, sql };
+  }
+  throw new Error(`no migration contains ${marker}`);
+}
+
+const LIMITS = latestDefining("PLAN_LIMITS_BEGIN");
+const ACCESS = latestDefining("-- ACCESS_STATUSES:");
+const ASSERT = latestDefining("function public.subbies_assert_can_add");
+const SQL = LIMITS.sql;
 
 const RESOURCE: Record<string, "contractors" | "documentTypes" | "projects"> = {
   contractors: "contractors",
@@ -24,7 +39,7 @@ const RESOURCE: Record<string, "contractors" | "documentTypes" | "projects"> = {
 
 function sqlLimits(): Map<string, number | null> {
   const block = SQL.slice(SQL.indexOf("PLAN_LIMITS_BEGIN"), SQL.indexOf("PLAN_LIMITS_END"));
-  assert.ok(block.length > 0, "PLAN_LIMITS markers not found in migration 0020");
+  assert.ok(block.length > 0, `PLAN_LIMITS markers not found in ${LIMITS.file}`);
   const out = new Map<string, number | null>();
   for (const m of block.matchAll(/\('(\w+)',\s*'(\w+)',\s*(null(?:::integer)?|\d+)\)/g)) {
     out.set(`${m[1]}.${m[2]}`, m[3].startsWith("null") ? null : Number(m[3]));
@@ -32,7 +47,7 @@ function sqlLimits(): Map<string, number | null> {
   return out;
 }
 
-test("every plan limit in plans.ts matches subbies_plan_limit in migration 0020", () => {
+test("every plan limit in plans.ts matches the latest subbies_plan_limit", () => {
   const sql = sqlLimits();
   const expected = new Map<string, number | null>();
   for (const plan of Object.values(PLANS)) {
@@ -43,7 +58,8 @@ test("every plan limit in plans.ts matches subbies_plan_limit in migration 0020"
   assert.deepEqual(Object.fromEntries(sql), Object.fromEntries(expected));
 });
 
-test("the access statuses match subbies_company_has_access in migration 0020", () => {
+test("the access statuses match the latest subbies_company_has_access", () => {
+  const SQL = ACCESS.sql;
   const marker = SQL.match(/-- ACCESS_STATUSES: ([\w,]+)/);
   assert.ok(marker, "ACCESS_STATUSES marker not found");
   assert.deepEqual(marker![1].split(",").sort(), [...ACCESS_STATUSES].sort());
@@ -55,4 +71,15 @@ test("the access statuses match subbies_company_has_access in migration 0020", (
   assert.ok(inList, "status list not found in subbies_company_has_access");
   const statuses = inList![1].split(",").map((x) => x.trim().replace(/'/g, "")).sort();
   assert.deepEqual(statuses, [...ACCESS_STATUSES].sort());
+});
+
+test("the SQL limit check counts what countResource counts (D8)", () => {
+  const fn = ASSERT.sql.slice(ASSERT.sql.indexOf("function public.subbies_assert_can_add"));
+  const body = fn.slice(0, fn.indexOf("$$;"));
+  assert.match(body, /from public\.contractors\s+where company_id = p_company_id and archived_at is null/);
+  assert.match(body, /from public\.projects\s+where company_id = p_company_id and status <> 'completed'/);
+
+  const ts = readFileSync(path.join(ROOT, "lib/billing/entitlements.ts"), "utf8");
+  assert.match(ts, /resource === "contractors"\) query = query\.is\("archived_at", null\)/);
+  assert.match(ts, /resource === "projects"\) query = query\.neq\("status", "completed"\)/);
 });
