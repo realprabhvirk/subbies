@@ -107,7 +107,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={fieldClasses()}
+                className={fieldClasses(false, "", "lg")}
               />
             </Field>
 
@@ -124,6 +124,7 @@ export default function LoginPage() {
                 </Link>
               </div>
               <PasswordField
+                fieldSize="lg"
                 id="password"
                 autoComplete="current-password"
                 required
@@ -138,7 +139,7 @@ export default function LoginPage() {
               </p>
             )}
 
-            <Button type="submit" pending={pending} fullWidth>
+            <Button type="submit" size="lg" pending={pending} fullWidth>
               {pending ? "Logging in…" : "Log in"}
             </Button>
           </form>

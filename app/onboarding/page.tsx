@@ -47,7 +47,7 @@ export default async function OnboardingPage(
     <AuthShell wide>
     <div className="mx-auto w-full max-w-5xl px-(--page-padding) py-6 sm:py-8">
       <div className="flex items-center justify-between">
-        <Logo />
+        <Logo size="brand" />
         <SignOutButton variant="inline" />
       </div>
 

@@ -77,7 +77,7 @@ export default function ForgotPasswordPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={fieldClasses()}
+                    className={fieldClasses(false, "", "lg")}
                   />
                 </div>
 
@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
                   </p>
                 )}
 
-                <Button type="submit" pending={pending} fullWidth>
+                <Button type="submit" size="lg" pending={pending} fullWidth>
                   {pending ? "Sending…" : "Send reset link"}
                 </Button>
               </form>

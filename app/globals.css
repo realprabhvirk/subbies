@@ -67,6 +67,9 @@
      one surface that stays dark regardless of what the brand accent does. */
   --color-sidebar-bg: oklch(17% 0.025 258);
   --color-sidebar-bg-elevated: oklch(21% 0.028 258);
+  /* One step darker than the rail: the marketing footer, so it reads apart
+     from a navy CTA band directly above it. */
+  --color-sidebar-bg-deep: oklch(13% 0.02 258);
   --color-sidebar-border: oklch(30% 0.025 258 / 0.6);
   --color-sidebar-active-bg: oklch(28% 0.05 258);
   --color-sidebar-ink: oklch(97% 0.003 90);
@@ -178,7 +181,7 @@
   --text-stat--line-height: 1;
 
   /* Spacing — named, layout-level steps on top of Tailwind's 4px grid. */
-  --spacing-section: 4.5rem;
+  --spacing-section: 4rem;
   --spacing-card: 1.5rem;
 
   --container-sm: 28rem;
@@ -247,7 +250,7 @@
 
 @media (min-width: 40rem) {
   :root {
-    --spacing-section: 6.5rem;
+    --spacing-section: 6rem;
     --page-padding: 2rem;
   }
 }
@@ -445,6 +448,123 @@
       animation: none;
     }
   }
+}
+
+/*
+  Marketing motion (app/(marketing)/_components/motion.tsx).
+  - [data-anim]: hidden until InView marks it data-in. Only when scripts run
+    and motion is allowed, so content never stays hidden.
+  - .rise / .pop-in: load-in for the hero, CSS only.
+  - .hero-drift: the hero product eases back as the page scrolls (scroll-
+    driven where supported, otherwise still).
+  - .story-frame: the pinned scroll story's visual swaps.
+*/
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-anim] {
+    transition:
+      opacity 700ms var(--ease-out) var(--anim-delay, 0ms),
+      transform 900ms var(--ease-out) var(--anim-delay, 0ms);
+  }
+  [data-anim]:not([data-in]) {
+    opacity: 0;
+  }
+  [data-anim="up"]:not([data-in]) {
+    transform: translateY(32px);
+  }
+  [data-anim="scale"]:not([data-in]) {
+    transform: translateY(40px) scale(0.95);
+  }
+  [data-anim="left"]:not([data-in]) {
+    transform: translateX(-40px);
+  }
+  [data-anim="right"]:not([data-in]) {
+    transform: translateX(40px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes subbies-rise {
+    from {
+      opacity: 0;
+      transform: translateY(28px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes subbies-pop {
+    from {
+      opacity: 0;
+      transform: translateY(-14px) scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes subbies-ping {
+    0% {
+      box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-brand) 35%, transparent);
+    }
+    100% {
+      box-shadow: 0 0 0 12px transparent;
+    }
+  }
+  .rise {
+    animation: subbies-rise 900ms var(--ease-out) both;
+    animation-delay: var(--anim-delay, 0ms);
+  }
+  .pop-in {
+    animation: subbies-pop 650ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+    animation-delay: var(--anim-delay, 0ms);
+  }
+  .ping {
+    animation: subbies-ping 1.6s var(--ease-out) 1.6s 3;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    @keyframes subbies-hero-drift {
+      to {
+        transform: translateY(-56px) rotateX(8deg) scale(0.96);
+        opacity: 0.5;
+      }
+    }
+    .hero-drift {
+      transform-origin: 50% 0;
+      animation: subbies-hero-drift linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 85svh;
+    }
+  }
+
+  .story-frame {
+    transition:
+      opacity 450ms var(--ease-out),
+      transform 650ms var(--ease-out);
+  }
+  .story-frame[data-state="next"] {
+    transform: translateY(48px) scale(0.95);
+  }
+  .story-frame[data-state="past"] {
+    transform: translateY(-48px) scale(0.95);
+  }
+}
+
+.story-frame[data-state="next"],
+.story-frame[data-state="past"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.story-stage {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 39px,
+    var(--color-line) 39px,
+    var(--color-line) 40px
+  );
 }
 
 /* Reduced motion: keep press feedback as colour only, no movement. */

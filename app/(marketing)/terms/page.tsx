@@ -3,40 +3,22 @@ import Link from "next/link";
 
 import { TRIAL_DAYS } from "@/lib/billing/plans";
 import { TERMS_LAST_UPDATED } from "@/lib/legal/terms";
-import { Section, Eyebrow } from "../_components/ui";
+import { LegalPage, LegalH2, LegalP, LegalUL } from "../_components/legal";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
   description: "The terms that apply when you use Subbies.",
 };
 
-function H2({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-xl sm:text-2xl">{children}</h2>;
-}
-
-function P({ children }: { children: React.ReactNode }) {
-  return <p className="mt-3 max-w-[68ch] text-sm leading-relaxed text-ink sm:text-base">{children}</p>;
-}
-
-function UL({ children }: { children: React.ReactNode }) {
-  return (
-    <ul className="mt-3 max-w-[68ch] list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-ink marker:text-ink-subtle sm:text-base">
-      {children}
-    </ul>
-  );
-}
+// Shared legal typography; LegalPage builds its contents list from H2.
+const H2 = LegalH2;
+const P = LegalP;
+const UL = LegalUL;
 
 export default function TermsPage() {
   return (
-    <Section className="pb-section pt-14 sm:pt-20">
-      <div className="max-w-3xl">
-        <Eyebrow>Legal</Eyebrow>
-        <h1 className="mt-5 text-4xl leading-[1.02] tracking-display sm:text-5xl">
-          Terms of Service
-        </h1>
-        <p className="mt-4 font-mono text-xs text-ink-muted">Last updated: {TERMS_LAST_UPDATED}</p>
-
-        <div className="mt-10 space-y-10 border-t border-ink pt-10">
+    <LegalPage title="Terms of Service" updated={<>Last updated: {TERMS_LAST_UPDATED}</>}>
+        <div className="space-y-12">
           <P>
             These terms are the agreement between you and Subbies
             (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;), the
@@ -322,7 +304,6 @@ export default function TermsPage() {
             </P>
           </section>
         </div>
-      </div>
-    </Section>
+    </LegalPage>
   );
 }
