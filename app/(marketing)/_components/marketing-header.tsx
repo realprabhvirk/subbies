@@ -26,7 +26,7 @@ export function MarketingHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-canvas">
-      <div className={`${CONTAINER} flex h-[72px] items-center justify-between gap-6 lg:h-20`}>
+      <div className={`${CONTAINER} flex h-16 items-center justify-between gap-6 lg:h-[72px]`}>
         <Link href="/" aria-label="Subbies home" className="rounded-md">
           <Logo size="brand" priority />
         </Link>
@@ -39,7 +39,7 @@ export function MarketingHeader() {
                 key={l.href}
                 href={l.href}
                 aria-current={active ? "page" : undefined}
-                className={`relative inline-flex min-h-11 items-center rounded-md px-3.5 text-lg font-medium transition-colors ${
+                className={`relative inline-flex min-h-11 items-center rounded-md px-3 text-[15px] font-medium transition-colors ${
                   active ? "text-ink" : "text-ink-muted hover:bg-surface-muted hover:text-ink"
                 }`}
               >
@@ -53,7 +53,7 @@ export function MarketingHeader() {
         <div className="hidden items-center gap-3 md:flex">
           <Link
             href="/login"
-            className="inline-flex min-h-11 items-center rounded-md px-3.5 text-lg font-medium text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
+            className="inline-flex min-h-11 items-center rounded-md px-3 text-[15px] font-medium text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink"
           >
             Log in
           </Link>
@@ -84,7 +84,7 @@ export function MarketingHeader() {
                 href={l.href}
                 onClick={() => setOpen(false)}
                 aria-current={pathname === l.href ? "page" : undefined}
-                className="flex min-h-14 items-center border-b border-line font-display text-xl font-semibold text-ink"
+                className="flex min-h-14 items-center border-b border-line font-display text-lg font-semibold text-ink"
               >
                 {l.label}
               </Link>

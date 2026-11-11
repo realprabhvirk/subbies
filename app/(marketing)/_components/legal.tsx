@@ -2,7 +2,7 @@ import { Children, isValidElement, type ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { ButtonLink } from "@/app/components/button";
-import { Band, Eyebrow } from "./ui";
+import { Band, Eyebrow, H1 } from "./ui";
 
 /*
  * Shared frame for the legal pages. The pages keep their wording exactly;
@@ -28,19 +28,19 @@ function slug(text: string): string {
 
 export function LegalH2({ children }: { children: ReactNode }) {
   return (
-    <h2 id={slug(textOf(children))} className="scroll-mt-28 text-2xl leading-tight sm:text-[1.75rem]">
+    <h2 id={slug(textOf(children))} className="scroll-mt-24 text-xl leading-tight sm:text-2xl">
       {children}
     </h2>
   );
 }
 
 export function LegalP({ children }: { children: ReactNode }) {
-  return <p className="mt-4 text-[1.0625rem] leading-[1.7] text-ink sm:text-lg">{children}</p>;
+  return <p className="mt-3 text-base leading-[1.7] text-ink sm:text-[17px]">{children}</p>;
 }
 
 export function LegalUL({ children }: { children: ReactNode }) {
   return (
-    <ul className="mt-4 list-disc space-y-2.5 pl-6 text-[1.0625rem] leading-[1.7] text-ink marker:text-ink-subtle sm:text-lg">
+    <ul className="mt-3 list-disc space-y-2 pl-6 text-base leading-[1.7] text-ink marker:text-ink-subtle sm:text-[17px]">
       {children}
     </ul>
   );
@@ -93,16 +93,16 @@ export function LegalPage({
   return (
     <>
       {banner}
-      <Band tone="deep" className="border-b border-line" innerClassName="py-14 sm:py-20 lg:py-24">
+      <Band tone="deep" className="border-b border-line" innerClassName="py-12 sm:py-16">
         <Eyebrow>Legal</Eyebrow>
-        <h1 className="mt-5 text-[2.6rem] leading-[1] tracking-display sm:text-6xl xl:text-[4.5rem]">{title}</h1>
-        <p className="mt-5 font-mono text-sm text-ink-muted">{updated}</p>
+        <h1 className={`mt-4 ${H1}`}>{title}</h1>
+        <p className="mt-4 font-mono text-sm text-ink-muted">{updated}</p>
       </Band>
 
       <Band tone="canvas" innerClassName="py-12 sm:py-16 lg:py-20">
         <div className="grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-16 xl:gap-24">
           <aside className="hidden lg:block">
-            <nav aria-label="On this page" className="sticky top-28 max-h-[calc(100svh-8rem)] overflow-y-auto pr-2">
+            <nav aria-label="On this page" className="sticky top-24 max-h-[calc(100svh-8rem)] overflow-y-auto pr-2">
               <p className="label-caps mb-3 text-ink-muted">On this page</p>
               <TocList headings={headings} />
             </nav>
@@ -123,15 +123,14 @@ export function LegalPage({
               </nav>
             </details>
 
-            <article className="max-w-[70ch] text-lg">{children}</article>
+            <article className="max-w-[70ch] text-[17px]">{children}</article>
           </div>
         </div>
       </Band>
 
       <Band tone="surface" className="border-t border-line" innerClassName="flex flex-col gap-6 py-12 sm:flex-row sm:items-center sm:justify-between lg:py-16">
         <div data-legal-chrome>
-          <p className="font-display text-2xl font-semibold sm:text-3xl">Questions about this page?</p>
-          <p className="mt-2 text-lg text-ink-muted">Send us a note and we&apos;ll reply personally.</p>
+          <p className="font-display text-xl font-semibold sm:text-2xl">Questions about this page?</p>
         </div>
         <ButtonLink href="/contact" variant="primary" size="cta" className="w-full sm:w-auto">
           Contact us

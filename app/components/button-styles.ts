@@ -50,8 +50,8 @@ const VARIANT: Record<ButtonVariant, string> = {
 const SIZE: Record<ButtonSize, string> = {
   sm: "h-10 px-4 text-xs gap-1.5",
   md: "h-12 px-5 text-sm gap-2",
-  lg: "h-14 px-7 text-lg gap-2.5",
-  cta: "h-12 px-[22px] text-[17px] gap-2",
+  lg: "h-12 px-6 text-base gap-2",
+  cta: "h-11 px-5 text-[15px] gap-2",
 };
 
 // The big marketing buttons get a soft shadow and a 1px lift on hover

@@ -37,8 +37,8 @@ export function Logo({
   /** Height of the mark in px. The wordmark scales with it. */
   height?: number;
   /**
-   * Brand-header preset: a 46px mark and 28px wordmark from sm up, 36px and
-   * 22px on phones. Overrides `height`. Used by the marketing nav and
+   * Brand-header preset: a 36px mark and 22px wordmark from sm up, 32px and
+   * 20px on phones. Overrides `height`. Used by the marketing nav and
    * footer, auth pages and the contractor upload page.
    */
   size?: "brand";
@@ -62,15 +62,15 @@ export function Logo({
         <Image
           src={MARK[tone]}
           alt={iconOnly ? "Subbies" : ""}
-          width={46}
-          height={46}
+          width={36}
+          height={36}
           priority={priority}
-          className="block h-9 w-9 shrink-0 object-contain sm:h-[46px] sm:w-[46px]"
+          className="block h-8 w-8 shrink-0 object-contain sm:h-9 sm:w-9"
         />
         {!iconOnly && (
           <span className="flex flex-col justify-center leading-none">
             <span
-              className={`font-display text-[22px] font-semibold tracking-[-0.02em] stretch-wide sm:text-[28px] ${
+              className={`font-display text-xl font-semibold tracking-[-0.02em] stretch-wide sm:text-[22px] ${
                 tone === "inverse" ? "text-sidebar-ink" : "text-ink"
               }`}
             >

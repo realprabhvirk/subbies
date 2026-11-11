@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Check, X } from "lucide-react";
 
-import { Band, Section, Eyebrow, CtaBand, FaqList, SectionHead } from "../_components/ui";
+import { Band, Section, CtaBand, FaqList, SectionHead, H1 } from "../_components/ui";
+import { InView } from "../_components/motion";
 import { ButtonLink } from "@/app/components/button";
 import {
   FEATURE_LABEL,
@@ -92,12 +93,12 @@ const FAQ = [
   },
 ];
 
-const CELL = "h-14 px-5 py-3 align-middle";
+const CELL = "h-12 px-5 py-2.5 align-middle";
 
 function Yes() {
   return (
     <span className="inline-flex items-center gap-2 font-medium">
-      <Check className="h-5 w-5 text-brand" strokeWidth={2.5} aria-hidden />
+      <Check className="h-4 w-4 text-brand" strokeWidth={2.5} aria-hidden />
       Yes
     </span>
   );
@@ -106,7 +107,7 @@ function Yes() {
 function No() {
   return (
     <span className="inline-flex items-center gap-2 text-ink-muted">
-      <X className="h-5 w-5 text-ink-subtle" strokeWidth={2.5} aria-hidden />
+      <X className="h-4 w-4 text-ink-subtle" strokeWidth={2.5} aria-hidden />
       No
     </span>
   );
@@ -125,30 +126,21 @@ function GroupRow({ label }: { label: string }) {
 export default function PricingPage() {
   return (
     <>
-      <Section className="py-14 sm:py-20 lg:py-24">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)] lg:items-end lg:gap-20">
-          <div>
-            <Eyebrow>Pricing</Eyebrow>
-            <h1 className="mt-5 max-w-[18ch] text-balance text-[2.6rem] leading-[0.98] tracking-display sm:text-6xl xl:text-[4.5rem]">
-              One monthly price. No per-contractor fees.
-            </h1>
-          </div>
-          <p className="max-w-[62ch] text-lg text-ink-muted sm:text-xl">
-            Pick a plan by the size of your operation. Every plan starts with a{" "}
-            {TRIAL_DAYS}-day free trial. Nothing is charged until day{" "}
-            {TRIAL_DAYS}.
-          </p>
-        </div>
+      <Section className="py-14 sm:py-20">
+        <h1 className={`rise max-w-[18ch] text-balance ${H1}`}>One monthly price. No per-contractor fees.</h1>
+        <p className="rise mt-5 text-lg text-ink-muted [--anim-delay:120ms]">
+          {TRIAL_DAYS} days free on every plan.
+        </p>
       </Section>
 
-      <Section className="pb-16 lg:pb-24">
+      <Section className="pb-16 lg:pb-20">
         {/* Three equal-height cards; the button sits on each card's floor so
             all three line up whatever the feature count. */}
         <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-3 lg:gap-8">
-          {TIERS.map((tier) => (
+          {TIERS.map((tier, i) => (
+            <InView key={tier.id} delay={i * 100} className="flex">
             <div
-              key={tier.id}
-              className={`relative flex flex-col overflow-hidden rounded-card border bg-surface p-7 sm:p-9 ${
+              className={`relative flex flex-1 flex-col overflow-hidden rounded-card border bg-surface p-6 sm:p-8 ${
                 tier.featured ? "border-brand shadow-lg ring-1 ring-brand" : "border-line"
               }`}
             >
@@ -157,27 +149,27 @@ export default function PricingPage() {
               ) : (
                 <p aria-hidden className="label-caps invisible mb-3 hidden lg:block">&nbsp;</p>
               )}
-              <h2 className="text-2xl sm:text-[1.75rem]">{tier.name}</h2>
-              <p className="mt-3 min-h-14 text-base text-ink-muted sm:text-lg">{tier.blurb}</p>
-              <p className="mt-7 flex items-baseline gap-2">
-                <span className="figure text-[3.5rem] leading-none">A${tier.amount}</span>
+              <h2 className="text-xl sm:text-2xl">{tier.name}</h2>
+              <p className="mt-2 min-h-12 text-base text-ink-muted">{tier.blurb}</p>
+              <p className="mt-6 flex items-baseline gap-2">
+                <span className="figure text-5xl leading-none">A${tier.amount}</span>
                 <span className="text-base text-ink-muted">/ month</span>
               </p>
-              <ul className="mt-8 divide-y divide-line border-y border-line text-base">
+              <ul className="mt-7 divide-y divide-line border-y border-line text-[15px]">
                 {tier.features.map((f) => (
-                  <li key={f} className="flex items-start gap-3 py-3">
-                    <Check className="mt-0.5 h-5 w-5 shrink-0 text-brand" strokeWidth={2.5} aria-hidden />
+                  <li key={f} className="flex items-start gap-2.5 py-2.5">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand" strokeWidth={2.5} aria-hidden />
                     <span>{f}</span>
                   </li>
                 ))}
                 {tier.comingSoon.map((f) => (
-                  <li key={f} className="flex items-start justify-between gap-3 py-3 text-ink-muted">
+                  <li key={f} className="flex items-start justify-between gap-3 py-2.5 text-ink-muted">
                     <span>{f}</span>
                     <ComingSoon />
                   </li>
                 ))}
               </ul>
-              <div className="mt-auto pt-9">
+              <div className="mt-auto pt-8">
                 <ButtonLink
                   href="/signup"
                   variant={tier.featured ? "primary" : "outline"}
@@ -188,27 +180,23 @@ export default function PricingPage() {
                 </ButtonLink>
               </div>
             </div>
+            </InView>
           ))}
         </div>
-        <p className="mt-7 max-w-[62ch] text-base text-ink-muted sm:text-lg">
-          {TRIAL_DAYS} days free on any plan. You enter a card at signup but
-          nothing is charged until day {TRIAL_DAYS}. Cancel before then and you
-          pay nothing. Nothing is ever deleted.
-        </p>
       </Section>
 
       {/* Comparison. On a phone the table scrolls sideways inside its own
           box; from lg the box stops clipping so the header can stick under
           the nav while the rows scroll past. */}
       <Band tone="surface" bordered innerClassName="py-section">
-        <SectionHead label="Compare plans" title="Everything side by side." />
-        <div className="relative mt-12 w-full min-w-0 max-w-full overflow-x-auto rounded-card border border-line bg-surface lg:overflow-visible">
-          <table className="w-full min-w-[640px] border-separate border-spacing-0 text-[17px]">
+        <SectionHead label="Compare plans" title="Side by side." />
+        <div className="relative mt-10 w-full min-w-0 max-w-full overflow-x-auto rounded-card border border-line bg-surface lg:overflow-visible">
+          <table className="w-full min-w-[640px] border-separate border-spacing-0 text-[15px]">
             <thead>
               <tr>
                 <th
                   scope="col"
-                  className={`${CELL} label-caps border-b border-line-strong bg-surface-muted text-left text-ink-muted lg:sticky lg:top-20 lg:z-10 lg:rounded-tl-card`}
+                  className={`${CELL} label-caps border-b border-line-strong bg-surface-muted text-left text-ink-muted lg:sticky lg:top-[72px] lg:z-10 lg:rounded-tl-card`}
                 >
                   Plan
                 </th>
@@ -216,7 +204,7 @@ export default function PricingPage() {
                   <th
                     key={t.id}
                     scope="col"
-                    className={`${CELL} border-b border-line-strong bg-surface-muted text-left font-display text-lg font-semibold lg:sticky lg:top-20 lg:z-10 ${
+                    className={`${CELL} border-b border-line-strong bg-surface-muted text-left font-display text-base font-semibold lg:sticky lg:top-[72px] lg:z-10 ${
                       t.featured ? "text-brand" : ""
                     } ${i === TIERS.length - 1 ? "lg:rounded-tr-card" : ""}`}
                   >
@@ -284,7 +272,7 @@ export default function PricingPage() {
 
       <CtaBand
         heading="Not sure which plan fits?"
-        sub={`Start with ${TRIAL_DAYS} days free. You can change plan any time, and everything you set up carries over.`}
+        sub="Change plan any time. Everything you set up carries over."
       />
     </>
   );

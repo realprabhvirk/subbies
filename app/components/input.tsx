@@ -11,14 +11,14 @@ import { type InputHTMLAttributes } from "react";
  */
 
 /**
- * md is the app's field. lg is the pre-signup field (auth, contact): 56px
- * tall with 17px text, for forms people fill in once, often on a phone.
+ * md is the app's field. lg is the pre-signup field (auth, contact): 52px
+ * tall with 16px text, for forms people fill in once, often on a phone.
  */
 export type FieldSize = "md" | "lg";
 
 const FIELD_SIZE: Record<FieldSize, string> = {
   md: "min-h-12 text-sm",
-  lg: "min-h-14 text-[17px]",
+  lg: "min-h-[52px] text-base",
 };
 
 export function fieldClasses(invalid = false, className = "", size: FieldSize = "md"): string {
@@ -51,7 +51,7 @@ export function Field({
   return (
     <div className={lg ? "space-y-2" : "space-y-1.5"}>
       {label && (
-        <label htmlFor={htmlFor} className={`block font-semibold text-ink ${lg ? "text-base" : "text-sm"}`}>
+        <label htmlFor={htmlFor} className="block text-sm font-semibold text-ink">
           {label}
         </label>
       )}

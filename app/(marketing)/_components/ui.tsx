@@ -28,7 +28,13 @@ export function Reveal({
  * The one marketing content width: 1440px max, fluid side padding. Nav,
  * every section and the footer use it, so edges line up on every screen.
  */
-export const CONTAINER = "mx-auto w-full min-w-0 max-w-[90rem] px-6 sm:px-10 lg:px-16";
+export const CONTAINER = "mx-auto w-full min-w-0 max-w-[90rem] px-5 sm:px-8 lg:px-14";
+
+/** Page title size, shared so every public page reads at the same scale. */
+export const H1 = "text-[2.375rem] leading-[1.04] tracking-display sm:text-5xl lg:text-[3.5rem]";
+
+/** Section heading size. */
+export const H2 = "text-[1.875rem] leading-[1.1] tracking-display sm:text-[2.5rem]";
 
 export function Container({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <div className={`${CONTAINER} ${className}`}>{children}</div>;
@@ -116,8 +122,8 @@ export function SectionHead({
         {index && <span aria-hidden className="h-px w-8 bg-line-strong" />}
         <span className="label-caps">{label}</span>
       </p>
-      <h2 className="mt-4 text-[2.125rem] leading-[1.06] tracking-display sm:text-5xl">{title}</h2>
-      {intro && <p className="mt-5 max-w-[62ch] text-lg text-ink-muted sm:text-xl">{intro}</p>}
+      <h2 className={`mt-4 ${H2}`}>{title}</h2>
+      {intro && <p className="mt-4 max-w-[56ch] text-lg text-ink-muted">{intro}</p>}
     </div>
   );
 }
@@ -169,7 +175,7 @@ export function SecondaryLink({
  */
 export function CtaBand({
   heading = "Stop chasing paperwork",
-  sub = "Set up your document checklist and send your first onboarding request in a few minutes.",
+  sub = "Send your first onboarding request in a few minutes.",
   secondary = { href: "/how-it-works", label: "See how it works" },
 }: {
   heading?: string;
@@ -180,8 +186,8 @@ export function CtaBand({
     <Band tone="navy" innerClassName="py-section">
       <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div className="max-w-2xl">
-          <h2 className="text-[2.125rem] leading-[1.05] tracking-display text-sidebar-ink sm:text-5xl">{heading}</h2>
-          <p className="mt-4 max-w-[62ch] text-lg text-sidebar-ink-muted sm:text-xl">{sub}</p>
+          <h2 className={`${H2} text-sidebar-ink`}>{heading}</h2>
+          <p className="mt-3 max-w-[52ch] text-lg text-sidebar-ink-muted">{sub}</p>
         </div>
         <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
           <ButtonLink href="/signup" variant="inverse" size="lg" className="group w-full sm:w-auto">
@@ -212,16 +218,16 @@ export function FaqList({ items, className = "" }: { items: { q: string; a: stri
     <div className={`divide-y divide-line border-y border-line ${className}`}>
       {items.map((item) => (
         <details key={item.q} className="group">
-          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-6 rounded-md py-5 text-lg font-semibold sm:text-xl [&::-webkit-details-marker]:hidden">
+          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-6 rounded-md py-4 text-base font-semibold sm:text-lg [&::-webkit-details-marker]:hidden">
             {item.q}
             <span
               aria-hidden
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line-strong text-brand transition-transform duration-[var(--duration-fast)] group-open:rotate-45 motion-reduce:transition-none"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line-strong text-brand transition-transform duration-[var(--duration-fast)] group-open:rotate-45 motion-reduce:transition-none"
             >
               <Plus className="h-5 w-5" strokeWidth={2.25} />
             </span>
           </summary>
-          <p className="max-w-[62ch] pb-6 pr-14 text-lg text-ink-muted">{item.a}</p>
+          <p className="max-w-[60ch] pb-5 pr-12 text-base text-ink-muted sm:text-[17px]">{item.a}</p>
         </details>
       ))}
     </div>
