@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 
 import { createClient } from "@/lib/supabase/server";
 import { getCompany } from "@/lib/supabase/dal";
-import { canAddProject } from "@/lib/billing/entitlements";
-import { hasComplianceIssue } from "@/lib/projects";
-import type { ContractorStatus, ProjectStatus } from "@/lib/types";
+import { canAddProject, getSubscriptionRow } from "@/lib/billing/entitlements";
+import { can, isPlanId } from "@/lib/billing/plans";
+import { computeProjectCompliance } from "@/lib/compliance/project";
+import { loadComplianceInputs } from "@/lib/projects/compliance-data";
+import { complianceToday } from "@/lib/time/compliance-today";
+import type { ProjectStatus } from "@/lib/types";
 import {
   ProjectsManager,
   type ProjectListItem,
@@ -53,31 +56,25 @@ export default async function ProjectsPage() {
     end_date: string | null;
   }[];
 
-  // Active assignments + the assigned contractor's status, in one query.
+  // Compliance per project from the one engine (three queries for all of
+  // them): issues = assigned contractors not cleared for that project.
   const counts = new Map<string, { total: number; issues: number }>();
   if (projects.length > 0) {
-    const { data: assignments } = await supabase
-      .from("project_contractors")
-      .select("project_id, contractors(status, archived_at)")
-      .in(
-        "project_id",
-        projects.map((p) => p.id),
-      )
-      .is("removed_at", null);
-
-    for (const row of (assignments ?? []) as unknown as {
-      project_id: string;
-      contractors: { status: ContractorStatus; archived_at: string | null } | null;
-    }[]) {
-      // Archived contractors keep their assignment (restoring brings it
-      // back) but don't count towards the project.
-      if (row.contractors?.archived_at != null) continue;
-      const entry = counts.get(row.project_id) ?? { total: 0, issues: 0 };
-      entry.total += 1;
-      if (row.contractors && hasComplianceIssue(row.contractors.status)) {
-        entry.issues += 1;
-      }
-      counts.set(row.project_id, entry);
+    const sub = await getSubscriptionRow(company.id);
+    const plan = isPlanId(sub?.plan) ? sub!.plan : null;
+    const { byProject } = await loadComplianceInputs(supabase, projects.map((p) => p.id));
+    const now = complianceToday();
+    for (const p of projects) {
+      const inputs = byProject.get(p.id);
+      if (!inputs) continue;
+      const r = computeProjectCompliance({
+        requirements: inputs.requirements,
+        contractors: inputs.contractors,
+        documents: inputs.documents,
+        now,
+        mode: can(plan, "requirements") ? "requirements" : "basic",
+      });
+      counts.set(p.id, { total: r.assignedCount, issues: r.assignedCount - r.clearedCount });
     }
   }
 

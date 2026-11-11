@@ -111,6 +111,7 @@ export default async function ProjectOverviewPage(props: PageProps<"/dashboard/p
                       </Link>
                     }
                     meta={item.text}
+                    wrapMeta
                     footer={<StatusBadge kind="requirement" status={item.issue} size="sm" />}
                     trailing={<StatusBadge kind="requirement" status={item.issue} />}
                     actions={action}

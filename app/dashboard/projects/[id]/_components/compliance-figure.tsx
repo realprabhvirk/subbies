@@ -14,7 +14,7 @@ export async function ComplianceFigure({ projectId }: { projectId: string }) {
     return <p className="text-sm text-ink-muted">No contractors assigned</p>;
   }
   return (
-    <div className="w-full max-w-56" aria-label={`Project compliance ${percent}%, ${clearedCount} of ${assignedCount} contractors cleared`}>
+    <div className="w-full max-w-64" aria-label={`Project compliance ${percent}%, ${clearedCount} of ${assignedCount} contractors cleared`}>
       <div className="flex items-baseline gap-2">
         <span className="figure text-5xl text-ink">{percent}%</span>
         <span className="text-sm text-ink-muted">compliant</span>

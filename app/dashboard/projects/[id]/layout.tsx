@@ -54,7 +54,7 @@ export default async function ProjectLayout({ children, params }: LayoutProps<"/
           </>
         }
         meta={
-          <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
+          <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-5">
             <div className="flex min-w-0 flex-wrap gap-x-6 gap-y-2 text-sm text-ink">
               {project.address && (
                 <span className="inline-flex min-w-0 items-center gap-1.5">

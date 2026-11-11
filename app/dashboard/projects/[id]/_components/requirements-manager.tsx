@@ -178,7 +178,6 @@ export function RequirementsManager({
         icon={ListChecks}
         tone="brand"
         title="Requirements"
-        count={requirements.length}
         subtitle="The documents every contractor on this project needs. Mandatory ones decide whether they're cleared for site."
         flush={requirements.length > 0}
       >
@@ -223,7 +222,7 @@ export function RequirementsManager({
               </select>
             </div>
             <Segmented label="New requirement: mandatory or optional" value={mandatory} onChange={setMandatory} disabled={pending} />
-            <div className="w-36 space-y-1.5">
+            <div className="w-44 space-y-1.5">
               <label htmlFor="req-min" className="block text-xs font-semibold text-ink">
                 Min. days valid <span className="font-normal text-ink-muted">(optional)</span>
               </label>

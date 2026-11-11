@@ -38,7 +38,11 @@ import { ListRow, RowList } from "@/app/components/list-row";
 import { ActionTile } from "@/app/components/action-tile";
 import { IconDisc, type DiscTone } from "@/app/components/icon-disc";
 import { DonutChart, DonutLegend, type DonutSegment } from "@/app/components/donut-chart";
-import { hasComplianceIssue } from "@/lib/projects";
+import { getSubscriptionRow } from "@/lib/billing/entitlements";
+import { can, isPlanId } from "@/lib/billing/plans";
+import { computeProjectCompliance } from "@/lib/compliance/project";
+import { loadComplianceInputs } from "@/lib/projects/compliance-data";
+import { complianceToday as complianceTodayDate } from "@/lib/time/compliance-today";
 import type { ContractorStatus, DocumentStatus } from "@/lib/types";
 import { Greeting } from "./_components/greeting";
 import { HeaderPhotoBand } from "./_components/header-photo-band";
@@ -78,7 +82,7 @@ export default async function DashboardPage() {
         .order("created_at", { ascending: false }),
       supabase
         .from("projects")
-        .select("id, project_contractors(removed_at, contractors(status, archived_at))")
+        .select("id")
         .eq("company_id", company.id)
         .neq("status", "completed"),
       loadNotifications(),
@@ -102,22 +106,24 @@ export default async function DashboardPage() {
     docs = (docData ?? []) as DocRow[];
   }
 
-  // Projects whose currently-assigned contractors include a compliance issue.
+  // Open projects with at least one assigned contractor not cleared for
+  // that project, from the one compliance engine (three queries in total).
   let projectsWithIssues = 0;
-  for (const project of (projectRows ?? []) as unknown as {
-    id: string;
-    project_contractors:
-      | {
-          removed_at: string | null;
-          contractors: { status: ContractorStatus; archived_at: string | null } | null;
-        }[]
-      | null;
-  }[]) {
-    const active = (project.project_contractors ?? []).filter(
-      (pc) => pc.removed_at === null && pc.contractors?.archived_at == null,
-    );
-    if (active.some((pc) => pc.contractors && hasComplianceIssue(pc.contractors.status))) {
-      projectsWithIssues += 1;
+  const openProjectIds = ((projectRows ?? []) as { id: string }[]).map((p) => p.id);
+  if (openProjectIds.length > 0) {
+    const sub = await getSubscriptionRow(company.id);
+    const plan = isPlanId(sub?.plan) ? sub!.plan : null;
+    const { byProject } = await loadComplianceInputs(supabase, openProjectIds);
+    const projectNow = complianceTodayDate();
+    for (const inputs of byProject.values()) {
+      const r = computeProjectCompliance({
+        requirements: inputs.requirements,
+        contractors: inputs.contractors,
+        documents: inputs.documents,
+        now: projectNow,
+        mode: can(plan, "requirements") ? "requirements" : "basic",
+      });
+      if (r.clearedCount < r.assignedCount) projectsWithIssues += 1;
     }
   }
 

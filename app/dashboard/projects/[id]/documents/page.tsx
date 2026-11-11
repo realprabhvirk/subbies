@@ -121,11 +121,11 @@ export default async function ProjectDocumentsPage(props: PageProps<"/dashboard/
         <>
           {/* Desktop table */}
           <div className="hidden overflow-x-auto rounded-card border border-line bg-surface shadow-sm md:block">
-            <table className="w-full min-w-[760px] text-sm">
+            <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-line-strong bg-surface-muted text-left">
                   {["Contractor", "Document type", "Status", "Expiry", "Reviewed", "Last updated", ""].map((h, i) => (
-                    <th key={i} scope="col" className="label-caps px-4 py-3 text-ink-muted">
+                    <th key={i} scope="col" className={`label-caps whitespace-nowrap px-4 py-3 text-ink-muted ${i === 5 ? "hidden 2xl:table-cell" : ""}`}>
                       {h || <span className="sr-only">Actions</span>}
                     </th>
                   ))}
@@ -134,7 +134,7 @@ export default async function ProjectDocumentsPage(props: PageProps<"/dashboard/
               <tbody className="divide-y divide-line">
                 {view.rows.map((r) => (
                   <tr key={r.key} className="transition-colors hover:bg-surface-muted">
-                    <td className="max-w-56 px-4 py-3">
+                    <td className="max-w-48 px-4 py-3">
                       <Link href={`/dashboard/contractors/${r.contractorId}`} className="block truncate font-semibold text-ink hover:underline">
                         {r.contractorName}
                       </Link>
@@ -153,8 +153,8 @@ export default async function ProjectDocumentsPage(props: PageProps<"/dashboard/
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-ink-muted">{fmtMoment(r.reviewedAt)}</td>
-                    <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-ink-muted">{fmtMoment(r.updatedAt)}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="hidden whitespace-nowrap px-4 py-3 font-mono text-xs text-ink-muted 2xl:table-cell">{fmtMoment(r.updatedAt)}</td>
+                    <td className="w-px whitespace-nowrap px-4 py-3 text-right">
                       <RowAction projectId={ws.project.id} row={r} />
                     </td>
                   </tr>

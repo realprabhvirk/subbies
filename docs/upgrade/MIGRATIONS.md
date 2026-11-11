@@ -5,6 +5,7 @@ Claude never applies migrations to production. Mr Virk applies each file in the 
 | # | File | Phase | Apply before |
 |---|---|---|---|
 | 0021 | `supabase/migrations/0021_plan_foundation_and_archiving.sql` | 1 | Merging Phase 1 |
+| 0022 | `supabase/migrations/0022_project_workspace.sql` | 2 | Merging Phase 2 (after 0021) |
 
 ## 0021: plan foundation and contractor archiving
 
@@ -44,4 +45,70 @@ drop function if exists public.restore_contractor(uuid);
 -- Then re-run the subbies_plan_limit, subbies_assert_can_add and
 -- assign_project_contractor definitions from 0020 Part A.
 -- Leave contractors.archived_at in place (dropping it would lose archive state).
+```
+
+## 0022: project workspace
+
+**What it does**
+
+1. Adds unique indexes on `(id, company_id)` for projects, document types and contractors. These are needed for the composite foreign keys.
+2. `project_requirements`: which document types a project needs, whether each is mandatory, and an optional minimum number of days it must stay valid.
+   - Composite FKs stop a row mixing companies.
+   - A document type that's in use can't be deleted. The FK is NO ACTION, so deleting a whole company still cascades.
+   - RLS allows company SELECT only.
+3. `project_activity`: the append-only audit log.
+   - Company SELECT only. No UPDATE or DELETE for anyone, including the service role.
+   - Event types are checked.
+   - A unique index makes `document_expired` once per project and document, so the daily job can re-run safely.
+4. `project_contractor_status`: the last known status per project and contractor. It's server-only, with no client access at all.
+5. `subbies_plan_has_feature` / `subbies_company_has_feature`. These hold the plan feature gates in SQL, between `PLAN_FEATURES_BEGIN/END` markers. A test checks them against `FEATURE_MIN_PLAN` in TypeScript.
+6. Functions:
+   - **Activity:** `record_project_activity` and `record_contractor_activity` for signed-in users. These refuse system-only event types. The `subbies_*` versions are service role only.
+   - **Requirements:** `add_project_requirement` and `update_project_requirement` require Business or above. `remove_project_requirement` works on any plan, since removing only relaxes compliance.
+   - **Status:** `sync_project_statuses`, plus `subbies_sync_project_statuses` for the service role. It records `compliance_status_changed` only on a real change. The first time a pair is seen it's stored silently, so no history is invented.
+
+**Apply order:** after 0021. **Apply before merging Phase 2.**
+- It's safe to apply before the code ships: it only adds things, and the deployed code never reads the new tables.
+- If the Phase 2 code ships before 0022, it degrades rather than breaks. Activity and status writes become silent no-ops, and requirements read as empty (basic mode).
+
+**Idempotent:** yes (`if not exists`, `create or replace`, `drop policy if exists`). Applied twice in a row on a local Postgres 16 replica. `supabase/tests/0022_project_workspace.sql` passes 40-plus checks, and the 0020 and 0021 tests still pass afterwards.
+
+**Verification query** (expect `3 | 3 | 9 | true | false`):
+
+```sql
+select
+  (select count(*) from information_schema.tables
+    where table_schema = 'public'
+      and table_name in ('project_requirements', 'project_activity', 'project_contractor_status')) as tables,
+  (select count(*) from pg_indexes
+    where schemaname = 'public'
+      and indexname in ('projects_id_company_uniq', 'document_types_id_company_uniq', 'contractors_id_company_uniq')) as uniq_indexes,
+  (select count(*) from pg_proc
+    where pronamespace = 'public'::regnamespace
+      and proname in ('subbies_plan_has_feature', 'subbies_company_has_feature', 'subbies_insert_project_activity',
+                      'record_project_activity', 'subbies_record_contractor_activity', 'record_contractor_activity',
+                      'add_project_requirement', 'update_project_requirement', 'remove_project_requirement')) as functions,
+  public.subbies_plan_has_feature('business', 'requirements') as business_has_requirements,
+  public.subbies_plan_has_feature('starter', 'requirements') as starter_has_requirements;
+```
+
+**Rollback** (drops Phase 2 data: requirements, activity and the status ledger; only if really needed):
+
+```sql
+drop function if exists public.sync_project_statuses(jsonb);
+drop function if exists public.subbies_sync_project_statuses(uuid, jsonb, uuid);
+drop function if exists public.subbies_status_label(text);
+drop function if exists public.remove_project_requirement(uuid);
+drop function if exists public.update_project_requirement(uuid, boolean, integer);
+drop function if exists public.add_project_requirement(uuid, uuid, boolean, integer);
+drop function if exists public.record_contractor_activity(uuid, text, text, uuid, jsonb);
+drop function if exists public.subbies_record_contractor_activity(uuid, uuid, text, text, uuid, uuid, jsonb);
+drop function if exists public.record_project_activity(uuid, text, text, uuid, uuid, jsonb);
+drop function if exists public.subbies_insert_project_activity(uuid, uuid, text, text, uuid, uuid, uuid, jsonb);
+drop function if exists public.subbies_company_has_feature(uuid, text);
+drop function if exists public.subbies_plan_has_feature(text, text);
+drop table if exists public.project_contractor_status;
+drop table if exists public.project_activity;
+drop table if exists public.project_requirements;
+-- The three (id, company_id) unique indexes are harmless to keep.
 ```

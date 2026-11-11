@@ -40,6 +40,7 @@ export function ListRow({
   actions,
   footer,
   wrapTitle = false,
+  wrapMeta = false,
   className = "",
 }: {
   href?: string;
@@ -51,6 +52,8 @@ export function ListRow({
   footer?: React.ReactNode;
   /** Let the title run to two lines instead of truncating (messages, not names). */
   wrapTitle?: boolean;
+  /** Let the meta line wrap to two lines (when it carries the key information). */
+  wrapMeta?: boolean;
   className?: string;
 }) {
   const titleClass = wrapTitle ? "line-clamp-2 break-words" : "truncate";
@@ -72,7 +75,7 @@ export function ListRow({
         ) : (
           <span className={`block ${titleClass} text-sm font-semibold text-ink`}>{title}</span>
         )}
-        {meta && <span className="mt-0.5 block truncate text-xs text-ink-muted">{meta}</span>}
+        {meta && <span className={`mt-0.5 block text-xs text-ink-muted ${wrapMeta ? "line-clamp-2 break-words" : "truncate"}`}>{meta}</span>}
         {footer && (
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 md:hidden">
             {footer}
