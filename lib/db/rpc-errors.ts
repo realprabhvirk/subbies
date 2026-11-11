@@ -10,7 +10,9 @@ export type SubbiesRpcCode =
   | "SUBBIES_LIMIT_REACHED"
   | "SUBBIES_INVALID_INPUT"
   | "SUBBIES_UNKNOWN_DOCUMENT_TYPE"
-  | "SUBBIES_NOT_FOUND";
+  | "SUBBIES_NOT_FOUND"
+  | "SUBBIES_FEATURE_NOT_IN_PLAN"
+  | "SUBBIES_ALREADY_REQUIRED";
 
 const CODES: readonly SubbiesRpcCode[] = [
   "SUBBIES_NO_COMPANY",
@@ -19,6 +21,8 @@ const CODES: readonly SubbiesRpcCode[] = [
   "SUBBIES_INVALID_INPUT",
   "SUBBIES_UNKNOWN_DOCUMENT_TYPE",
   "SUBBIES_NOT_FOUND",
+  "SUBBIES_FEATURE_NOT_IN_PLAN",
+  "SUBBIES_ALREADY_REQUIRED",
 ];
 
 export function subbiesRpcCode(error: { message?: string | null } | null | undefined): SubbiesRpcCode | null {
@@ -28,7 +32,7 @@ export function subbiesRpcCode(error: { message?: string | null } | null | undef
 
 export function rpcErrorMessage(
   error: { message?: string | null } | null | undefined,
-  what: "contractors" | "document types" | "projects" | "assignment",
+  what: "contractors" | "document types" | "projects" | "assignment" | "requirements",
 ): string {
   switch (subbiesRpcCode(error)) {
     case "SUBBIES_NO_COMPANY":
@@ -43,6 +47,10 @@ export function rpcErrorMessage(
       return "One of the selected documents is no longer available. Refresh and try again.";
     case "SUBBIES_NOT_FOUND":
       return "Couldn't find that project or contractor. Refresh and try again.";
+    case "SUBBIES_FEATURE_NOT_IN_PLAN":
+      return "That isn't included in your plan. Upgrade in Settings → Billing to use it.";
+    case "SUBBIES_ALREADY_REQUIRED":
+      return "That document type is already a requirement on this project.";
     default:
       return "Something went wrong. Try again.";
   }

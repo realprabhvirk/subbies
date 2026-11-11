@@ -117,7 +117,13 @@ export const FEATURE_LABEL: Record<PlanFeature, string> = {
  * marketing and is never sold as available. Each later phase adds its
  * feature here when it ships.
  */
-export const SHIPPED_FEATURES: readonly PlanFeature[] = ["projectCompliance"];
+export const SHIPPED_FEATURES: readonly PlanFeature[] = [
+  "projectCompliance",
+  // Phase 2: project workspace.
+  "requirements",
+  "documentRegister",
+  "activityView",
+];
 
 export function isShipped(feature: PlanFeature): boolean {
   return SHIPPED_FEATURES.includes(feature);

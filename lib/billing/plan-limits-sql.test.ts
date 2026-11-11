@@ -10,7 +10,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
-import { PLANS } from "./plans.ts";
+import { PLANS, FEATURE_MIN_PLAN } from "./plans.ts";
 import { ACCESS_STATUSES } from "./access-statuses.ts";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -82,4 +82,13 @@ test("the SQL limit check counts what countResource counts (D8)", () => {
   const ts = readFileSync(path.join(ROOT, "lib/billing/entitlements.ts"), "utf8");
   assert.match(ts, /resource === "contractors"\) query = query\.is\("archived_at", null\)/);
   assert.match(ts, /resource === "projects"\) query = query\.neq\("status", "completed"\)/);
+});
+
+test("plan feature gates match the latest subbies_plan_has_feature", () => {
+  const { file, sql } = latestDefining("PLAN_FEATURES_BEGIN");
+  const block = sql.slice(sql.indexOf("PLAN_FEATURES_BEGIN"), sql.indexOf("PLAN_FEATURES_END"));
+  assert.ok(block.length > 0, `PLAN_FEATURES markers not found in ${file}`);
+  const fromSql: Record<string, string> = {};
+  for (const m of block.matchAll(/\('(\w+)',\s*'(\w+)'\)/g)) fromSql[m[1]] = m[2];
+  assert.deepEqual(fromSql, { ...FEATURE_MIN_PLAN });
 });
