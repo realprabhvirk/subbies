@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Plus } from "lucide-react";
 
 import { ButtonLink } from "@/app/components/button";
 
@@ -200,5 +200,30 @@ export function CtaBand({
         </div>
       </div>
     </Band>
+  );
+}
+
+/**
+ * Question-and-answer accordion. Native <details>, so it works without
+ * JavaScript, opens with Enter or Space, and find-in-page reaches answers.
+ */
+export function FaqList({ items, className = "" }: { items: { q: string; a: string }[]; className?: string }) {
+  return (
+    <div className={`divide-y divide-line border-y border-line ${className}`}>
+      {items.map((item) => (
+        <details key={item.q} className="group">
+          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-6 rounded-md py-5 text-lg font-semibold sm:text-xl [&::-webkit-details-marker]:hidden">
+            {item.q}
+            <span
+              aria-hidden
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line-strong text-brand transition-transform duration-[var(--duration-fast)] group-open:rotate-45 motion-reduce:transition-none"
+            >
+              <Plus className="h-5 w-5" strokeWidth={2.25} />
+            </span>
+          </summary>
+          <p className="max-w-[62ch] pb-6 pr-14 text-lg text-ink-muted">{item.a}</p>
+        </details>
+      ))}
+    </div>
   );
 }
