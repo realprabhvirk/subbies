@@ -31,8 +31,9 @@ export interface PlanLimits {
 export type LimitedResource = keyof PlanLimits;
 
 /**
- * Everything limitFor() answers. `seats` and `photos` are config only until
- * their phases ship (team and photos); nothing counts them yet.
+ * Everything limitFor() answers. `seats` is config only until the team phase
+ * ships. `photos` is the per-project slot count (3 on every plan); the SQL
+ * PHOTO_SLOTS marker in 0023 enforces it server-side.
  */
 export type LimitResource = LimitedResource | "seats" | "photos";
 
@@ -123,6 +124,9 @@ export const SHIPPED_FEATURES: readonly PlanFeature[] = [
   "requirements",
   "documentRegister",
   "activityView",
+  // Phase 3: project location and jobsite photos (every plan).
+  "map",
+  "photos",
 ];
 
 export function isShipped(feature: PlanFeature): boolean {
@@ -182,6 +186,8 @@ export const PLAN_CONFIG: Record<PlanId, PlanConfig> = {
       "Review, approve and reject",
       "Expiry reminders",
       "Compliance status per project",
+      "Project map and location",
+      "3 jobsite photos per project",
     ],
     comingSoon: comingSoonAt("starter"),
   },

@@ -7,6 +7,7 @@ import { Crosshair, MapPin, RotateCcw, Search } from "lucide-react";
 
 import { Button } from "@/app/components/button";
 import { fieldClasses } from "@/app/components/input";
+import { permanentGeocodeWith } from "@/lib/mapbox/geocode";
 import { saveProjectLocation, clearProjectLocation } from "../location-actions";
 
 export interface SavedLocation {
@@ -252,7 +253,19 @@ export default function LocationPicker({
     start(async () => {
       if (!pin) return setError("Place the pin on the map first.");
       setError(null);
-      const r = await saveProjectLocation(projectId, { address, lat: pin.lat, lng: pin.lng, placeId, manual });
+      // A searched address is confirmed here with permanent geocoding and
+      // the public token (Mapbox only allows storing permanent results).
+      // The pin moves to the confirmed point. If this fails, the server
+      // tries with its own token when one is configured.
+      let confirmed: { lat: number; lng: number; mapboxId: string | null } | null = null;
+      if (!manual && address.trim()) {
+        const r = await permanentGeocodeWith(token, address, pin);
+        if (r.ok) {
+          confirmed = { lat: r.lat, lng: r.lng, mapboxId: r.mapboxId };
+          placePin(r.lat, r.lng, { byHand: false });
+        }
+      }
+      const r = await saveProjectLocation(projectId, { address, lat: pin.lat, lng: pin.lng, placeId, manual, confirmed });
       if (!r.ok) return setError(r.error);
       onDone();
     });
