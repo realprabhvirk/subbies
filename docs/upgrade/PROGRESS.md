@@ -7,9 +7,9 @@ Start each session with: "Continue the Subbies upgrade from `docs/upgrade/PROGRE
 | Phase | Branch | Status |
 |---|---|---|
 | 0 Audit | `feature/upgrade-p1-foundation` | Done. See `PLAN.md`. |
-| 1 Foundation | `feature/upgrade-p1-foundation` | Done, pushed, not merged. **Apply migration 0021 before merging.** |
-| 2 Project workspace | `feature/upgrade-p2-project-workspace` (branched from the Phase 1 branch, which isn't merged) | Done, pushed, not merged. **Apply 0021 then 0022 before merging.** Merge Phase 1 first, or merge this branch (it contains Phase 1). |
-| 3 onwards | | Not started |
+| 1 Foundation | `feature/upgrade-p1-foundation` | Done. Merged to `main` 2026-11-11 (0021 applied first). |
+| 2 Project workspace | `feature/upgrade-p2-project-workspace` (branched from the Phase 1 branch, which isn't merged) | Done. Merged to `main` 2026-11-11 (0021 and 0022 applied and verified first). |
+| 3 Location and photos | `feature/upgrade-p3-location-photos` (branch from `main`) | Not started. Needs the two Mapbox tokens. |
 
 ## Before merging Phase 1
 
