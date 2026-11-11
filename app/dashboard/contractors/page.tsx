@@ -305,7 +305,7 @@ export default async function ContractorsPage(
                           <span className="flex w-52 justify-start">
                             <StatusBadge kind="contractor" status={c.status} />
                           </span>
-                          <span className="hidden w-36 font-mono text-xs text-ink-muted xl:block">{added}</span>
+                          <span className="hidden w-44 whitespace-nowrap font-mono text-xs text-ink-muted xl:block">{added}</span>
                         </>
                       }
                       actions={canResend ? <ResendButton contractorId={c.id} /> : undefined}

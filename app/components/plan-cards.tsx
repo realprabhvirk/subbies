@@ -46,10 +46,12 @@ export function PlanCards({
           {plan.featured && (
             <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-brand" />
           )}
-          <div className="flex items-baseline justify-between gap-3">
-            <h4 className="text-lg font-semibold">{plan.name}</h4>
-            {plan.tag && <span className="label-caps text-brand">{plan.tag}</span>}
-          </div>
+          {plan.tag ? (
+            <p className="label-caps mb-2 text-brand">{plan.tag}</p>
+          ) : (
+            <p aria-hidden className="label-caps invisible mb-2 hidden lg:block">&nbsp;</p>
+          )}
+          <h4 className="text-lg font-semibold">{plan.name}</h4>
           <p className="mt-1.5 min-h-12 text-sm text-ink-muted">{plan.blurb}</p>
           <p className="mt-5 flex items-baseline gap-1.5">
             <span className="figure text-5xl text-ink">A${plan.amount}</span>

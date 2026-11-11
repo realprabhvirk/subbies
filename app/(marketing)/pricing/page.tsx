@@ -93,10 +93,14 @@ export default function PricingPage() {
               {tier.featured && (
                 <span aria-hidden className="absolute inset-x-0 top-0 h-1 bg-brand" />
               )}
-              <div className="flex items-baseline justify-between gap-3">
-                <h2 className="text-xl">{tier.name}</h2>
-                {tier.tag && <span className="label-caps text-brand">{tier.tag}</span>}
-              </div>
+              {/* The tag sits above the name; the other cards keep the same
+                  height on desktop so prices and buttons line up. */}
+              {tier.tag ? (
+                <p className="label-caps mb-2 text-brand">{tier.tag}</p>
+              ) : (
+                <p aria-hidden className="label-caps invisible mb-2 hidden lg:block">&nbsp;</p>
+              )}
+              <h2 className="text-xl">{tier.name}</h2>
               <p className="mt-2 min-h-12 text-sm text-ink-muted">{tier.blurb}</p>
               <p className="mt-6 flex items-baseline gap-1.5">
                 <span className="figure text-6xl">A${tier.amount}</span>
