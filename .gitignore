@@ -46,3 +46,6 @@ next-env.d.ts
 # Design system reference export (unzipped for reference, not app code)
 /design-reference/
 design-audit/
+
+# graphify knowledge graph (rebuilt locally, never committed)
+graphify-out/
