@@ -26,6 +26,7 @@ import { getCompany } from "@/lib/supabase/dal";
 import { complianceTodayUtcMs } from "@/lib/time/compliance-today";
 import { bucketContractors, EXPIRING_WINDOW_DAYS } from "@/lib/dashboard-buckets";
 import { relativeTime } from "@/lib/relative-time";
+import { balanceColumns } from "@/lib/balance-columns";
 import { StatusBadge } from "@/app/components/status-badge";
 import { Alert } from "@/app/components/alert";
 import { ButtonLink } from "@/app/components/button";
@@ -197,6 +198,184 @@ export default async function DashboardPage() {
     awaiting_review: { tone: "pending", icon: Clock },
   };
 
+  // --- Card layout. Heights are rough estimates in px, only used to decide
+  // which column a card goes in (lib/balance-columns.ts).
+  type CardKey = "needs" | "overview" | "expiring" | "recent" | "quick";
+  const CARD_ORDER: CardKey[] = ["needs", "overview", "expiring", "recent", "quick"];
+  const cards: Record<CardKey, React.ReactNode> = {
+    needs: (
+      <>
+          {total === 0 ? (
+            <GettingStarted />
+          ) : (
+            <SectionCard
+              id="needs-you"
+              icon={TriangleAlert}
+              tone="expired"
+              title="Needs you"
+              count={queue.length}
+              subtitle="Most urgent first."
+              action={{ href: "/dashboard/contractors", label: "All contractors" }}
+              flush
+            >
+              {queue.length === 0 ? (
+                <div className="flex flex-col items-center border-t border-line px-6 py-14 text-center">
+                  <IconDisc icon={CircleCheck} tone="approved" size="lg" />
+                  <p className="mt-5 font-display text-card-title font-semibold">Nothing needs you right now</p>
+                  <p className="mt-2 max-w-sm text-sm text-ink-muted">
+                    No documents to review and nothing has expired.
+                  </p>
+                </div>
+              ) : (
+                <RowList>
+                  {queue.map((c) => {
+                    const status = effectiveStatus(c);
+                    const disc = QUEUE_DISC[status];
+                    return (
+                      <ListRow
+                        key={c.id}
+                        href={`/dashboard/contractors/${c.id}`}
+                        leading={
+                          disc ? <IconDisc icon={disc.icon} tone={disc.tone} size="sm" /> : undefined
+                        }
+                        title={c.business_name}
+                        meta={
+                          <>
+                            {REASON[status]}
+                            {c.trade && <span className="hidden sm:inline"> · {c.trade}</span>}
+                          </>
+                        }
+                        trailing={
+                          // Hidden on phones: the meta line and the disc
+                          // already say it, and the title needs the width.
+                          <span className="hidden sm:inline-flex">
+                            <StatusBadge kind="contractor" status={status} />
+                          </span>
+                        }
+                      />
+                    );
+                  })}
+                </RowList>
+              )}
+            </SectionCard>
+          )}
+      </>
+    ),
+    overview: (
+          <SectionCard id="overview" icon={ChartPie} tone="brand" title="Compliance overview">
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-6">
+              <DonutChart segments={segments} centerLabel="Total contractors" className="w-44 shrink-0" />
+              <div className="min-w-56 flex-1">
+                {total === 0 ? (
+                  <div>
+                    <p className="text-sm text-ink-muted">
+                      Add your first contractor and the picture fills in here.
+                    </p>
+                    <ButtonLink href="/dashboard/contractors/new" className="mt-4">
+                      <UserPlus className="h-5 w-5" strokeWidth={2} aria-hidden />
+                      Add contractor
+                    </ButtonLink>
+                  </div>
+                ) : (
+                  <>
+                    <DonutLegend segments={segments} />
+                    <p className="mt-4 text-xs text-ink-muted">
+                      Each contractor is counted once, by their most urgent status.
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+          </SectionCard>
+    ),
+    expiring: (
+      <>
+          {total > 0 && (
+            <SectionCard
+              id="coming-up"
+              icon={CalendarClock}
+              tone="expiring"
+              title={`Expiring in the next ${EXPIRING_WINDOW_DAYS} days`}
+              flush
+            >
+              {comingUp.length === 0 ? (
+                <p className="border-t border-line px-card py-6 text-sm text-ink-muted sm:px-6">
+                  Nothing is due to expire in the next {EXPIRING_WINDOW_DAYS} days.
+                </p>
+              ) : (
+                <RowList>
+                  {comingUp.map((c) => (
+                    <ListRow
+                      key={c.id}
+                      href={`/dashboard/contractors/${c.id}`}
+                      leading={<Avatar name={c.business_name} size="sm" />}
+                      title={c.business_name}
+                      trailing={
+                        <span
+                          className={`rounded-full border px-3 py-1 font-mono text-2xs font-medium ${
+                            c.daysLeft <= 7
+                              ? "border-attention-line bg-attention-bg text-attention"
+                              : "border-line-strong bg-surface-muted text-ink-muted"
+                          }`}
+                        >
+                          {c.daysLeft === 0 ? "today" : `${c.daysLeft}d`}
+                        </span>
+                      }
+                    />
+                  ))}
+                </RowList>
+              )}
+            </SectionCard>
+          )}
+      </>
+    ),
+    recent: (
+      <>
+          {recent.length > 0 && (
+            <SectionCard
+              id="recent-activity"
+              icon={History}
+              tone="pending"
+              title="Recent activity"
+              flush
+            >
+              <RowList>
+                {recent.map((n) => (
+                  <ListRow
+                    key={n.id}
+                    href={n.contractor_id ? `/dashboard/contractors/${n.contractor_id}` : undefined}
+                    leading={<IconDisc icon={Upload} tone="neutral" size="sm" />}
+                    title={n.message}
+                    wrapTitle
+                    meta={relativeTime(n.created_at)}
+                  />
+                ))}
+              </RowList>
+            </SectionCard>
+          )}
+      </>
+    ),
+    quick: (
+          <SectionCard id="quick-actions" icon={Zap} tone="brand" title="Quick actions">
+            <div className="@container"><div className="grid grid-cols-2 gap-4 @xl:grid-cols-4">
+              <ActionTile href="/dashboard/contractors/new" icon={UserPlus} label="Add contractor" variant="primary" />
+              <ActionTile href="/dashboard/projects" icon={FolderKanban} label="Projects" />
+              <ActionTile href="/dashboard/document-types" icon={FileText} label="Document types" />
+              <ActionTile href="/dashboard/settings" icon={Settings} label="Settings" />
+            </div></div>
+          </SectionCard>
+    ),
+  };
+  const needsHeight = total === 0 ? 340 : queue.length === 0 ? 360 : 110 + queue.length * 76;
+  const rest: { key: CardKey; height: number }[] = [];
+  if (total > 0) rest.push({ key: "expiring", height: comingUp.length === 0 ? 190 : 100 + comingUp.length * 66 });
+  if (recent.length > 0) rest.push({ key: "recent", height: 100 + recent.length * 80 });
+  rest.push({ key: "quick", height: 250 });
+  const columns = balanceColumns(
+    { left: { key: "needs", height: needsHeight }, right: { key: "overview", height: total === 0 ? 480 : 560 } },
+    rest,
+  );
+
   return (
     <div className="space-y-8">
       <PageHeader
@@ -299,161 +478,21 @@ export default async function DashboardPage() {
         </Link>
       )}
 
+      {/* Two columns, but not a fixed left/right split: each card after the
+          first pair goes into whichever column is currently shorter, so
+          neither side ends early and leaves a hole. Below xl it's a single
+          column in reading order (the wrappers use display: contents and the
+          cards carry an explicit order). */}
       <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <div className="min-w-0 space-y-6">
-          {total === 0 ? (
-            <GettingStarted />
-          ) : (
-            <SectionCard
-              id="needs-you"
-              icon={TriangleAlert}
-              tone="expired"
-              title="Needs you"
-              count={queue.length}
-              subtitle="Most urgent first."
-              action={{ href: "/dashboard/contractors", label: "All contractors" }}
-              flush
-            >
-              {queue.length === 0 ? (
-                <div className="flex flex-col items-center border-t border-line px-6 py-14 text-center">
-                  <IconDisc icon={CircleCheck} tone="approved" size="lg" />
-                  <p className="mt-5 font-display text-card-title font-semibold">Nothing needs you right now</p>
-                  <p className="mt-2 max-w-sm text-sm text-ink-muted">
-                    No documents to review and nothing has expired.
-                  </p>
-                </div>
-              ) : (
-                <RowList>
-                  {queue.map((c) => {
-                    const status = effectiveStatus(c);
-                    const disc = QUEUE_DISC[status];
-                    return (
-                      <ListRow
-                        key={c.id}
-                        href={`/dashboard/contractors/${c.id}`}
-                        leading={
-                          disc ? <IconDisc icon={disc.icon} tone={disc.tone} size="sm" /> : undefined
-                        }
-                        title={c.business_name}
-                        meta={
-                          <>
-                            {REASON[status]}
-                            {c.trade && <span className="hidden sm:inline"> · {c.trade}</span>}
-                          </>
-                        }
-                        trailing={
-                          // Hidden on phones: the meta line and the disc
-                          // already say it, and the title needs the width.
-                          <span className="hidden sm:inline-flex">
-                            <StatusBadge kind="contractor" status={status} />
-                          </span>
-                        }
-                      />
-                    );
-                  })}
-                </RowList>
-              )}
-            </SectionCard>
-          )}
-
-          <SectionCard id="quick-actions" icon={Zap} tone="brand" title="Quick actions">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <ActionTile href="/dashboard/contractors/new" icon={UserPlus} label="Add contractor" variant="primary" />
-              <ActionTile href="/dashboard/projects" icon={FolderKanban} label="Projects" />
-              <ActionTile href="/dashboard/document-types" icon={FileText} label="Document types" />
-              <ActionTile href="/dashboard/settings" icon={Settings} label="Settings" />
-            </div>
-          </SectionCard>
-        </div>
-
-        <div className="min-w-0 space-y-6">
-          <SectionCard id="overview" icon={ChartPie} tone="brand" title="Compliance overview">
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-6">
-              <DonutChart segments={segments} centerLabel="Total contractors" className="w-44 shrink-0" />
-              <div className="min-w-56 flex-1">
-                {total === 0 ? (
-                  <div>
-                    <p className="text-sm text-ink-muted">
-                      Add your first contractor and the picture fills in here.
-                    </p>
-                    <ButtonLink href="/dashboard/contractors/new" className="mt-4">
-                      <UserPlus className="h-5 w-5" strokeWidth={2} aria-hidden />
-                      Add contractor
-                    </ButtonLink>
-                  </div>
-                ) : (
-                  <>
-                    <DonutLegend segments={segments} />
-                    <p className="mt-4 text-xs text-ink-muted">
-                      Each contractor is counted once, by their most urgent status.
-                    </p>
-                  </>
-                )}
+        {(["left", "right"] as const).map((side) => (
+          <div key={side} className="contents xl:block xl:min-w-0 xl:space-y-6">
+            {columns[side].map((key) => (
+              <div key={key} style={{ order: CARD_ORDER.indexOf(key) }} className="min-w-0">
+                {cards[key]}
               </div>
-            </div>
-          </SectionCard>
-
-          {total > 0 && (
-            <SectionCard
-              id="coming-up"
-              icon={CalendarClock}
-              tone="expiring"
-              title={`Expiring in the next ${EXPIRING_WINDOW_DAYS} days`}
-              flush
-            >
-              {comingUp.length === 0 ? (
-                <p className="border-t border-line px-card py-6 text-sm text-ink-muted sm:px-6">
-                  Nothing is due to expire in the next {EXPIRING_WINDOW_DAYS} days.
-                </p>
-              ) : (
-                <RowList>
-                  {comingUp.map((c) => (
-                    <ListRow
-                      key={c.id}
-                      href={`/dashboard/contractors/${c.id}`}
-                      leading={<Avatar name={c.business_name} size="sm" />}
-                      title={c.business_name}
-                      trailing={
-                        <span
-                          className={`rounded-full border px-3 py-1 font-mono text-2xs font-medium ${
-                            c.daysLeft <= 7
-                              ? "border-attention-line bg-attention-bg text-attention"
-                              : "border-line-strong bg-surface-muted text-ink-muted"
-                          }`}
-                        >
-                          {c.daysLeft === 0 ? "today" : `${c.daysLeft}d`}
-                        </span>
-                      }
-                    />
-                  ))}
-                </RowList>
-              )}
-            </SectionCard>
-          )}
-
-          {recent.length > 0 && (
-            <SectionCard
-              id="recent-activity"
-              icon={History}
-              tone="pending"
-              title="Recent activity"
-              flush
-            >
-              <RowList>
-                {recent.map((n) => (
-                  <ListRow
-                    key={n.id}
-                    href={n.contractor_id ? `/dashboard/contractors/${n.contractor_id}` : undefined}
-                    leading={<IconDisc icon={Upload} tone="neutral" size="sm" />}
-                    title={n.message}
-                    wrapTitle
-                    meta={relativeTime(n.created_at)}
-                  />
-                ))}
-              </RowList>
-            </SectionCard>
-          )}
-        </div>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );
