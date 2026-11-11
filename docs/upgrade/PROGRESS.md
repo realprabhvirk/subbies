@@ -140,6 +140,8 @@ None.
 
 See `MIGRATIONS.md`. None applied to production by Claude.
 
+- 2026-11-11: Mr Virk reports 0021 and 0022 applied in the Supabase SQL editor. Verification query output not shared yet.
+
 ## Founder decisions to confirm
 
 - D8: only completed projects are excluded from the project limit (there's no project archive). Confirm, or ask for a project archive in a later phase.
