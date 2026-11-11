@@ -6,6 +6,7 @@ Claude never applies migrations to production. Mr Virk applies each file in the 
 |---|---|---|---|
 | 0021 | `supabase/migrations/0021_plan_foundation_and_archiving.sql` | 1 | Merging Phase 1 |
 | 0022 | `supabase/migrations/0022_project_workspace.sql` | 2 | Merging Phase 2 (after 0021) |
+| 0023 | `supabase/migrations/0023_project_location_and_photos.sql` | 3 | Merging Phase 3 (after 0022) |
 
 ## 0021: plan foundation and contractor archiving
 
@@ -111,4 +112,59 @@ drop table if exists public.project_contractor_status;
 drop table if exists public.project_activity;
 drop table if exists public.project_requirements;
 -- The three (id, company_id) unique indexes are harmless to keep.
+```
+
+## 0023: project location and jobsite photos
+
+**What it does**
+
+1. `projects` gets optional `location_address`, `latitude`, `longitude` (numeric 9,6), `location_place_id` and `location_is_manual`. Range checks, a both-or-neither check, and length checks are added via guarded `DO` blocks.
+2. `set_project_location` / `clear_project_location`: the only way to write the location (the column grant is unchanged). Both record `location_changed`.
+3. `project_photos`:
+   - `unique (project_id, position)` (deferrable) with `position between 1 and 3`, so a 4th photo is refused by the database even when uploads race;
+   - paths must sit under `{company_id}/{project_id}/`;
+   - WebP only, 5 MB max;
+   - RLS allows company SELECT only.
+4. `add_project_photo` (lowest free slot, retries on a race), `replace_project_photo`, `delete_project_photo` (these two return the old paths) and `move_project_photo` (swaps in one statement). Each records its photo event.
+5. A private `project-photos` bucket (5 MB, `image/webp`). Storage policies limit authenticated read, insert and delete to objects whose first folder is the caller's company id.
+
+**Apply order:** after 0022. **Apply before merging Phase 3.**
+- It's safe to apply before the code ships: everything is additive and the deployed code doesn't use any of it.
+- If the Phase 3 code ships first, location and photos simply don't appear (separate queries that fail soft), and the sweep skips.
+
+**Tests:**
+- Applied twice in a row on the local Postgres 16 replica.
+- `supabase/tests/0023_project_location_and_photos.sql` passes. It covers location validation, the 3-slot cap, move/replace/delete, cross-company access and the Storage policies.
+- A real-parallel race (20 simultaneous uploads into an empty project) produced exactly slots 1, 2 and 3, and 17 refusals.
+
+**Verification query** (expect `5 | 1 | 6 | false | 3`):
+
+```sql
+select
+  (select count(*) from information_schema.columns
+    where table_schema = 'public' and table_name = 'projects'
+      and column_name in ('location_address', 'latitude', 'longitude', 'location_place_id', 'location_is_manual')) as location_cols,
+  (select count(*) from information_schema.tables where table_schema = 'public' and table_name = 'project_photos') as photos_table,
+  (select count(*) from pg_proc where pronamespace = 'public'::regnamespace
+    and proname in ('set_project_location', 'clear_project_location', 'add_project_photo',
+                    'replace_project_photo', 'delete_project_photo', 'move_project_photo')) as functions,
+  (select public from storage.buckets where id = 'project-photos') as bucket_public,
+  (select count(*) from pg_policies where schemaname = 'storage' and tablename = 'objects'
+    and policyname like 'project photos own company%') as storage_policies;
+```
+
+**Rollback** (drops photos rows; delete the bucket's files in the dashboard first if you want them gone):
+
+```sql
+drop policy if exists "project photos own company read" on storage.objects;
+drop policy if exists "project photos own company insert" on storage.objects;
+drop policy if exists "project photos own company delete" on storage.objects;
+drop function if exists public.move_project_photo(uuid, integer);
+drop function if exists public.delete_project_photo(uuid);
+drop function if exists public.replace_project_photo(uuid, text, text, text, integer);
+drop function if exists public.add_project_photo(uuid, text, text, text, integer);
+drop function if exists public.clear_project_location(uuid);
+drop function if exists public.set_project_location(uuid, text, numeric, numeric, text, boolean);
+drop table if exists public.project_photos;
+-- The location columns are nullable and harmless to keep.
 ```

@@ -101,21 +101,22 @@ export function PhotoGrid({ projectId, photos, editable = true }: { projectId: s
                 </div>
               )}
               {editable && !uploading && (
-                <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/55 to-transparent p-1.5">
-                  <div className="flex gap-1">
-                    <IconButton tone="overlay" aria-label="Move photo left" disabled={slot === 1 || pending} onClick={() => start(async () => { const r = await moveProjectPhoto(projectId, p.id, -1); if (!r.ok) setError(r.error); else router.refresh(); })}>
-                      <ChevronLeft className="h-4 w-4" strokeWidth={2.25} />
-                    </IconButton>
-                    <IconButton tone="overlay" aria-label="Move photo right" disabled={slot === SLOTS || pending} onClick={() => start(async () => { const r = await moveProjectPhoto(projectId, p.id, 1); if (!r.ok) setError(r.error); else router.refresh(); })}>
-                      <ChevronRight className="h-4 w-4" strokeWidth={2.25} />
-                    </IconButton>
-                  </div>
-                  <div className="flex gap-1">
-                    <IconButton tone="overlay" aria-label="Replace photo" disabled={Boolean(busy) || pending} onClick={() => pick(slot, p.id)}>
+                <div className="opacity-100 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:opacity-100">
+                  {/* Two rows of two 44px buttons: they fit a ~90px tile. */}
+                  <div className="absolute inset-x-0 top-0 flex justify-end gap-0.5 bg-gradient-to-b from-black/50 to-transparent p-0.5">
+                    <IconButton tone="overlay" aria-label={`Replace photo ${slot}`} disabled={Boolean(busy) || pending} onClick={() => pick(slot, p.id)}>
                       <RefreshCw className="h-4 w-4" strokeWidth={2.25} />
                     </IconButton>
-                    <IconButton tone="overlay" aria-label="Delete photo" disabled={pending} onClick={() => setConfirmDelete(p)}>
+                    <IconButton tone="overlay" aria-label={`Delete photo ${slot}`} disabled={pending} onClick={() => setConfirmDelete(p)}>
                       <Trash2 className="h-4 w-4" strokeWidth={2.25} />
+                    </IconButton>
+                  </div>
+                  <div className="absolute inset-x-0 bottom-0 flex justify-between gap-0.5 bg-gradient-to-t from-black/50 to-transparent p-0.5">
+                    <IconButton tone="overlay" aria-label={`Move photo ${slot} left`} disabled={slot === 1 || pending} onClick={() => start(async () => { const r = await moveProjectPhoto(projectId, p.id, -1); if (!r.ok) setError(r.error); else router.refresh(); })}>
+                      <ChevronLeft className="h-4 w-4" strokeWidth={2.25} />
+                    </IconButton>
+                    <IconButton tone="overlay" aria-label={`Move photo ${slot} right`} disabled={slot === SLOTS || pending} onClick={() => start(async () => { const r = await moveProjectPhoto(projectId, p.id, 1); if (!r.ok) setError(r.error); else router.refresh(); })}>
+                      <ChevronRight className="h-4 w-4" strokeWidth={2.25} />
                     </IconButton>
                   </div>
                 </div>

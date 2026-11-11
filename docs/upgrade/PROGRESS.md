@@ -9,7 +9,8 @@ Start each session with: "Continue the Subbies upgrade from `docs/upgrade/PROGRE
 | 0 Audit | `feature/upgrade-p1-foundation` | Done. See `PLAN.md`. |
 | 1 Foundation | `feature/upgrade-p1-foundation` | Done. Merged to `main` 2026-11-11 (0021 applied first). |
 | 2 Project workspace | `feature/upgrade-p2-project-workspace` (branched from the Phase 1 branch, which isn't merged) | Done. Merged to `main` 2026-11-11 (0021 and 0022 applied and verified first). |
-| 3 Location and photos | `feature/upgrade-p3-location-photos` (branch from `main`) | Not started. Needs the two Mapbox tokens. |
+| 3 Location and photos | `feature/upgrade-p3-location-photos` (from `main`) | Done, pushed, not merged. **Apply 0023 before merging.** Mapbox tokens go in Vercel env vars. |
+| 4 onwards | | Not started |
 
 ## Before merging Phase 1
 
@@ -93,6 +94,32 @@ The code reads `contractors.archived_at`. Without 0021, the dashboard and contra
 - The Completed project pill is neutral, not green (lifecycle colour rule).
 - `SHIPPED_FEATURES` now includes requirements, document register and activity, so they've left "Coming soon" on pricing.
 
+## Phase 3: what shipped
+
+- **Location:**
+  - Optional map location per project.
+  - The overview shows a static Mapbox image: no map JavaScript, cached by the browser, navy pin. It says "Map unavailable" (and still shows the address) without a token.
+  - If a project has an address but no pin, "Find this address" prefills the search. Nothing is bulk-geocoded.
+- **Location editor:** loaded with `next/dynamic` only inside its dialog.
+  - Search is an ARIA combobox: 250 ms debounce, 3+ characters, 5 suggestions, Australia only, one Search Box session per search.
+  - By hand: click to place, drag the pin, or "Pan to place" with a centre crosshair, which is easier on phones.
+  - The suggested address after a pin move needs a click to apply.
+  - Reset, Remove (with confirm) and Save. `location_changed` is recorded.
+- **Terms:** a location chosen from search is re-fetched with permanent geocoding (server token) before it's stored. Hand-placed pins are stored as placed. See PLAN.md.
+- **Photos:** three slots per project, on every plan.
+  - Client downscale (1600px, JPEG 0.82) with upload progress.
+  - Route handler checks session, company and project, rate limit (30 per 10 min per company), size (4 MB), and magic bytes. HEIC is refused with "Please choose a JPEG, PNG or WebP photo".
+  - sharp re-encode: auto-orient, all EXIF and GPS stripped (tested with a GPS-tagged fixture, both unit and end-to-end through the route), 1600px plus 480px WebP.
+  - Files are stored with the user's client under `{company}/{project}/` (Storage policies apply). The row goes through the RPC, and files are removed again if the row fails.
+  - Replace, delete (row first, then files), move left/right, and a native `<dialog>` lightbox.
+  - On mouse devices the tile controls show on hover or focus; on touch they're always visible. Every control is 44px.
+- **Nightly sweep:** removes `project-photos` files with no row once they're over 1 hour old. It runs in the existing expiry cron and fails closed.
+- **Overview layout:** compliance on the left, Location and Photos on the right. Phone order: tiles, needs attention, location, photos, activity.
+- **CSP:** adds Mapbox origins (img-src, connect-src) and `worker-src 'self' blob:`. The headers test is updated.
+- **New dependencies:**
+  - `mapbox-gl` 3.33.0, the brief's choice for the editor. It's lazy-loaded in one dialog only. Pinned to a version four weeks old.
+  - `sharp` 0.35.5, needed for server-side re-encoding. Next already installs this exact build as an optional dependency; it's now listed directly so it can't silently disappear. Pinned.
+
 ## Decisions
 
 - D1–D11 locked as per the brief.
@@ -106,6 +133,9 @@ The code reads `contractors.archived_at`. Without 0021, the dashboard and contra
 - (P2) Optional requirements show in the register and on the bar, but a missing optional one isn't a "needs attention" item. An expiring one is.
 - (P2) The client can write its own company's activity (single-owner company). System-only event types (`document_expired`, `compliance_status_changed`) are refused from the client.
 
+- (P3) The upload route uses the signed-in user's Supabase client for Storage, so the company-folder policies are what enforce access. The orphan sweep uses the service role, as other cron jobs do.
+- (P3) Without a session the upload route gets the shared auth helper's redirect to /login (303), not a JSON 401. Nothing is processed.
+
 ## Deviations from the brief
 
 - Plan config stays in `lib/billing/plans.ts` (already imported across the app). `lib/plans.ts` re-exports it.
@@ -118,6 +148,9 @@ The code reads `contractors.archived_at`. Without 0021, the dashboard and contra
 - (P2) There's no project archive state, so `project_archived` is in the event list but never written.
 - (P2) "Request" for a missing document reuses the existing email path through a small new action, because there was no flow for requesting a new document type from an existing contractor.
 
+- (P3) Photo tile actions are two rows of two 44px buttons (top: replace, delete; bottom: move). Four in a row don't fit a ~90px tile.
+- (P3) Location is its own query instead of part of the project row, so a deploy before 0023 doesn't break project pages.
+
 ## UNVERIFIED
 
 - 0021 has been tested on a local Postgres 16 replica built from the repo migrations (both SQL test files pass, before and after), **not on the real Supabase project**. Run the verification query after applying.
@@ -126,11 +159,21 @@ The code reads `contractors.archived_at`. Without 0021, the dashboard and contra
 - The billing settings usage tiles in the new navy tone weren't screenshotted.
 - (P2) 0022 was tested on the local replica only, not real Supabase.
 - (P2) Workspace screens were checked against a mock: overview, contractors, requirements and documents at 1440px; overview and documents at 390px; the Starter locked state; 0 px overflow everywhere.
+- (P3) The location editor (GL JS map, Search Box, reverse geocoding, permanent geocoding) wasn't run against real Mapbox: there's no token in the sandbox. The static map was checked with a stand-in image.
+- (P3) HEIC from a real iPhone wasn't tested. With `accept="image/jpeg,image/png,image/webp"`, Safari should hand over JPEG; HEIC that arrives anyway gets a clear refusal.
+- (P3) 0023 was tested on the local replica only; real Supabase Storage policies and `storage.foldername` weren't exercised.
 - (P2) Not exercised end to end: Request, add/remove requirement, Load more, the cron project job, and token upload fan-out. The SQL functions are covered by SQL tests and the engine and register by unit tests.
 
 ## Env vars
 
-No new env vars in Phase 1 or Phase 2.
+No new env vars in Phase 1 or Phase 2. Phase 3 (add in Vercel, Production and Preview):
+
+| Name | What | Where it's used |
+|---|---|---|
+| `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapbox **public** token (`pk.`), URL-restricted in Mapbox to the site's domains | Browser: static map image, location editor, address search |
+| `MAPBOX_SERVER_TOKEN` | Mapbox token for server use, **no** `NEXT_PUBLIC_` prefix, scoped to geocoding | Server: permanent geocoding on save (later: PDF static maps) |
+
+Without them the map shows "Map unavailable", and saving a searched address asks the user to place the pin by hand. Photos don't need either.
 
 ## New dependencies
 

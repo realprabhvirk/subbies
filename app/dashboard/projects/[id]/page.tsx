@@ -74,8 +74,10 @@ export default async function ProjectOverviewPage(props: PageProps<"/dashboard/p
         />
       </div>
 
+      {/* Phone order: needs attention, location, photos, activity. Desktop:
+          compliance on the left two-thirds, location and photos on the right. */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="min-w-0 space-y-6 lg:col-span-2">
+        <div className="min-w-0 lg:col-span-2 lg:row-start-1">
         <SectionCard
           id="attention"
           icon={TriangleAlert}
@@ -130,6 +132,14 @@ export default async function ProjectOverviewPage(props: PageProps<"/dashboard/p
           )}
         </SectionCard>
 
+        </div>
+
+        <div className="min-w-0 space-y-6 lg:col-start-3 lg:row-span-2 lg:row-start-1">
+          <LocationCard projectId={project.id} location={location} freeTextAddress={project.address} />
+          <PhotosCard projectId={project.id} photos={photos} />
+        </div>
+
+        <div className="min-w-0 lg:col-span-2 lg:row-start-2">
         {showActivity ? (
           <SectionCard
             id="recent-activity"
@@ -151,12 +161,6 @@ export default async function ProjectOverviewPage(props: PageProps<"/dashboard/p
             </p>
           </SectionCard>
         )}
-        </div>
-
-        {/* Right rail: height-capped, never above compliance on a phone. */}
-        <div className="min-w-0 space-y-6">
-          <LocationCard projectId={project.id} location={location} freeTextAddress={project.address} />
-          <PhotosCard projectId={project.id} photos={photos} />
         </div>
       </div>
     </div>

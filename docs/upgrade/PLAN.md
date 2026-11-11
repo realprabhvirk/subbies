@@ -81,3 +81,32 @@ Storage: one private bucket `contractor-documents` (15 MB, PDF/JPEG/PNG/HEIC). A
 | Starter: 1 project | Starter: 0 projects (TS and SQL) | Changed to 1 in both, via migration 0021. |
 | Next migration is 0021 | Confirmed | Phase 1 adds `0021_plan_foundation_and_archiving.sql`. |
 | Fix `/pricing` mobile overflow | The premium UI sweep measured 0px overflow at 390px | Re-measured in Phase 1, and the hardening is applied anyway (see PROGRESS.md). |
+
+## Phase 3: Mapbox terms, cost and photo storage (checked 2026-11-11)
+
+Source: mapbox.com/pricing, the Search Box and Static Images API docs, and mapbox.com/legal/tos (last updated 31 March 2024). Figures marked (summary) came from a summarised read of the pricing page and should be re-checked on the live page. The Product Terms PDF (dated 20 October 2026) wasn't read.
+
+| Product | Free each month | Beyond (USD) | Used for |
+|---|---|---|---|
+| Static Images API | 50,000 requests | $1.00 per 1,000 up to 500k | Overview map (and the Phase 4 PDF map) |
+| GL JS map loads (web) | 50,000 loads | $5.00 per 1,000 up to 100k | Location editor dialog only |
+| Search Box sessions (summary) | 500 sessions ("introductory preview pricing") | $3.00 per 1,000 | Address search in the editor |
+| Search Box reverse (summary) | 50,000 requests | $1.00 per 1,000 | "Suggested address" after a pin move |
+| Permanent geocoding (summary) | none | $5.00 per 1,000 | One lookup per saved location chosen from search |
+
+**Terms finding: storing search results.** The Search Box docs say returned data is "only available for temporary use", and storing position data needs a different arrangement. So:
+- Coordinates chosen from search are looked up once on save with the Geocoding API's permanent mode (`permanent=true`, server token), and that result is what's stored.
+- Pins placed by hand are the user's own coordinates and are stored as placed (`location_is_manual = true`).
+- The address text is whatever the user typed or confirmed.
+
+Founder to confirm with Mapbox whether storing an address text the user accepted from a reverse-geocode suggestion is covered. It's shown only as a suggestion, with a confirm click.
+
+**Static images** are loaded straight from Mapbox by the browser (cached up to 12 hours by Mapbox's headers). Subbies never stores or proxies them. Attribution stays on the image (the default).
+
+**Cost estimates**:
+- **Per 1,000 saved project locations:** about $5 of permanent geocoding if all come from search. Hand-placed pins cost nothing to save. Search sessions are about $3 above the 500 free; reverse lookups sit inside the free tier.
+- **Per 1,000 overview views:** free up to 50k a month, then about $1.
+- **Per 1,000 PDF reports (Phase 4):** one static image each, so about $1 beyond the free 50k.
+- **Map loads:** only when someone opens the location editor, comfortably inside the free 50k.
+
+**Photo storage budget:** 3 photos per project. Each is a WebP at most 1600px (typically 150–400 KB) plus a 480px thumbnail (about 30 KB), so roughly 1.3 MB per project at most and well under 1 MB in practice. 1,000 projects with full photo slots is about 1 GB in Supabase Storage.
