@@ -9,8 +9,8 @@ Start each session with: "Continue the Subbies upgrade from `docs/upgrade/PROGRE
 | 0 Audit | `feature/upgrade-p1-foundation` | Done. See `PLAN.md`. |
 | 1 Foundation | `feature/upgrade-p1-foundation` | Done. Merged to `main` 2026-11-11 (0021 applied first). |
 | 2 Project workspace | `feature/upgrade-p2-project-workspace` (branched from the Phase 1 branch, which isn't merged) | Done. Merged to `main` 2026-11-11 (0021 and 0022 applied and verified first). |
-| 3 Location and photos | `feature/upgrade-p3-location-photos` (from `main`) | Done, pushed, not merged. **Apply 0023 before merging.** Mapbox tokens go in Vercel env vars. |
-| 4 onwards | | Not started |
+| 3 Location and photos | `feature/upgrade-p3-location-photos` (from `main`) | Done. Merged to `main` 2026-11-11 (0022 and 0023 applied to the live database first). Mapbox tokens still to be added in Vercel. |
+| 4 PDF compliance report | `feature/upgrade-p4-pdf` (from `main`) | Not started. |
 
 ## Before merging Phase 1
 
@@ -183,7 +183,7 @@ None.
 
 See `MIGRATIONS.md`. None applied to production by Claude.
 
-- 2026-11-11: 0021 confirmed applied on the live database. 0022 turned out NOT to be applied there (a status check showed no project_activity table), although its verification was reported as matching, most likely run in another project. 0022 and 0023 are being applied to the live database now. Phase 2 code was built to degrade without 0022 (no requirements, no activity) and did not break.
+- 2026-11-11: 0021 confirmed applied on the live database. 0022 turned out NOT to be applied there (a status check showed no project_activity table), although its verification was reported as matching, most likely run in another project. 0022 and 0023 were then applied to the live database and checked (all expected values returned). Phase 2 code was built to degrade without 0022 (no requirements, no activity) and did not break.
 
 ## Founder decisions to confirm
 
