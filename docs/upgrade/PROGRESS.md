@@ -183,7 +183,7 @@ None.
 
 See `MIGRATIONS.md`. None applied to production by Claude.
 
-- 2026-11-11: Mr Virk reports 0021 and 0022 applied in the Supabase SQL editor. Both verification queries matched the expected output.
+- 2026-11-11: 0021 confirmed applied on the live database. 0022 turned out NOT to be applied there (a status check showed no project_activity table), although its verification was reported as matching, most likely run in another project. 0022 and 0023 are being applied to the live database now. Phase 2 code was built to degrade without 0022 (no requirements, no activity) and did not break.
 
 ## Founder decisions to confirm
 
