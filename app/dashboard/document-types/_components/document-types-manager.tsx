@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Pencil, Trash2, FileText } from "lucide-react";
 
 import { fieldClasses } from "@/app/components/input";
-import { Button, ButtonLink } from "@/app/components/button";
+import { Button } from "@/app/components/button";
 import { IconButton } from "@/app/components/icon-button";
 import { IconDisc } from "@/app/components/icon-disc";
 import { DialogFrame } from "@/app/components/dialog";
@@ -13,6 +13,8 @@ import { EmptyState } from "@/app/components/empty-state";
 import { PageHeader } from "@/app/components/page-header";
 import { ReminderScheduleField } from "./reminder-schedule-field";
 import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
+import { UpgradePrompt } from "@/app/components/upgrade-prompt";
+import type { PlanError } from "@/lib/billing/plans";
 import type { DocumentType } from "@/lib/types";
 import {
   createDocumentType,
@@ -30,10 +32,13 @@ export function DocumentTypesManager({
   types,
   atLimit = false,
   limit = null,
+  planError = null,
 }: {
   types: DocumentType[];
   atLimit?: boolean;
   limit?: number | null;
+  /** The server's typed error when the plan (not lapsed access) blocks adding. */
+  planError?: PlanError | null;
 }) {
   const router = useRouter();
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -60,11 +65,7 @@ export function DocumentTypesManager({
         title="Document types"
         description="The compliance documents you collect from contractors. You'll pick from this list when onboarding each contractor."
         actions={
-          atLimit ? (
-            <ButtonLink href="/dashboard/settings?tab=billing" variant="secondary">
-              Upgrade to add more
-            </ButtonLink>
-          ) : (
+          atLimit ? undefined : (
             <Button type="button" onClick={() => setDialog({ mode: "create" })}>
               <Plus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               Add document type
@@ -73,7 +74,12 @@ export function DocumentTypesManager({
         }
       />
 
-      {atLimit && <LimitBanner resource="document types" limit={limit} />}
+      {atLimit &&
+        (planError ? (
+          <UpgradePrompt error={planError} />
+        ) : (
+          <LimitBanner resource="document types" limit={limit} accessLapsed />
+        ))}
 
       {deleteError && (
         <p className="rounded-md border border-expired-line bg-expired-bg/70 px-4 py-3 text-sm text-expired">
@@ -87,10 +93,12 @@ export function DocumentTypesManager({
           title="No document types yet"
           description="Add the documents you need from contractors, for example Public Liability insurance, a trade licence, or a workers compensation certificate."
           action={
-            <Button type="button" onClick={() => setDialog({ mode: "create" })}>
-              <Plus className="h-5 w-5" strokeWidth={2} aria-hidden />
-              Add document type
-            </Button>
+            atLimit ? undefined : (
+              <Button type="button" onClick={() => setDialog({ mode: "create" })}>
+                <Plus className="h-5 w-5" strokeWidth={2} aria-hidden />
+                Add document type
+              </Button>
+            )
           }
         />
       ) : (

@@ -6,11 +6,13 @@ import { useRouter } from "next/navigation";
 import { Plus, Pencil, MapPin, TriangleAlert, CircleCheck, FolderKanban } from "lucide-react";
 
 import { StatusBadge } from "@/app/components/status-badge";
-import { ButtonLink, Button } from "@/app/components/button";
+import { Button } from "@/app/components/button";
 import { IconButton } from "@/app/components/icon-button";
 import { EmptyState } from "@/app/components/empty-state";
 import { PageHeader } from "@/app/components/page-header";
 import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
+import { UpgradePrompt } from "@/app/components/upgrade-prompt";
+import type { PlanError } from "@/lib/billing/plans";
 import type { ProjectStatus } from "@/lib/types";
 import { ProjectDialog, type ProjectDialogData } from "./project-dialog";
 
@@ -34,10 +36,13 @@ export function ProjectsManager({
   projects,
   atLimit = false,
   limit = null,
+  planError = null,
 }: {
   projects: ProjectListItem[];
   atLimit?: boolean;
   limit?: number | null;
+  /** The server's typed error when the plan (not lapsed access) blocks adding. */
+  planError?: PlanError | null;
 }) {
   const router = useRouter();
   const [dialog, setDialog] = useState<DialogState>(null);
@@ -50,11 +55,7 @@ export function ProjectsManager({
         title="Projects"
         description="Which contractors are on which job, and whether everyone on site is compliant."
         actions={
-          atLimit ? (
-            <ButtonLink href="/dashboard/settings?tab=billing" variant="secondary">
-              Upgrade to add more
-            </ButtonLink>
-          ) : (
+          atLimit ? undefined : (
             <Button type="button" onClick={openCreate}>
               <Plus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               New project
@@ -63,7 +64,12 @@ export function ProjectsManager({
         }
       />
 
-      {atLimit && <LimitBanner resource="projects" limit={limit} />}
+      {atLimit &&
+        (planError ? (
+          <UpgradePrompt error={planError} />
+        ) : (
+          <LimitBanner resource="projects" limit={limit} accessLapsed />
+        ))}
 
       {projects.length === 0 ? (
         <EmptyState
@@ -71,10 +77,12 @@ export function ProjectsManager({
           title="No projects yet"
           description="Create a project, then assign the contractors working on it."
           action={
-            <Button type="button" onClick={openCreate}>
-              <Plus className="h-5 w-5" strokeWidth={2} aria-hidden />
-              New project
-            </Button>
+            atLimit ? undefined : (
+              <Button type="button" onClick={openCreate}>
+                <Plus className="h-5 w-5" strokeWidth={2} aria-hidden />
+                New project
+              </Button>
+            )
           }
         />
       ) : (

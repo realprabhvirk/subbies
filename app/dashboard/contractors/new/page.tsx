@@ -7,6 +7,7 @@ import { canAddContractor } from "@/lib/billing/entitlements";
 import type { DocumentType } from "@/lib/types";
 import { ButtonLink } from "@/app/components/button";
 import { EmptyState } from "@/app/components/empty-state";
+import { UpgradePrompt } from "@/app/components/upgrade-prompt";
 import { PageHeader } from "@/app/components/page-header";
 import { NewContractorForm } from "./_components/new-contractor-form";
 
@@ -39,16 +40,16 @@ export default async function NewContractorPage() {
       />
 
       {!limitCheck.allowed ? (
-        <EmptyState
-          icon={Lock}
-          title={`You're at your plan's limit of ${limitCheck.limit} contractors`}
-          description="Upgrade your plan to add more. Your existing contractors and their documents aren't affected."
-          action={
-            <ButtonLink href="/dashboard/settings?tab=billing">
-              Go to billing
-            </ButtonLink>
-          }
-        />
+        limitCheck.planError ? (
+          <UpgradePrompt error={limitCheck.planError} />
+        ) : (
+          <EmptyState
+            icon={Lock}
+            title="Your access has ended"
+            description="Choose a plan to add contractors. Your existing contractors and their documents aren't affected."
+            action={<ButtonLink href="/dashboard/settings?tab=billing">Choose a plan</ButtonLink>}
+          />
+        )
       ) : error ? (
         <p className="rounded-md border border-expired-line bg-expired-bg/70 px-4 py-3 text-sm text-expired">
           We couldn&apos;t load your document types. Refresh to try again.

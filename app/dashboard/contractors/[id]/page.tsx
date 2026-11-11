@@ -25,6 +25,7 @@ import { ContractorActivity } from "./_components/contractor-activity";
 import { ContractorProjects } from "./_components/contractor-projects";
 import { ContractorDetailsPanel } from "./_components/contractor-details-panel";
 import { ResendRequestsPanel } from "./_components/resend-requests-panel";
+import { ArchivedBanner } from "./_components/archived-banner";
 import { DocumentHistory, type HistoryItem } from "./_components/document-history";
 import { NotesPanel } from "./_components/notes-panel";
 import type { NoteView } from "./notes-actions";
@@ -113,16 +114,17 @@ export default async function ContractorDetailPage(
     trade: string | null;
     status: ContractorStatus;
     created_at: string;
+    archived_at?: string | null;
   }
 
   let { data: contractor, error: contractorError } = await supabase
     .from("contractors")
-    .select("id, business_name, contact_name, email, phone, abn, trade, status, created_at")
+    .select("id, business_name, contact_name, email, phone, abn, trade, status, created_at, archived_at")
     .eq("id", id)
     .eq("company_id", company.id)
     .maybeSingle<ContractorRow>();
 
-  // `abn` arrived in a later migration. On a deploy that lands before that
+  // `abn` and `archived_at` arrived in later migrations. On a deploy that lands before that
   // migration has run, selecting it is an error, which would otherwise read as
   // "this contractor doesn't exist" for every contractor. Fall back to the
   // columns that were always there so the page keeps working either way.
@@ -333,6 +335,7 @@ export default async function ContractorDetailPage(
   ].filter(Boolean) as { icon: typeof Mail; text: string; label?: string; mono?: boolean }[];
 
   const activeProjectCount = projects.filter((p) => !p.removedAt).length;
+  const archivedAt = contractor.archived_at ?? null;
 
   return (
     <div className="space-y-6">
@@ -361,6 +364,14 @@ export default async function ContractorDetailPage(
           </dl>
         }
       />
+
+      {archivedAt && (
+        <ArchivedBanner
+          contractorId={contractor.id}
+          name={contractor.business_name}
+          archivedLabel={formatMoment(archivedAt)}
+        />
+      )}
 
       {/* Scrolls sideways on a narrow phone rather than pushing the whole page
           wider. The bottom rule is an inset shadow, not a border, so the
@@ -409,11 +420,13 @@ export default async function ContractorDetailPage(
           >
             <DocumentReviewList documents={documents} />
           </SectionCard>
-          <ResendRequestsPanel
-            contractorId={contractor.id}
-            contractorEmail={contractor.email}
-            documents={resendable}
-          />
+          {!archivedAt && (
+            <ResendRequestsPanel
+              contractorId={contractor.id}
+              contractorEmail={contractor.email}
+              documents={resendable}
+            />
+          )}
           <DocumentHistory items={history} />
         </div>
       )}
@@ -436,6 +449,7 @@ export default async function ContractorDetailPage(
             phone: contractor.phone ?? "",
             abn: formatAbn(contractor.abn),
           }}
+          archived={Boolean(archivedAt)}
           counts={{
             // Everything that will be deleted: live, pending copies and archived.
             documents: docRows.length + archivedRows.length,

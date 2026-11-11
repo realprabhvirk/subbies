@@ -19,6 +19,8 @@ import { EmptyState } from "@/app/components/empty-state";
 import { ButtonLink } from "@/app/components/button";
 import type { Contractor, DocumentStatus } from "@/lib/types";
 import { ResendButton } from "./_components/resend-button";
+import { UpgradePrompt } from "@/app/components/upgrade-prompt";
+import { LimitBanner } from "@/app/dashboard/_components/limit-banner";
 
 export const metadata: Metadata = { title: "Contractors" };
 
@@ -136,27 +138,16 @@ export default async function ContractorsPage(
               <Plus className="h-5 w-5" strokeWidth={2.25} aria-hidden />
               Add contractor
             </ButtonLink>
-          ) : (
-            <ButtonLink href="/dashboard/settings?tab=billing" variant="secondary">
-              Upgrade to add more
-            </ButtonLink>
-          )
+          ) : undefined
         }
       />
 
-      {!limitCheck.allowed && (
-        <Alert tone="warning">
-          You&apos;re at your plan&apos;s limit of {limitCheck.limit}{" "}
-          contractors.{" "}
-          <Link
-            href="/dashboard/settings?tab=billing"
-            className="font-medium underline"
-          >
-            Upgrade your plan
-          </Link>{" "}
-          to add more.
-        </Alert>
-      )}
+      {!limitCheck.allowed &&
+        (limitCheck.planError ? (
+          <UpgradePrompt error={limitCheck.planError} />
+        ) : (
+          <LimitBanner resource="contractors" limit={limitCheck.limit} accessLapsed={limitCheck.accessLapsed} />
+        ))}
 
       {created && (
         <Alert tone={emailIssue ? "warning" : "success"}>
@@ -212,10 +203,12 @@ export default async function ContractorsPage(
           title="No contractors yet"
           description="Add a contractor to request their compliance documents and send them a secure upload link."
           action={
-            <ButtonLink href="/dashboard/contractors/new">
-              <Plus className="h-5 w-5" strokeWidth={2} aria-hidden />
-              Add contractor
-            </ButtonLink>
+            limitCheck.allowed ? (
+              <ButtonLink href="/dashboard/contractors/new">
+                <Plus className="h-5 w-5" strokeWidth={2} aria-hidden />
+                Add contractor
+              </ButtonLink>
+            ) : undefined
           }
         />
       ) : (

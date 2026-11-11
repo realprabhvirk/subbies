@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Link2Off, TriangleAlert } from "lucide-react";
+import { Archive, Link2Off, TriangleAlert } from "lucide-react";
 
 import { Alert } from "@/app/components/alert";
 import { Button } from "@/app/components/button";
@@ -14,7 +14,12 @@ import {
   type ContractorDetailsFieldErrors,
   type ContractorDetailsInput,
 } from "@/lib/contractor-details-logic";
-import { deleteContractor, revokeUploadLink, updateContractorDetails } from "../manage-actions";
+import {
+  archiveContractor,
+  deleteContractor,
+  revokeUploadLink,
+  updateContractorDetails,
+} from "../manage-actions";
 
 export interface DeletionCounts {
   /** Every document row, archived and pending replacements included. */
@@ -35,11 +40,14 @@ export function ContractorDetailsPanel({
   contractorId,
   initial,
   counts,
+  archived = false,
 }: {
   contractorId: string;
   /** What's currently saved. ABN already formatted for display. */
   initial: ContractorDetailsInput;
   counts: DeletionCounts;
+  /** Already archived: the restore control is in the banner at the top. */
+  archived?: boolean;
 }) {
   const router = useRouter();
   const [saved, setSaved] = useState(initial);
@@ -48,6 +56,7 @@ export function ContractorDetailsPanel({
   const [status, setStatus] = useState<{ ok: boolean; text: string } | null>(null);
   const [pending, startTransition] = useTransition();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingArchive, setConfirmingArchive] = useState(false);
   const [confirmingRevoke, setConfirmingRevoke] = useState(false);
   const [revoked, setRevoked] = useState(false);
 
@@ -244,6 +253,29 @@ export function ContractorDetailsPanel({
         </div>
       </div>
 
+      {!archived && (
+        <div className="rounded-card border border-line bg-surface p-card sm:p-6">
+          <div className="flex items-start gap-3">
+            <Archive className="mt-0.5 h-5 w-5 shrink-0 text-ink-muted" strokeWidth={2} aria-hidden />
+            <div className="min-w-0">
+              <h2 className="text-sm font-semibold text-ink">Archive contractor</h2>
+              <p className="mt-1 text-sm text-ink-muted">
+                Takes {saved.businessName} off your register without deleting anything. You can
+                restore them later.
+              </p>
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => setConfirmingArchive(true)}
+                className="mt-4"
+              >
+                Archive contractor
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-card border border-expired-line bg-surface p-card sm:p-6">
         <div className="flex items-start gap-3">
           <TriangleAlert
@@ -278,6 +310,15 @@ export function ContractorDetailsPanel({
             setRevoked(true);
           }}
           onClose={() => setConfirmingRevoke(false)}
+        />
+      )}
+
+      {confirmingArchive && (
+        <ArchiveDialog
+          contractorId={contractorId}
+          name={saved.businessName}
+          projects={counts.projects}
+          onClose={() => setConfirmingArchive(false)}
         />
       )}
 
@@ -334,6 +375,64 @@ function RevokeDialog({
       <p>
         The link {name} has now will stop working. Nothing is emailed yet: their new
         link goes out with the next request you send.
+      </p>
+    </ConfirmDialog>
+  );
+}
+
+function ArchiveDialog({
+  contractorId,
+  name,
+  projects,
+  onClose,
+}: {
+  contractorId: string;
+  name: string;
+  projects: number;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  const confirm = () => {
+    setError(null);
+    startTransition(async () => {
+      const result = await archiveContractor(contractorId);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      router.replace(`/dashboard/contractors?archived=${encodeURIComponent(name)}`);
+    });
+  };
+
+  return (
+    <ConfirmDialog
+      title={`Archive ${name}?`}
+      confirmLabel="Archive contractor"
+      pendingLabel="Archiving…"
+      tone="primary"
+      pending={pending}
+      error={error}
+      onConfirm={confirm}
+      onClose={onClose}
+    >
+      <p>When you archive {name}:</p>
+      <ul className="mt-2 list-disc space-y-1 pl-5">
+        <li>They leave your contractor register and stop counting towards your plan</li>
+        <li>No expiry reminders or document requests go to them</li>
+        <li>Their upload link shows &ldquo;This link is no longer active&rdquo; and accepts no uploads</li>
+        {projects > 0 && (
+          <li>
+            They&apos;re hidden from {plural(projects, "project")} and its compliance count. The
+            assignment comes back if you restore them.
+          </li>
+        )}
+      </ul>
+      <p className="mt-3">
+        Nothing is deleted. Their documents, files, notes and history are kept, and you can
+        restore them from the Archived filter on the contractors list.
       </p>
     </ConfirmDialog>
   );

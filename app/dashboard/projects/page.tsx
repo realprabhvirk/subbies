@@ -106,6 +106,7 @@ export default async function ProjectsPage() {
       projects={items}
       atLimit={!limitCheck.allowed}
       limit={limitCheck.limit}
+      planError={limitCheck.planError}
     />
   );
 }

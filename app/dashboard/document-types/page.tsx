@@ -42,6 +42,7 @@ export default async function DocumentTypesPage() {
       types={(data ?? []) as DocumentType[]}
       atLimit={!limitCheck.allowed}
       limit={limitCheck.limit}
+      planError={limitCheck.planError}
     />
   );
 }
