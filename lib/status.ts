@@ -8,6 +8,7 @@ import {
   CircleDot,
   PauseCircle,
   Ban,
+  CalendarClock,
 } from "lucide-react";
 
 import type {
@@ -15,6 +16,7 @@ import type {
   DocumentStatus,
   ProjectStatus,
 } from "@/lib/types";
+import type { ProjectContractorStatus, RequirementState } from "@/lib/compliance/project";
 
 interface StatusMeta {
   label: string;
@@ -92,9 +94,68 @@ export const projectStatusMeta: Record<ProjectStatus, StatusMeta> = {
     icon: PauseCircle,
     className: "text-neutral-status bg-neutral-status-bg border-neutral-status-line",
   },
+  // Lifecycle, not compliance: neutral, never green.
   completed: {
     label: "Completed",
     icon: CircleCheck,
+    className: "text-neutral-status bg-neutral-status-bg border-neutral-status-line",
+  },
+};
+
+/** A contractor's standing on one project (the compliance engine). */
+export const projectContractorStatusMeta: Record<ProjectContractorStatus, StatusMeta> = {
+  compliant: {
+    label: "Cleared",
+    icon: CircleCheck,
     className: "text-approved bg-approved-bg border-approved-line",
+  },
+  expiring: {
+    label: "Expiring soon",
+    icon: CalendarClock,
+    className: "text-attention bg-attention-bg border-attention-line",
+  },
+  pending_review: {
+    label: "Pending review",
+    icon: Clock,
+    className: "text-review bg-review-bg border-review-line",
+  },
+  not_cleared: {
+    label: "Not cleared",
+    icon: CircleX,
+    className: "text-expired bg-expired-bg border-expired-line",
+  },
+};
+
+/** One requirement for one contractor. */
+export const requirementStateMeta: Record<RequirementState, StatusMeta> = {
+  valid: {
+    label: "Valid",
+    icon: CircleCheck,
+    className: "text-approved bg-approved-bg border-approved-line",
+  },
+  expiring: {
+    label: "Expiring soon",
+    icon: CalendarClock,
+    className: "text-attention bg-attention-bg border-attention-line",
+  },
+  pending_review: {
+    label: "Pending review",
+    icon: Clock,
+    className: "text-review bg-review-bg border-review-line",
+  },
+  rejected: {
+    label: "Rejected",
+    icon: CircleX,
+    className: "text-expired bg-expired-bg border-expired-line",
+  },
+  expired: {
+    label: "Expired",
+    icon: CircleX,
+    className: "text-expired bg-expired-bg border-expired-line",
+  },
+  missing: {
+    label: "Missing",
+    icon: CircleDashed,
+    className: "text-expired bg-expired-bg border-expired-line",
   },
 };

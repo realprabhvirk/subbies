@@ -1,16 +1,19 @@
 import { Skeleton } from "@/app/components/skeleton";
-import { CardRowsSkeleton, HeaderSkeleton } from "../../_skeleton-parts";
+import { CardRowsSkeleton } from "../../_skeleton-parts";
 
-/** Back link, title + actions, meta line, the assign card, the contractors card. */
+/** Overview: four stat tiles, then needs attention (2/3) and recent activity (1/3). */
 export default function Loading() {
   return (
     <div className="space-y-6" aria-busy="true" aria-label="Loading">
-      <div>
-        <HeaderSkeleton back />
-        <Skeleton className="mt-5 h-5 w-80 max-w-full" />
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-40 rounded-card" />
+        ))}
       </div>
-      <Skeleton className="h-36 rounded-card" />
-      <CardRowsSkeleton rows={3} />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <CardRowsSkeleton rows={4} className="lg:col-span-2" />
+        <CardRowsSkeleton rows={3} />
+      </div>
     </div>
   );
 }

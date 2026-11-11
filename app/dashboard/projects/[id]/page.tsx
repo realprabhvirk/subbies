@@ -1,191 +1,148 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import { MapPin, CalendarRange } from "lucide-react";
+import Link from "next/link";
+import { CalendarClock, CircleCheck, ClipboardList, History, ShieldCheck, TriangleAlert, Users } from "lucide-react";
 
-import { createClient } from "@/lib/supabase/server";
-import { getCompany } from "@/lib/supabase/dal";
+import { StatTile } from "@/app/components/stat-tile";
+import { SectionCard } from "@/app/components/section-card";
+import { ListRow, RowList } from "@/app/components/list-row";
+import { Avatar } from "@/app/components/avatar";
 import { StatusBadge } from "@/app/components/status-badge";
-import { PageHeader } from "@/app/components/page-header";
 import { Alert } from "@/app/components/alert";
-import { projectIssueCount, type AssignedContractor } from "@/lib/projects";
-import type { ContractorStatus, ProjectStatus } from "@/lib/types";
-import { EditProjectButton } from "./_components/edit-project-button";
-import {
-  ProjectContractorsPanel,
-  type AvailableContractor,
-} from "./_components/project-contractors-panel";
+import { ButtonLink } from "@/app/components/button";
+import { can } from "@/lib/billing/plans";
+import { EXPIRING_WINDOW_DAYS } from "@/lib/compliance/project";
+import { getProjectWorkspace } from "./_lib/workspace";
+import { loadProjectActivity } from "./_lib/activity";
+import { RequestButton } from "./_components/request-button";
+import { ActivityFeed } from "./_components/activity-feed";
 
 export const metadata: Metadata = { title: "Project" };
 
-function fmtDate(iso: string): string {
-  return new Intl.DateTimeFormat("en-AU", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(iso + "T00:00:00"));
-}
+const ATTENTION_SHOWN = 8;
 
-export default async function ProjectDetailPage(
-  props: PageProps<"/dashboard/projects/[id]">,
-) {
+export default async function ProjectOverviewPage(props: PageProps<"/dashboard/projects/[id]">) {
   const { id } = await props.params;
-  const company = await getCompany();
-  if (!company) return null;
+  const ws = await getProjectWorkspace(id);
+  if (!ws) return null;
+  const { compliance: c, plan, project } = ws;
+  const showActivity = can(plan, "activityView");
+  const activity = showActivity ? await loadProjectActivity(id, { limit: 5 }) : null;
+  const base = `/dashboard/projects/${id}`;
 
-  const supabase = await createClient();
-
-  const { data: project } = await supabase
-    .from("projects")
-    .select("id, name, address, status, start_date, end_date")
-    .eq("id", id)
-    .eq("company_id", company.id)
-    .maybeSingle<{
-      id: string;
-      name: string;
-      address: string | null;
-      status: ProjectStatus;
-      start_date: string | null;
-      end_date: string | null;
-    }>();
-
-  if (!project) notFound();
-
-  const [{ data: assignmentRows }, { data: allContractors }] = await Promise.all([
-    supabase
-      .from("project_contractors")
-      .select(
-        "id, contractor_id, role_on_project, assigned_at, contractors(business_name, trade, status, archived_at)",
-      )
-      .eq("project_id", project.id)
-      .is("removed_at", null)
-      .order("assigned_at", { ascending: true }),
-    supabase
-      .from("contractors")
-      .select("id, business_name, trade, status")
-      .eq("company_id", company.id)
-      .is("archived_at", null)
-      .order("business_name", { ascending: true }),
-  ]);
-
-  type AssignmentRow = {
-      id: string;
-      contractor_id: string;
-      role_on_project: string | null;
-      assigned_at: string;
-      contractors: {
-        business_name: string;
-        trade: string | null;
-        status: ContractorStatus;
-        archived_at: string | null;
-      } | null;
-  };
-  const assignmentList = (assignmentRows ?? []) as unknown as AssignmentRow[];
-  // Archived contractors keep their assignment (restoring brings it back)
-  // but drop out of the project's list and compliance count.
-  const archivedAssigned = assignmentList.filter((r) => r.contractors?.archived_at != null).length;
-  const assigned: AssignedContractor[] = assignmentList
-    .filter((r) => r.contractors?.archived_at == null)
-    .map((r) => ({
-    projectContractorId: r.id,
-    contractorId: r.contractor_id,
-    businessName: r.contractors?.business_name ?? "Contractor",
-    trade: r.contractors?.trade ?? null,
-    roleOnProject: r.role_on_project,
-    status: r.contractors?.status ?? "pending",
-    assignedAt: r.assigned_at,
-  }));
-
-  const assignedIds = new Set(assigned.map((a) => a.contractorId));
-  const available: AvailableContractor[] = (
-    (allContractors ?? []) as {
-      id: string;
-      business_name: string;
-      trade: string | null;
-      status: ContractorStatus;
-    }[]
-  )
-    .filter((c) => !assignedIds.has(c.id))
-    .map((c) => ({
-      id: c.id,
-      businessName: c.business_name,
-      trade: c.trade,
-      status: c.status,
-    }));
-
-  const issues = projectIssueCount(assigned);
-  const dateRange =
-    project.start_date || project.end_date
-      ? [
-          project.start_date ? fmtDate(project.start_date) : "–",
-          project.end_date ? fmtDate(project.end_date) : "–",
-        ].join(" → ")
-      : null;
+  const attention = c.needsAttention.slice(0, ATTENTION_SHOWN);
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        back={{ href: "/dashboard/projects", label: "Projects" }}
-        title={project.name}
-        actions={
-          <>
-            <StatusBadge kind="project" status={project.status} />
-            <EditProjectButton
-              project={{
-                id: project.id,
-                name: project.name,
-                address: project.address,
-                status: project.status,
-                startDate: project.start_date,
-                endDate: project.end_date,
-              }}
-            />
-          </>
-        }
-        meta={
-          (project.address || dateRange) && (
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-ink">
-              {project.address && (
-                <span className="inline-flex items-center gap-1.5">
-                  <MapPin className="h-4 w-4 text-ink-subtle" strokeWidth={2} aria-hidden />
-                  {project.address}
-                </span>
-              )}
-              {dateRange && (
-                <span className="inline-flex items-center gap-1.5">
-                  <CalendarRange className="h-4 w-4 text-ink-subtle" strokeWidth={2} aria-hidden />
-                  <span className="font-mono text-xs">{dateRange}</span>
-                </span>
-              )}
+      {ws.loadError && <Alert tone="error">Some compliance data couldn&apos;t be loaded. Refresh to try again.</Alert>}
+
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+        <StatTile
+          tone="brand"
+          icon={ShieldCheck}
+          label="Project compliance"
+          value={c.percent === null ? "–" : `${c.percent}%`}
+          caption={c.percent === null ? "No contractors assigned" : c.mode === "requirements" ? "Against this project's requirements" : "From each contractor's overall status"}
+        />
+        <StatTile
+          tone="approved"
+          icon={Users}
+          label="Contractors cleared"
+          value={`${c.clearedCount} of ${c.assignedCount}`}
+          caption="Cleared for site"
+        />
+        <StatTile
+          tone="expired"
+          icon={ClipboardList}
+          label={c.mode === "requirements" ? "Outstanding requirements" : "Not cleared"}
+          value={c.outstandingMandatory}
+          caption={c.mode === "requirements" ? "Mandatory documents not yet valid" : "Contractors with an outstanding issue"}
+        />
+        <StatTile
+          tone="expiring"
+          icon={CalendarClock}
+          label="Expiring soon"
+          value={c.expiringCount}
+          caption={`Within ${EXPIRING_WINDOW_DAYS} days`}
+        />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <SectionCard
+          id="attention"
+          className="lg:col-span-2"
+          icon={TriangleAlert}
+          tone="brand"
+          title="Needs attention"
+          count={c.needsAttention.length}
+          action={c.needsAttention.length > ATTENTION_SHOWN && can(plan, "documentRegister") ? { href: `${base}/documents`, label: "View all" } : undefined}
+          flush={attention.length > 0}
+        >
+          {c.assignedCount === 0 ? (
+            <div className="rounded-lg border border-dashed border-line-strong px-card py-8 text-center">
+              <p className="text-sm text-ink-muted">No contractors assigned yet.</p>
+              <ButtonLink href={`${base}/contractors`} variant="secondary" className="mt-4">
+                Assign contractors
+              </ButtonLink>
             </div>
-          )
-        }
-      />
+          ) : attention.length === 0 ? (
+            <div className="flex flex-col items-center px-card py-8 text-center">
+              <CircleCheck className="h-8 w-8 text-approved" strokeWidth={2} aria-hidden />
+              <p className="mt-3 text-sm font-semibold text-ink">Everyone on this project is cleared</p>
+              <p className="mt-1 text-sm text-ink-muted">Nothing is missing, expired or waiting for review.</p>
+            </div>
+          ) : (
+            <RowList>
+              {attention.map((item, i) => {
+                const canRequest = item.issue === "missing" || item.issue === "expired" || item.issue === "rejected";
+                const action = canRequest ? (
+                  <RequestButton projectId={project.id} contractorId={item.contractorId} documentTypeId={item.documentTypeId} />
+                ) : (
+                  <ButtonLink href={`/dashboard/contractors/${item.contractorId}?tab=documents`} variant="secondary" size="sm">
+                    Review
+                  </ButtonLink>
+                );
+                return (
+                  <ListRow
+                    key={`${item.contractorId}-${item.documentTypeId ?? "c"}-${i}`}
+                    leading={<Avatar name={item.businessName} />}
+                    title={
+                      <Link href={`/dashboard/contractors/${item.contractorId}`} className="hover:underline">
+                        {item.businessName}
+                      </Link>
+                    }
+                    meta={item.text}
+                    footer={<StatusBadge kind="requirement" status={item.issue} size="sm" />}
+                    trailing={<StatusBadge kind="requirement" status={item.issue} />}
+                    actions={action}
+                  />
+                );
+              })}
+            </RowList>
+          )}
+        </SectionCard>
 
-      {issues > 0 && (
-        <Alert tone="warning">
-          {issues} of {assigned.length} assigned{" "}
-          {assigned.length === 1 ? "contractor" : "contractors"} on this project{" "}
-          {issues === 1 ? "isn't" : "aren't"} fully compliant.
-        </Alert>
-      )}
-      {issues === 0 && assigned.length > 0 && (
-        <Alert tone="success">
-          Every contractor assigned to this project is approved.
-        </Alert>
-      )}
-
-      <ProjectContractorsPanel
-        projectId={project.id}
-        assigned={assigned}
-        available={available}
-      />
-
-      {archivedAssigned > 0 && (
-        <p className="text-sm text-ink-muted">
-          {archivedAssigned} archived {archivedAssigned === 1 ? "contractor is" : "contractors are"} hidden
-          from this project. Restoring a contractor brings their assignment back.
-        </p>
-      )}
+        {showActivity ? (
+          <SectionCard
+            id="recent-activity"
+            icon={History}
+            tone="neutral"
+            title="Recent activity"
+            action={activity && activity.events.length > 0 ? { href: `${base}/activity`, label: "View all" } : undefined}
+          >
+            {activity && activity.events.length > 0 ? (
+              <ActivityFeed projectId={project.id} initial={activity.events} compact />
+            ) : (
+              <p className="text-sm text-ink-muted">Activity appears here as things change on this project.</p>
+            )}
+          </SectionCard>
+        ) : (
+          <SectionCard id="recent-activity" icon={History} tone="neutral" title="Recent activity">
+            <p className="text-sm text-ink-muted">
+              Changes on this project are being recorded. Activity history is on the Business plan; see the Activity tab.
+            </p>
+          </SectionCard>
+        )}
+      </div>
     </div>
   );
 }

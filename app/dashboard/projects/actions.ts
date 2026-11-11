@@ -166,7 +166,7 @@ export async function updateProject(
   }
 
   revalidatePath("/dashboard/projects");
-  revalidatePath(`/dashboard/projects/${id}`);
+  revalidatePath(`/dashboard/projects/${id}`, "layout");
   revalidatePath("/dashboard");
   return { ok: true };
 }
@@ -221,7 +221,7 @@ export async function assignContractor(
   // First sighting is stored silently; later changes are recorded.
   await syncAfterProjectChange(company.id, projectId);
 
-  revalidatePath(`/dashboard/projects/${projectId}`);
+  revalidatePath(`/dashboard/projects/${projectId}`, "layout");
   revalidatePath(`/dashboard/contractors/${contractorId}`);
   revalidatePath("/dashboard/projects");
   revalidatePath("/dashboard");
@@ -272,7 +272,7 @@ export async function removeContractor(
     contractorId: row.contractor_id,
   });
 
-  revalidatePath(`/dashboard/projects/${row.project_id}`);
+  revalidatePath(`/dashboard/projects/${row.project_id}`, "layout");
   revalidatePath(`/dashboard/contractors/${row.contractor_id}`);
   revalidatePath("/dashboard/projects");
   revalidatePath("/dashboard");

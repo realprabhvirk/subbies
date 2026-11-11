@@ -12,8 +12,46 @@ import { Avatar } from "@/app/components/avatar";
 import { Button } from "@/app/components/button";
 import { IconButton } from "@/app/components/icon-button";
 import { fieldClasses } from "@/app/components/input";
-import { hasComplianceIssue, type AssignedContractor } from "@/lib/projects";
+import type { AssignedContractor } from "@/lib/projects";
+import type { ProjectContractorStatus, RequirementState } from "@/lib/compliance/project";
+import { requirementStateMeta } from "@/lib/status";
 import type { ContractorStatus } from "@/lib/types";
+
+/** An assigned contractor plus their standing on THIS project (the engine). */
+export interface WorkspaceAssigned extends AssignedContractor {
+  projectStatus: ProjectContractorStatus;
+  mandatoryMet: number;
+  mandatoryTotal: number;
+  cells: { name: string; state: RequirementState; mandatory: boolean }[];
+}
+
+const SEGMENT: Record<RequirementState, string> = {
+  valid: "bg-tile-approved-disc",
+  expiring: "bg-tile-expiring-disc",
+  pending_review: "bg-tile-pending-disc",
+  rejected: "bg-tile-expired-disc",
+  expired: "bg-tile-expired-disc",
+  missing: "bg-line-strong",
+};
+
+/** "2 of 3 required documents" plus one segment per requirement; text carries the meaning too. */
+function RequirementBar({ a }: { a: WorkspaceAssigned }) {
+  if (a.cells.length === 0) return null;
+  const label = a.cells.map((c) => `${c.name}: ${requirementStateMeta[c.state].label}`).join(", ");
+  return (
+    <div className="w-40">
+      <p className="font-mono text-xs text-ink">
+        {a.mandatoryMet} of {a.mandatoryTotal}
+        <span className="font-sans text-ink-muted"> required</span>
+      </p>
+      <div className="mt-1.5 flex gap-0.5" role="img" aria-label={label} title={label}>
+        {a.cells.map((c, i) => (
+          <span key={i} className={`h-1.5 flex-1 rounded-full ${SEGMENT[c.state]} ${c.mandatory ? "" : "opacity-50"}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
 import { assignContractor, removeContractor } from "../../actions";
 
 export interface AvailableContractor {
@@ -29,7 +67,7 @@ export function ProjectContractorsPanel({
   available,
 }: {
   projectId: string;
-  assigned: AssignedContractor[];
+  assigned: WorkspaceAssigned[];
   available: AvailableContractor[];
 }) {
   const router = useRouter();
@@ -153,8 +191,20 @@ export function ProjectContractorsPanel({
                 leading={<Avatar name={a.businessName} />}
                 title={a.businessName}
                 meta={[a.roleOnProject ?? a.trade].filter(Boolean).join(" · ") || "–"}
-                footer={<StatusBadge kind="contractor" status={a.status} size="sm" />}
-                trailing={<StatusBadge kind="contractor" status={a.status} />}
+                footer={
+                  <>
+                    <StatusBadge kind="projectContractor" status={a.projectStatus} size="sm" />
+                    <RequirementBar a={a} />
+                  </>
+                }
+                trailing={
+                  <>
+                    <RequirementBar a={a} />
+                    <span className="flex w-44 justify-start">
+                      <StatusBadge kind="projectContractor" status={a.projectStatus} />
+                    </span>
+                  </>
+                }
                 actions={
                   <IconButton
                     tone="danger"
@@ -172,10 +222,10 @@ export function ProjectContractorsPanel({
         )}
       </SectionCard>
 
-      {assigned.some((a) => hasComplianceIssue(a.status)) && (
+      {assigned.some((a) => a.projectStatus === "not_cleared") && (
         <p className="text-xs text-ink-muted">
-          Contractors marked anything other than “Approved” have an outstanding
-          compliance issue. Open the contractor to see what&apos;s missing.
+          &ldquo;Not cleared&rdquo; means a mandatory document is missing, expired or rejected for this
+          project. Open the contractor to see what&apos;s outstanding.
         </p>
       )}
     </div>

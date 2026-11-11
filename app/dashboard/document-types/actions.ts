@@ -160,6 +160,21 @@ export async function deleteDocumentType(
   const company = access.company;
 
   const supabase = await createClient();
+
+  // A type that projects require can't be deleted (the database refuses it,
+  // migration 0022). Say why up front instead of silently changing compliance.
+  const { count: usedBy, error: usedError } = await supabase
+    .from("project_requirements")
+    .select("id", { count: "exact", head: true })
+    .eq("document_type_id", id)
+    .eq("company_id", company.id);
+  if (!usedError && (usedBy ?? 0) > 0) {
+    return {
+      ok: false,
+      error: `Used by ${usedBy} ${usedBy === 1 ? "project" : "projects"}. Remove it from those projects' requirements first.`,
+    };
+  }
+
   const { error } = await supabase
     .from("document_types")
     .delete()
@@ -167,6 +182,9 @@ export async function deleteDocumentType(
     .eq("company_id", company.id);
 
   if (error) {
+    if (error.code === "23503" && /project_requirements/.test(error.message ?? "")) {
+      return { ok: false, error: "This document type is used by a project's requirements. Remove it there first." };
+    }
     console.error("deleteDocumentType failed", error);
     return {
       ok: false,

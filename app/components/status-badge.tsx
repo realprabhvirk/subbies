@@ -1,8 +1,11 @@
 import {
   contractorStatusMeta,
   documentStatusMeta,
+  projectContractorStatusMeta,
   projectStatusMeta,
+  requirementStateMeta,
 } from "@/lib/status";
+import type { ProjectContractorStatus, RequirementState } from "@/lib/compliance/project";
 import type {
   ContractorStatus,
   DocumentStatus,
@@ -13,6 +16,8 @@ type Props = (
   | { kind: "contractor"; status: ContractorStatus }
   | { kind: "document"; status: DocumentStatus }
   | { kind: "project"; status: ProjectStatus }
+  | { kind: "projectContractor"; status: ProjectContractorStatus }
+  | { kind: "requirement"; status: RequirementState }
 ) & {
   /** "sm" for dense rows; default for headers and cards. */
   size?: "sm" | "md";
@@ -31,7 +36,11 @@ export function StatusBadge({ size = "md", className = "", ...props }: Props) {
       ? contractorStatusMeta[props.status]
       : props.kind === "document"
         ? documentStatusMeta[props.status]
-        : projectStatusMeta[props.status];
+        : props.kind === "projectContractor"
+          ? projectContractorStatusMeta[props.status]
+          : props.kind === "requirement"
+            ? requirementStateMeta[props.status]
+            : projectStatusMeta[props.status];
   const Icon = meta.icon;
 
   return (
