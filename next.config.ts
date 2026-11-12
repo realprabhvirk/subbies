@@ -80,6 +80,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // The PDF report reads its fonts and logo from lib/pdf/assets at runtime;
+  // make sure they ship with that function.
+  outputFileTracingIncludes: {
+    "/api/projects/\\[id\\]/report": ["./lib/pdf/assets/**/*"],
+  },
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },

@@ -32,7 +32,7 @@ export function ProjectTabs({ projectId, tabs }: { projectId: string; tabs: Proj
             key={t.label}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`flex h-12 shrink-0 items-center gap-2 whitespace-nowrap border-b-[3px] px-4 text-sm transition-colors ${
+            className={`relative flex h-12 shrink-0 items-center gap-2 whitespace-nowrap border-b-[3px] px-4 text-sm transition-colors ${
               active
                 ? "border-brand font-semibold text-ink"
                 : "border-transparent font-medium text-ink-muted hover:border-line-strong hover:text-ink"

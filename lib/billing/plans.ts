@@ -127,6 +127,8 @@ export const SHIPPED_FEATURES: readonly PlanFeature[] = [
   // Phase 3: project location and jobsite photos (every plan).
   "map",
   "photos",
+  // Phase 4: PDF compliance report.
+  "pdfExport",
 ];
 
 export function isShipped(feature: PlanFeature): boolean {
