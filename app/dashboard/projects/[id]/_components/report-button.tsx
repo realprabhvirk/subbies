@@ -12,9 +12,32 @@ import type { PlanError } from "@/lib/billing/plans";
  * "Download PDF". On plans without reports it shows a lock and opens the
  * upgrade prompt (the server also refuses the route, this is only the UI).
  * Fetches rather than linking, so a refusal (rate limit, access) shows as a
- * message instead of downloading an error as a file.
+ * message instead of downloading an error as a file. The map image is
+ * fetched first, in the browser, and posted with the request (see
+ * lib/pdf/client-map.ts).
  */
-export function ReportButton({ projectId, locked }: { projectId: string; locked: PlanError | null }) {
+/** The map image for the report, fetched here so the public token works. */
+async function fetchMapImage(url: string): Promise<Blob | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return blob.type.startsWith("image/") ? blob : null;
+  } catch {
+    return null; // the report still builds, just without the map
+  }
+}
+
+export function ReportButton({
+  projectId,
+  locked,
+  mapUrl = null,
+}: {
+  projectId: string;
+  locked: PlanError | null;
+  /** Static map URL (public token) when the project has a location. */
+  mapUrl?: string | null;
+}) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
@@ -40,7 +63,10 @@ export function ReportButton({ projectId, locked }: { projectId: string; locked:
     setPending(true);
     setError(null);
     try {
-      const res = await fetch(`/api/projects/${projectId}/report`);
+      const form = new FormData();
+      const map = mapUrl ? await fetchMapImage(mapUrl) : null;
+      if (map) form.append("map", map, "map.png");
+      const res = await fetch(`/api/projects/${projectId}/report`, { method: "POST", body: form });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         setError(body?.error ?? "Couldn't create the report. Try again.");

@@ -5,7 +5,9 @@ import { CalendarRange, MapPin } from "lucide-react";
 import { PageHeader } from "@/app/components/page-header";
 import { StatusBadge } from "@/app/components/status-badge";
 import { can, featureError } from "@/lib/billing/plans";
+import { publicMapboxToken, staticMapUrl } from "@/lib/mapbox/static-map";
 import { getProjectBasics } from "./_lib/workspace";
+import { loadProjectLocation } from "./_lib/location";
 import { EditProjectButton } from "./_components/edit-project-button";
 import { ProjectTabs } from "./_components/project-tabs";
 import { ReportButton } from "./_components/report-button";
@@ -26,7 +28,16 @@ export default async function ProjectLayout({ children, params }: LayoutProps<"/
   const { id } = await params;
   const basics = await getProjectBasics(id);
   if (!basics) notFound();
-  const { project, plan } = basics;
+  const { project, plan, company } = basics;
+
+  // The report's map is fetched by the browser with the public token (a
+  // URL-restricted token can't be used server-side). Only looked up when
+  // the plan has reports; shares the overview's cached location query.
+  const reportLocked = featureError(plan, "pdfExport");
+  const token = publicMapboxToken();
+  const location = !reportLocked && token ? await loadProjectLocation(project.id, company.id) : null;
+  const reportMapUrl =
+    location && token ? staticMapUrl({ lat: location.lat, lng: location.lng, token, width: 640, height: 360, zoom: 15 }) : null;
 
   const dateRange =
     project.start_date || project.end_date
@@ -42,7 +53,7 @@ export default async function ProjectLayout({ children, params }: LayoutProps<"/
         actions={
           <>
             <StatusBadge kind="project" status={project.status} />
-            <ReportButton projectId={project.id} locked={featureError(plan, "pdfExport")} />
+            <ReportButton projectId={project.id} locked={reportLocked} mapUrl={reportMapUrl} />
             <EditProjectButton
               project={{
                 id: project.id,

@@ -1,13 +1,19 @@
 import "server-only";
 
+import { cache } from "react";
+
 import { createClient } from "@/lib/supabase/server";
 import type { SavedLocation } from "../_components/location-picker";
 
 /**
  * The project's saved map location. Its own query so a deploy that lands
  * before migration 0023 just shows no map instead of breaking the page.
+ * Cached per request, so the layout (report map) and overview share one query.
  */
-export async function loadProjectLocation(projectId: string, companyId: string): Promise<SavedLocation | null> {
+export const loadProjectLocation = cache(async function loadProjectLocation(
+  projectId: string,
+  companyId: string,
+): Promise<SavedLocation | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("projects")
@@ -23,4 +29,4 @@ export async function loadProjectLocation(projectId: string, companyId: string):
     placeId: data.location_place_id,
     manual: Boolean(data.location_is_manual),
   };
-}
+});

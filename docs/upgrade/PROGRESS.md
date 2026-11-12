@@ -135,7 +135,12 @@ The code reads `contractors.archived_at`. Without 0021, the dashboard and contra
   - contractor blocks never split, and the section heading stays with the first block.
 - **Statuses:** always printed as words; colour only reinforces. A missing optional document is neutral and doesn't count as "Missing".
 - **Resilience:**
-  - The map is fetched server-side with a 4 s timeout ("Map unavailable" or "Location not provided" when absent).
+  - **Map (public token only):** "Download PDF" fetches the static map in the browser with `NEXT_PUBLIC_MAPBOX_TOKEN` (the browser sends the Referer a URL-restricted token needs) and POSTs it with the request as multipart field `map`.
+    - The server accepts it only if it's a real JPEG, PNG or WebP under 1.5 MB (`lib/pdf/client-map.ts`), and the renderer re-encodes it with sharp. Anything else is ignored and the report builds without it. Requests over the cap get a 413.
+    - The server fetches the map itself (4 s timeout) only when the browser sent none and `MAPBOX_SERVER_TOKEN`, or an unrestricted public token, exists.
+    - "Map unavailable" or "Location not provided" is shown when there's no map.
+    - The layout looks up the location only on plans with reports, through a per-request cached query shared with the overview.
+    - `GET` still works (no browser map); the button uses `POST`.
   - Each photo is fetched independently, and anything undecodable is dropped.
   - Images are re-encoded for print (1000px, JPEG q70). Over 4 MB re-renders once at 700px q45.
 - **Privacy:** the report model only carries names, trades, statuses, dates and notes. A test checks its keys and that no email, phone, ABN, policy or path data is present.
@@ -214,7 +219,7 @@ The code reads `contractors.archived_at`. Without 0021, the dashboard and contra
 - (P3) The location editor (GL JS map, Search Box, reverse geocoding, permanent geocoding) wasn't run against real Mapbox: there's no token in the sandbox. The static map was checked with a stand-in image.
 - (P3) HEIC from a real iPhone wasn't tested. With `accept="image/jpeg,image/png,image/webp"`, Safari should hand over JPEG; HEIC that arrives anyway gets a clear refusal.
 - (P3) 0023 was tested on the local replica only; real Supabase Storage policies and `storage.foldername` weren't exercised.
-- (P4) The PDF's static map wasn't fetched from real Mapbox (no token in the sandbox); the failure path ("Map unavailable") was exercised through the route. Font tracing on Vercel isn't verified until a preview deploy downloads a report.
+- (P4) The PDF map was tested end to end in Chromium with Mapbox mocked in the browser and no server token: the map arrives in the PDF, and with Mapbox refusing (403) the report still downloads without it. A non-image "map" is ignored, a 2 MB upload gets a 413, Starter gets a 403, and no session redirects to /login. Real Mapbox (the CORS response on the static image) and font tracing on Vercel aren't verified until a deploy downloads a report.
 - (P2) Not exercised end to end: Request, add/remove requirement, Load more, the cron project job, and token upload fan-out. The SQL functions are covered by SQL tests and the engine and register by unit tests.
 
 ## Env vars

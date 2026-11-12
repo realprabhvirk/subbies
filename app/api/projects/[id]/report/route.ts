@@ -9,6 +9,7 @@ import { complianceToday } from "@/lib/time/compliance-today";
 import { publicMapboxToken, staticMapUrl } from "@/lib/mapbox/static-map";
 import { PROJECT_PHOTOS_BUCKET } from "@/lib/photos/constants";
 import { buildReportModel } from "@/lib/pdf/report-model";
+import { acceptClientMap, MAX_CLIENT_MAP_BYTES } from "@/lib/pdf/client-map";
 import { renderReport } from "@/lib/pdf/render";
 import { isUuid } from "@/lib/onboarding";
 import { loadProjectLocation } from "@/app/dashboard/projects/[id]/_lib/location";
@@ -18,7 +19,12 @@ export const maxDuration = 30;
 
 const json = (status: number, error: string) => Response.json({ ok: false, error }, { status });
 
-/** The static map, fetched server-side with a 4 s timeout. null on any failure. */
+/**
+ * Server-side static map, used only when the browser didn't send one. Needs
+ * MAPBOX_SERVER_TOKEN, or an unrestricted public token: a URL-restricted
+ * public token is refused server-side (no Referer). 4 s timeout, null on any
+ * failure.
+ */
 async function fetchMap(lat: number, lng: number): Promise<Buffer | null> {
   const token = process.env.MAPBOX_SERVER_TOKEN?.trim() || publicMapboxToken();
   if (!token) return null;
@@ -35,11 +41,36 @@ async function fetchMap(lat: number, lng: number): Promise<Buffer | null> {
 }
 
 /**
+ * POST /api/projects/[id]/report: same report, with the map image the
+ * browser fetched using the public Mapbox token (multipart field "map",
+ * optional). This is what the "Download PDF" button calls.
+ */
+export async function POST(req: Request, ctx: RouteContext<"/api/projects/[id]/report">) {
+  const declared = Number(req.headers.get("content-length") ?? 0);
+  if (declared > MAX_CLIENT_MAP_BYTES + 64_000) return json(413, "That request is too large.");
+  let clientMap: Buffer | null = null;
+  try {
+    const form = await req.formData();
+    const file = form.get("map");
+    if (file instanceof Blob && file.size <= MAX_CLIENT_MAP_BYTES) {
+      clientMap = acceptClientMap(new Uint8Array(await file.arrayBuffer()));
+    }
+  } catch {
+    clientMap = null; // no body or not multipart: build without a browser map
+  }
+  return report(ctx, clientMap);
+}
+
+/**
  * GET /api/projects/[id]/report: the project's compliance report as a PDF
  * (Business and up). Same loader and engine as the workspace, so the PDF
  * matches the screen. A missing map or photo never fails the report.
  */
 export async function GET(_req: Request, ctx: RouteContext<"/api/projects/[id]/report">) {
+  return report(ctx, null);
+}
+
+async function report(ctx: RouteContext<"/api/projects/[id]/report">, clientMap: Buffer | null): Promise<Response> {
   const { id: projectId } = await ctx.params;
   if (!isUuid(projectId)) return json(404, "Couldn't find that project.");
 
@@ -81,7 +112,8 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/projects/[id]/r
   // Map and photos are fetched independently; any failure just leaves it out.
   const bucket = supabase.storage.from(PROJECT_PHOTOS_BUCKET);
   const [map, ...photos] = await Promise.all([
-    location ? fetchMap(location.lat, location.lng) : Promise.resolve(null),
+    // The browser's map (public token) first; the server fetch is the fallback.
+    location ? (clientMap ? Promise.resolve(clientMap) : fetchMap(location.lat, location.lng)) : Promise.resolve(null),
     ...((photoRows.data ?? []) as { storage_path: string }[]).slice(0, 3).map(async (r) => {
       try {
         const { data } = await bucket.download(r.storage_path);
