@@ -35,7 +35,7 @@ export function AuthShell({
         <div className="flex min-h-screen flex-col px-(--page-padding) py-6 sm:px-10 lg:py-8">
           <header className="lg:hidden">
             <Link href="/" prefetch={false} aria-label="Subbies home" className="inline-block rounded-md">
-              <Logo height={32} priority />
+              <Logo size="brand" priority />
             </Link>
           </header>
 
@@ -93,7 +93,7 @@ function PhotoPanel({ wide }: { wide: boolean }) {
         <Link href="/" prefetch={false} aria-label="Subbies home" className="self-start rounded-md">
           <Logo tone="inverse" height={40} />
         </Link>
-        <p className="max-w-md font-display text-4xl font-bold leading-[1.08] tracking-display text-sidebar-ink xl:text-5xl">
+        <p className="rise max-w-md font-display text-4xl font-bold leading-[1.08] tracking-display text-sidebar-ink [--anim-delay:200ms] xl:text-5xl">
           Compliance builds progress.
         </p>
       </div>

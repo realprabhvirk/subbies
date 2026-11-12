@@ -5,7 +5,7 @@ import { Logo } from "@/app/components/logo";
 export default function OnboardNotFound() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-4 pb-12 pt-6 sm:px-6 sm:pt-10">
-      <Logo height={24} />
+      <Logo size="brand" />
       <div className="flex flex-1 flex-col justify-center py-12">
         <LinkIcon className="h-8 w-8 text-ink-subtle" strokeWidth={1.75} aria-hidden />
         <h1 className="mt-5 text-2xl sm:text-3xl">This link isn&apos;t valid</h1>

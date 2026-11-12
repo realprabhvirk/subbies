@@ -1,20 +1,14 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowRight, Check, FileCheck } from "lucide-react";
+import { FileCheck } from "lucide-react";
 
-import {
-  Section,
-  SectionHead,
-  Eyebrow,
-  Reveal,
-  PrimaryLink,
-  CtaBand,
-} from "./_components/ui";
+import { Band, Section, H2, PrimaryLink, SecondaryLink, CtaBand } from "./_components/ui";
+import { InView, StoryScroller } from "./_components/motion";
 import { TRIAL_DAYS, PLANS } from "@/lib/billing/plans";
 import { ProductPreview } from "./_components/product-preview";
 import { UploadPreview } from "./_components/upload-preview";
 import { ReminderPreview } from "./_components/reminder-preview";
+import { RequestPreview, ReviewPreview } from "./_components/step-previews";
 
 export const metadata: Metadata = {
   title: {
@@ -24,75 +18,19 @@ export const metadata: Metadata = {
     "Stop chasing contractors for paperwork and know whether they're approved to work. Collect, review, and track compliance documents in one place.",
 };
 
-const FACTS = [
-  { k: "Contractor logins", v: "None. One link." },
-  { k: "Accepted files", v: "PDF, JPG, PNG, HEIC" },
-  { k: "Expiry reminders", v: "On your schedule" },
-  { k: "Plans from", v: `A$${PLANS.starter.amount} / month` },
-];
-
 const STEPS = [
-  {
-    title: "Onboard",
-    body: "Add a contractor, tick the documents you need from them, and Subbies emails one secure link.",
-  },
-  {
-    title: "Collect",
-    body: "They upload from their phone on site — a photo of the certificate is fine. No login, no account, no app.",
-  },
-  {
-    title: "Review",
-    body: "Open each file, set its expiry date, approve it or send it back with a reason they'll actually read.",
-  },
-  {
-    title: "Track",
-    body: "Everyone's status stays current. Reminders go out before anything expires, and your dashboard shows who needs you.",
-  },
-];
-
-const FEATURES = [
-  {
-    label: "For the contractor",
-    title: "Nothing to sign up for.",
-    body: "The contractor gets a plain email from your business and one link. They see exactly what's outstanding, upload from their phone, and they're done. The step where onboarding usually stalls — making an account — isn't there.",
-    points: [
-      "Works on any phone, no app",
-      "Photos and PDFs both accepted",
-      "Same link works when a document renews",
-    ],
-    preview: <UploadPreview />,
-  },
-  {
-    label: "For the expiry dates",
-    title: "Reminders before anything lapses.",
-    body: "Set an expiry when you approve a document. Subbies reminds the contractor on the schedule you choose for that document type, and escalates to you if they don't respond.",
-    points: [
-      "A schedule per document type",
-      "Days left shown on every record",
-      "Lapses show up on your dashboard",
-    ],
-    preview: <ReminderPreview />,
-  },
-  {
-    label: "For you",
-    title: "One register, worst first.",
-    body: "Every certificate, licence and insurance document for every contractor, reviewed and tracked in one place. The dashboard leads with what needs you — expired, rejected, waiting for review — not a wall of charts.",
-    points: [
-      "Status stamps you can read at a glance",
-      "Compliance per project",
-      "Full history of every document",
-    ],
-    preview: <ProductPreview />,
-  },
+  { title: "Send one link", body: "Pick the documents you need. Subbies emails the contractor a secure link.", visual: <RequestPreview /> },
+  { title: "They upload from their phone", body: "No account, no app. A photo of the certificate is fine.", visual: <UploadPreview /> },
+  { title: "Approve or send it back", body: "Set the expiry and approve, or reject with a reason.", visual: <ReviewPreview /> },
+  { title: "Stay ahead of expiry", body: "Reminders go out before anything lapses.", visual: <ReminderPreview /> },
 ];
 
 export default function LandingPage() {
   return (
     <>
-      {/* Hero — editorial, left-set, the real product beside the promise.
-          The ruled background is the "register" motif, drawn in the warm
-          hairline colour. */}
-      <section className="relative isolate overflow-hidden border-b border-line">
+      {/* Hero. Text rises in on load; the product composite eases back as
+          the page scrolls. The ruled background is the one texture. */}
+      <section className="relative isolate overflow-hidden border-b border-line lg:flex lg:min-h-[calc(100svh-4.5rem)] lg:items-center">
         <div
           aria-hidden
           className="absolute inset-0 -z-10 opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent_85%)]"
@@ -101,230 +39,93 @@ export default function LandingPage() {
               "repeating-linear-gradient(to bottom, transparent 0, transparent 39px, var(--color-line) 39px, var(--color-line) 40px)",
           }}
         />
-        <Section className="grid grid-cols-[minmax(0,1fr)] items-center gap-12 pb-16 pt-14 sm:pb-24 sm:pt-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-14 lg:pb-32 lg:pt-24">
+        <Section className="grid grid-cols-[minmax(0,1fr)] items-center gap-14 py-14 sm:py-20 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-16">
           <div>
-            <Eyebrow>Contractor onboarding &amp; compliance</Eyebrow>
-            <h1 className="mt-5 text-[2.6rem] leading-[0.98] tracking-display sm:text-6xl xl:text-[4.25rem]">
+            <h1 className="rise max-w-[15ch] text-[2.375rem] leading-[1.02] tracking-display sm:text-5xl lg:text-[3.5rem] xl:text-[4rem]">
               Stop chasing paperwork. Know who&apos;s cleared for site.
             </h1>
-            <p className="mt-6 max-w-xl text-base text-ink-muted sm:text-lg">
-              Collect insurance certificates, licences and workers comp from your
-              subcontractors, review them in one place, and see at a glance
-              who is approved to work.
+            <p className="rise mt-6 max-w-[30rem] text-lg text-ink-muted [--anim-delay:120ms]">
+              Collect insurance, licences and workers comp from your
+              subcontractors. See who&apos;s approved to work.
             </p>
-            <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-4">
+            <div className="rise mt-9 flex flex-col gap-3 [--anim-delay:220ms] sm:flex-row sm:flex-wrap sm:items-center">
               <PrimaryLink href="/signup">Start {TRIAL_DAYS}-day free trial</PrimaryLink>
-              <Link
-                href="/how-it-works"
-                className="group inline-flex items-center gap-1.5 text-sm font-semibold text-ink transition-colors hover:text-brand"
-              >
-                See how it works
-                <ArrowRight
-                  className="h-4 w-4 transition-transform duration-[var(--duration-fast)] group-hover:translate-x-0.5"
-                  strokeWidth={2.25}
-                  aria-hidden
-                />
-              </Link>
+              <SecondaryLink href="/how-it-works">See how it works</SecondaryLink>
             </div>
-            <p className="mt-6 text-sm text-ink-muted">
-              Card required, nothing charged for {TRIAL_DAYS} days. Built for
-              builders, property maintenance and facilities teams.
+            <p className="rise mt-5 text-sm text-ink-subtle [--anim-delay:300ms]">
+              Nothing charged for {TRIAL_DAYS} days. Cancel any time.
             </p>
           </div>
 
-          {/* Product composite: the register with the contractor's phone
-              view overlapping its corner. */}
-          <div aria-hidden className="relative sm:pt-16">
-            <ProductPreview />
-            {/* The moment the product exists for: a contractor's upload
-                landing. Mirrors the app's real notification copy. */}
-            <div className="absolute -left-4 top-0 hidden w-80 items-start gap-3 rounded-card border border-line bg-surface p-3.5 shadow-lg sm:flex xl:-left-10">
-              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-review-line bg-review-bg text-review">
+          <div aria-hidden className="relative mx-auto w-full max-w-xl pt-16 [perspective:1600px] lg:max-w-[40rem]">
+            <div className="hero-drift">
+              <div className="rise [--anim-delay:180ms]">
+                <ProductPreview />
+              </div>
+            </div>
+            <div className="pop-in absolute left-0 top-0 hidden w-80 items-start gap-3 rounded-card border border-line bg-surface p-3.5 shadow-lg [--anim-delay:900ms] sm:flex lg:-left-8">
+              <span className="ping mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-review-line bg-review-bg text-review">
                 <FileCheck className="h-4 w-4" strokeWidth={2.25} />
               </span>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold leading-snug">
                   BJ Plumbing &amp; Gas uploaded Public liability insurance
                 </p>
-                <p className="mt-1 font-mono text-2xs text-ink-subtle">just now</p>
+                <p className="mt-1 flex justify-between font-mono text-2xs text-ink-subtle">
+                  <span>just now</span>
+                  <span>Example</span>
+                </p>
               </div>
             </div>
           </div>
         </Section>
       </section>
 
-      {/* Facts strip — true statements about the product, in place of a logo
-          wall or invented stats. */}
-      <div className="border-b border-line bg-surface">
-        <Section>
-          <dl className="grid grid-cols-2 lg:grid-cols-4">
-            {FACTS.map((f, i) => (
-              <div
-                key={f.k}
-                className={`py-6 sm:py-8 ${i % 2 === 1 ? "border-l border-line pl-5 sm:pl-8" : ""} ${
-                  i >= 2 ? "border-t border-line lg:border-t-0" : ""
-                } ${i === 2 ? "lg:border-l lg:pl-8" : ""}`}
-              >
-                <dt className="label-caps text-ink-muted">{f.k}</dt>
-                <dd className="mt-2 font-display text-lg font-semibold sm:text-xl">{f.v}</dd>
-              </div>
-            ))}
-          </dl>
-        </Section>
-      </div>
-
-      {/* The problem — named plainly, in two columns: the claim, the cost. */}
-      <Section className="py-section">
-        <Reveal className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16">
-          <SectionHead
-            index="01"
-            label="The problem"
-            title="You're not short on subbies. You're short on certainty about them."
-          />
-          <div className="space-y-4 text-base text-ink-muted lg:pt-16">
-            <p>
-              Insurance certificates that quietly lapse. A licence you meant to
-              check before the job started. A spreadsheet three people are
-              editing at once, none of them sure which version is current.
-            </p>
-            <p>
-              It costs an afternoon every time you chase it down, and it&apos;s
-              invisible right up until it isn&apos;t —{" "}
-              <span className="font-semibold text-ink">
-                an expired policy on site, discovered at the worst possible
-                moment.
-              </span>
-            </p>
-          </div>
-        </Reveal>
-      </Section>
-
-      {/* How it works — four ruled, numbered steps. */}
-      <div className="border-y border-line bg-surface">
-        <Section className="py-section">
-          <Reveal>
-            <SectionHead
-              index="02"
-              label="How it works"
-              title={
-                <>
-                  From &ldquo;we need someone Monday&rdquo; to approved, without
-                  the back-and-forth.
-                </>
-              }
-            />
-          </Reveal>
-          <ol className="mt-14 grid border-t border-ink sm:grid-cols-2 lg:grid-cols-4">
-            {STEPS.map((step, i) => (
-              <li
-                key={step.title}
-                className={`border-b border-line py-7 sm:pr-8 lg:border-b-0 ${
-                  i > 0 ? "lg:border-l lg:pl-8" : ""
-                } ${i % 2 === 1 ? "sm:border-l sm:pl-8 lg:pl-8" : ""}`}
-              >
-                <span className="figure text-4xl text-line-strong">0{i + 1}</span>
-                <h3 className="mt-4 text-xl">{step.title}</h3>
-                <p className="mt-2 text-sm text-ink-muted">{step.body}</p>
-              </li>
-            ))}
-          </ol>
-          <div className="mt-10">
-            <Link
-              href="/how-it-works"
-              className="group inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
-            >
-              The full walkthrough
-              <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-            </Link>
-          </div>
-        </Section>
-      </div>
-
-      {/* Features — alternating text and real product, separated by rules. */}
-      <Section className="py-section">
-        <Reveal>
-          <SectionHead
-            index="03"
-            label="What you get"
-            title="The parts that actually take time, handled."
-          />
-        </Reveal>
-        <div className="mt-14 divide-y divide-line border-y border-line">
-          {FEATURES.map((f, i) => (
-            <Reveal key={f.title}>
-              <div className="grid grid-cols-[minmax(0,1fr)] items-center gap-10 py-12 sm:py-16 lg:grid-cols-2 lg:gap-16">
-                <div className={i % 2 === 1 ? "lg:order-2" : ""}>
-                  <Eyebrow className="text-brand">{f.label}</Eyebrow>
-                  <h3 className="mt-3 text-2xl leading-tight tracking-display sm:text-4xl">
-                    {f.title}
-                  </h3>
-                  <p className="mt-4 max-w-lg text-base text-ink-muted">{f.body}</p>
-                  <ul className="mt-6 max-w-lg divide-y divide-line border-y border-line">
-                    {f.points.map((p) => (
-                      <li key={p} className="flex items-center gap-2.5 py-2.5 text-sm">
-                        <Check className="h-4 w-4 shrink-0 text-approved" strokeWidth={2.5} aria-hidden />
-                        {p}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div aria-hidden className={`mx-auto w-full max-w-md ${i % 2 === 1 ? "lg:order-1" : ""}`}>
-                  {f.preview}
-                </div>
-              </div>
-            </Reveal>
-          ))}
+      {/* The whole flow as one pinned scroll story. */}
+      <Band tone="surface" className="border-b border-line" innerClassName="py-section">
+        <InView>
+          <h2 className={`max-w-[20ch] ${H2}`}>From &ldquo;we need someone Monday&rdquo; to approved.</h2>
+        </InView>
+        <div className="mt-6 lg:mt-0">
+          <StoryScroller steps={STEPS} />
         </div>
-      </Section>
+      </Band>
 
-      {/* Why Subbies exists — an honest founder note, not a testimonial. */}
-      <div className="border-t border-line bg-surface">
-        <Section className="py-section">
-          <Reveal className="grid grid-cols-[minmax(0,1fr)] items-center gap-10 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16">
+      {/* Why Subbies exists: an honest founder note, not a testimonial. */}
+      <Band tone="deep" innerClassName="py-section">
+        <div className="grid grid-cols-[minmax(0,1fr)] items-center gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-20">
+          <InView anim="scale">
             <Image
               src="/marketing/trust-crew.webp"
               alt="Two site supervisors reviewing rebar layout on a job site"
               width={900}
               height={675}
-              sizes="(min-width: 1024px) 35vw, 90vw"
+              sizes="(min-width: 1024px) 40vw, 90vw"
               className="aspect-[4/3] w-full rounded-card object-cover grayscale-[35%]"
             />
-            <div>
-              <Eyebrow>Why Subbies exists</Eyebrow>
-              <blockquote className="mt-4 font-display text-2xl font-semibold leading-snug tracking-[-0.02em] sm:text-3xl">
-                &ldquo;Built by someone who&apos;s spent real afternoons chasing
-                subcontractors for the same insurance certificate twice, because
-                there was nowhere it was supposed to live.&rdquo;
-              </blockquote>
-              <p className="mt-5 max-w-xl text-sm text-ink-muted">
-                Subbies isn&apos;t a feature bolted onto a bigger project
-                management suite. It does one job: know who&apos;s compliant,
-                without the spreadsheet. The screens on this page are built from
-                the real product, shown with example data.
-              </p>
-            </div>
-          </Reveal>
-        </Section>
-      </div>
+          </InView>
+          <InView delay={120}>
+            <blockquote className="font-display text-2xl font-semibold leading-snug tracking-[-0.02em] sm:text-[2rem] sm:leading-[1.25]">
+              &ldquo;Built by someone who&apos;s spent real afternoons chasing
+              subcontractors for the same insurance certificate twice.&rdquo;
+            </blockquote>
+            <p className="mt-5 text-sm text-ink-muted">
+              Screens on this page are the real product, shown with example data.
+            </p>
+          </InView>
+        </div>
+      </Band>
 
-      {/* Pricing teaser — one honest line and a link. */}
-      <div className="border-t border-line">
-        <Section className="flex flex-col gap-4 py-10 sm:flex-row sm:items-center sm:justify-between">
-          <p className="font-display text-xl font-semibold sm:text-2xl">
-            Plans from A${PLANS.starter.amount} a month.{" "}
-            <span className="text-ink-muted">
-              No per-contractor fees. {TRIAL_DAYS} days free.
-            </span>
+      {/* Pricing in one line. */}
+      <Band tone="surface" className="border-t border-line" innerClassName="flex flex-col gap-5 py-12 sm:flex-row sm:items-center sm:justify-between">
+        <InView>
+          <p className="font-display text-2xl font-semibold sm:text-[1.75rem]">
+            From A${PLANS.starter.amount} a month.{" "}
+            <span className="text-ink-muted">No per-contractor fees.</span>
           </p>
-          <Link
-            href="/pricing"
-            className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
-          >
-            Compare plans
-            <ArrowRight className="h-4 w-4" strokeWidth={2.25} aria-hidden />
-          </Link>
-        </Section>
-      </div>
+        </InView>
+        <SecondaryLink href="/pricing">Compare plans</SecondaryLink>
+      </Band>
 
       <CtaBand />
     </>

@@ -24,6 +24,7 @@ export function Logo({
   iconOnly = false,
   showTagline = false,
   height = 28,
+  size,
   priority = false,
 }: {
   className?: string;
@@ -35,6 +36,12 @@ export function Logo({
   showTagline?: boolean;
   /** Height of the mark in px. The wordmark scales with it. */
   height?: number;
+  /**
+   * Brand-header preset: a 36px mark and 22px wordmark from sm up, 32px and
+   * 20px on phones. Overrides `height`. Used by the marketing nav and
+   * footer, auth pages and the contractor upload page.
+   */
+  size?: "brand";
   priority?: boolean;
 }) {
   const mark = (
@@ -48,6 +55,41 @@ export function Logo({
       style={{ height, width: height }}
     />
   );
+
+  if (size === "brand") {
+    return (
+      <span className={`inline-flex items-center gap-3 ${className}`}>
+        <Image
+          src={MARK[tone]}
+          alt={iconOnly ? "Subbies" : ""}
+          width={36}
+          height={36}
+          priority={priority}
+          className="block h-8 w-8 shrink-0 object-contain sm:h-9 sm:w-9"
+        />
+        {!iconOnly && (
+          <span className="flex flex-col justify-center leading-none">
+            <span
+              className={`font-display text-xl font-semibold tracking-[-0.02em] stretch-wide sm:text-[22px] ${
+                tone === "inverse" ? "text-sidebar-ink" : "text-ink"
+              }`}
+            >
+              Subbies
+            </span>
+            {showTagline && (
+              <span
+                className={`mt-1.5 text-[10.5px] font-semibold uppercase tracking-[0.1em] sm:text-xs ${
+                  tone === "inverse" ? "text-sidebar-ink-muted" : "text-ink-muted"
+                }`}
+              >
+                Compliance builds progress
+              </span>
+            )}
+          </span>
+        )}
+      </span>
+    );
+  }
 
   if (iconOnly) return <span className={className}>{mark}</span>;
 

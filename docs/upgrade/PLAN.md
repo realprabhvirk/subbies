@@ -95,7 +95,8 @@ Source: mapbox.com/pricing, the Search Box and Static Images API docs, and mapbo
 | Permanent geocoding (summary) | none | $5.00 per 1,000 | One lookup per saved location chosen from search |
 
 **Terms finding: storing search results.** The Search Box docs say returned data is "only available for temporary use", and storing position data needs a different arrangement. So:
-- Coordinates chosen from search are looked up once on save with the Geocoding API's permanent mode (`permanent=true`, server token), and that result is what's stored.
+- Coordinates chosen from search are looked up once on save with the Geocoding API's permanent mode (`permanent=true`), and that result is what's stored. Since the Phase 3 follow-up the browser does this lookup with the public token (browser requests carry the Referer, so a URL-restricted `pk.` token works). `MAPBOX_SERVER_TOKEN` is optional: if it's set, the server retries the lookup when the browser couldn't confirm. A URL-restricted public token can't be used server-side, because server requests carry no Referer and get a 403.
+- Mapbox requires a credit card on file (or an enterprise contract) for permanent geocoding. Without one, Mapbox refuses the lookup and the editor asks the user to place the pin by hand.
 - Pins placed by hand are the user's own coordinates and are stored as placed (`location_is_manual = true`).
 - The address text is whatever the user typed or confirmed.
 

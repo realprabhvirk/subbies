@@ -9,6 +9,7 @@ import {
   can,
   checkLimit,
   featureError,
+  isShipped,
   limitFor,
   limitLine,
   planToAdd,
@@ -194,7 +195,7 @@ test("planToAdd skips plans that still wouldn't fit", () => {
 });
 
 test("coming soon lists exactly the unshipped features, at the plan that first has them", () => {
-  assert.deepEqual(PLANS.starter.comingSoon, ["Project map", "Photos"]);
+  assert.deepEqual(PLANS.starter.comingSoon, []);
   assert.deepEqual(PLANS.business.comingSoon, []);
   assert.deepEqual(PLANS.pro.comingSoon, ["Analytics", "Team members (up to 10)", "Bulk tools", "Audit exports", "Priority support"]);
 });
@@ -205,4 +206,14 @@ test("nothing unshipped appears in a plan's live feature list", () => {
       assert.ok(!PLANS[id].features.includes(soon), `${id} sells ${soon} as live`);
     }
   }
+});
+
+test("project map and photos are live on every plan, with 3 photo slots", () => {
+  for (const id of PLAN_IDS) {
+    assert.ok(can(id, "map"), `${id} has the map`);
+    assert.ok(can(id, "photos"), `${id} has photos`);
+    assert.equal(limitFor(id, "photos"), 3, `${id} photo slots`);
+  }
+  assert.ok(isShipped("map") && isShipped("photos"));
+  assert.ok(PLANS.starter.features.includes("3 jobsite photos per project"));
 });

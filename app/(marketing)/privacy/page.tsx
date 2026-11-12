@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { TriangleAlert } from "lucide-react";
 
-import { Section, Eyebrow } from "../_components/ui";
+import { LegalPage, LegalH2, LegalP, LegalUL } from "../_components/legal";
+import { CONTAINER } from "../_components/ui";
 import {
   PRIVACY_POLICY_IN_FORCE,
   PRIVACY_LAST_UPDATED,
@@ -30,7 +31,7 @@ function NotInForceBanner() {
       role="alert"
       className="border-b-2 border-expired-line bg-expired-bg"
     >
-      <div className="mx-auto flex max-w-5xl items-start gap-4 px-4 py-8 sm:px-6 sm:py-10">
+      <div className={`${CONTAINER} flex items-start gap-4 py-8 sm:py-10`}>
         <TriangleAlert
           className="mt-1 h-8 w-8 shrink-0 text-expired sm:h-10 sm:w-10"
           strokeWidth={2.25}
@@ -66,35 +67,19 @@ function PrivacyContact() {
   );
 }
 
-function H2({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-xl sm:text-2xl">{children}</h2>;
-}
-
-function P({ children }: { children: React.ReactNode }) {
-  return <p className="mt-3 max-w-[68ch] text-sm leading-relaxed text-ink sm:text-base">{children}</p>;
-}
-
-function UL({ children }: { children: React.ReactNode }) {
-  return (
-    <ul className="mt-3 max-w-[68ch] list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-ink marker:text-ink-subtle sm:text-base">
-      {children}
-    </ul>
-  );
-}
+// Shared legal typography; LegalPage builds its contents list from H2.
+const H2 = LegalH2;
+const P = LegalP;
+const UL = LegalUL;
 
 export default function PrivacyPage() {
   return (
-    <>
-      {!PRIVACY_POLICY_IN_FORCE && <NotInForceBanner />}
-      <Section className="pb-section pt-14 sm:pt-20">
-      <div className="max-w-3xl">
-        <Eyebrow>Legal</Eyebrow>
-        <h1 className="mt-5 text-4xl leading-[1.02] tracking-display sm:text-5xl">
-          Privacy Policy
-        </h1>
-        <p className="mt-4 font-mono text-xs text-ink-muted">Last updated: {PRIVACY_LAST_UPDATED}</p>
-
-        <div className="mt-10 space-y-10 border-t border-ink pt-10">
+    <LegalPage
+      title="Privacy Policy"
+      updated={<>Last updated: {PRIVACY_LAST_UPDATED}</>}
+      banner={!PRIVACY_POLICY_IN_FORCE ? <NotInForceBanner /> : null}
+    >
+        <div className="space-y-12">
           <P>
             Subbies (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) provides a subcontractor
             compliance and document tracking platform for construction
@@ -367,7 +352,7 @@ export default function PrivacyPage() {
           <section>
             <H2>11. Contact us</H2>
             <P>Questions about this policy or your data can be directed to:</P>
-            <div className="mt-3 text-sm leading-relaxed text-ink-muted sm:text-base">
+            <div className="mt-4 text-[1.0625rem] leading-[1.7] text-ink-muted sm:text-lg">
               <p className="font-semibold text-ink">{LEGAL_ENTITY_NAME}</p>
               <p>ABN: {LEGAL_ENTITY_ABN}</p>
               <p>
@@ -378,15 +363,13 @@ export default function PrivacyPage() {
           </section>
         </div>
 
-        <p className="mt-12 border-t border-line pt-6 text-sm text-ink-muted">
+        <p className="mt-14 border-t border-line pt-7 text-lg text-ink-muted">
           Questions before you sign up? See our{" "}
           <Link href="/contact" className="text-brand hover:underline">
             contact page
           </Link>
           .
         </p>
-      </div>
-    </Section>
-    </>
+    </LegalPage>
   );
 }

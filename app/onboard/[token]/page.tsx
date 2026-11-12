@@ -40,7 +40,7 @@ export default async function OnboardPage(props: PageProps<"/onboard/[token]">) 
   return (
     <main className="mx-auto w-full max-w-xl px-(--page-padding) pb-12 pt-6 sm:pt-10">
       <div className="flex items-center justify-between gap-3">
-        <Logo height={32} />
+        <Logo size="brand" />
         <span className="flex items-center gap-2 text-xs font-medium text-ink-muted">
           <Lock className="h-4 w-4" strokeWidth={2.25} aria-hidden />
           Secure upload link

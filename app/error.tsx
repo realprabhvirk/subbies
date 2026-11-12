@@ -7,10 +7,12 @@
  * Components carry only a digest (no message), shown so support can match
  * it to the server logs.
  *
- * Deliberately dependency-light (no Button, no icon library): a root error
- * boundary ships with every page, so anything imported here is paid for on
- * every route.
+ * Deliberately dependency-light (no Button component, no icon library): a
+ * root error boundary ships with every page, so anything imported here is
+ * paid for on every route. buttonClasses is a plain string helper.
  */
+import { buttonClasses } from "@/app/components/button-styles";
+
 export default function Error({
   error,
   retry,
@@ -19,18 +21,17 @@ export default function Error({
   retry: () => void;
 }) {
   return (
-    <main className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col justify-center px-5 py-16 sm:px-8">
+    <main className="mx-auto flex min-h-[80svh] w-full max-w-3xl flex-col justify-center px-5 py-16 sm:px-8">
       <p className="label-caps text-expired">Something went wrong</p>
-      <h1 className="mt-4 text-3xl sm:text-4xl">That didn&apos;t load properly.</h1>
-      <p className="mt-4 max-w-lg text-base text-ink-muted">
-        It&apos;s usually temporary. Try again, and if it keeps happening, let us
-        know what you were doing.
+      <h1 className="mt-4 text-[2.375rem] leading-[1.04] tracking-display sm:text-5xl">That didn&apos;t load properly.</h1>
+      <p className="mt-5 max-w-lg text-lg text-ink-muted">
+        It&apos;s usually temporary. Try again.
       </p>
-      <div className="mt-8 flex flex-wrap items-center gap-3">
+      <div className="mt-9 flex flex-col gap-3 sm:flex-row">
         <button
           type="button"
           onClick={() => retry()}
-          className="pressable inline-flex h-11 items-center rounded-md border border-brand bg-brand px-4.5 text-sm font-semibold text-white hover:border-brand-hover hover:bg-brand-hover"
+          className={buttonClasses("primary", "lg")}
         >
           Try again
         </button>
@@ -39,7 +40,7 @@ export default function Error({
             runtime out of this every-page boundary. */}
         <a
           href="/contact"
-          className="inline-flex h-11 items-center px-2 text-sm font-semibold text-brand hover:underline"
+          className={buttonClasses("outline", "lg")}
         >
           Contact support
         </a>

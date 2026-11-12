@@ -10,8 +10,19 @@ import { type InputHTMLAttributes } from "react";
  * classes only carry the resting state.
  */
 
-export function fieldClasses(invalid = false, className = ""): string {
-  return `block w-full min-h-12 rounded-md border bg-surface px-4 py-3 text-sm text-ink outline-none transition-[border-color,box-shadow] duration-[var(--duration-fast)] placeholder:text-ink-subtle disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted ${
+/**
+ * md is the app's field. lg is the pre-signup field (auth, contact): 52px
+ * tall with 16px text, for forms people fill in once, often on a phone.
+ */
+export type FieldSize = "md" | "lg";
+
+const FIELD_SIZE: Record<FieldSize, string> = {
+  md: "min-h-12 text-sm",
+  lg: "min-h-[52px] text-base",
+};
+
+export function fieldClasses(invalid = false, className = "", size: FieldSize = "md"): string {
+  return `block w-full ${FIELD_SIZE[size]} rounded-md border bg-surface px-4 py-3 text-ink outline-none transition-[border-color,box-shadow] duration-[var(--duration-fast)] placeholder:text-ink-subtle disabled:cursor-not-allowed disabled:bg-surface-muted disabled:text-ink-muted ${
     invalid ? "border-expired" : "border-field-line hover:border-ink-subtle"
   } ${className}`;
 }
@@ -21,6 +32,7 @@ export function Field({
   htmlFor,
   hint,
   error,
+  size = "md",
   children,
 }: {
   /**
@@ -32,10 +44,12 @@ export function Field({
   htmlFor?: string;
   hint?: string;
   error?: string;
+  size?: FieldSize;
   children: React.ReactNode;
 }) {
+  const lg = size === "lg";
   return (
-    <div className="space-y-1.5">
+    <div className={lg ? "space-y-2" : "space-y-1.5"}>
       {label && (
         <label htmlFor={htmlFor} className="block text-sm font-semibold text-ink">
           {label}
@@ -43,9 +57,9 @@ export function Field({
       )}
       {children}
       {error ? (
-        <p className="text-xs font-medium text-expired">{error}</p>
+        <p className={`font-medium text-expired ${lg ? "text-sm" : "text-xs"}`}>{error}</p>
       ) : hint ? (
-        <p className="text-xs text-ink-muted">{hint}</p>
+        <p className={`text-ink-muted ${lg ? "text-sm" : "text-xs"}`}>{hint}</p>
       ) : null}
     </div>
   );
@@ -55,6 +69,7 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   label?: React.ReactNode;
   hint?: string;
   error?: string;
+  fieldSize?: FieldSize;
 };
 
 export function Input({
@@ -63,15 +78,16 @@ export function Input({
   error,
   id,
   className = "",
+  fieldSize = "md",
   ...props
 }: InputProps) {
   return (
-    <Field label={label} htmlFor={id} hint={hint} error={error}>
+    <Field label={label} htmlFor={id} hint={hint} error={error} size={fieldSize}>
       <input
         id={id}
         aria-invalid={error ? true : undefined}
         {...props}
-        className={fieldClasses(Boolean(error), className)}
+        className={fieldClasses(Boolean(error), className, fieldSize)}
       />
     </Field>
   );
